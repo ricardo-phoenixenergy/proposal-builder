@@ -16,7 +16,7 @@ describe("Outline — add section", () => {
     // The new UI has one insert <select> per gap (aria-label "Insert section at N").
     // The LAST one (index === sections.length) appends at the end.
     const inserts = screen.getAllByLabelText(/insert section/i);
-    const appendPicker = inserts[inserts.length - 1];
+    const appendPicker = inserts[inserts.length - 1]!;
     fireEvent.change(appendPicker, { target: { value: "text" } });
 
     expect(useProposalStore.getState().document.sections).toHaveLength(before + 1);
