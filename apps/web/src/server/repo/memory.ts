@@ -1,5 +1,6 @@
 import type { ProposalDocument, ThemeTokens } from "@proposal/shared";
 import type {
+  Folder,
   ProposalSummary,
   ProposalVersion,
   Repository,
@@ -38,6 +39,7 @@ export function createMemoryRepo(): Repository {
   const templates = new Map<string, TemplateRow>(); // keyed by template id
   const users = new Map<string, StoredUser>(); // keyed by lowercased email
   const sectionTypeRows = new Map<string, SectionTypeRow>();
+  const folders = new Map<string, Folder>(); // keyed by folder id
 
   return {
     async listProposals(ownerId) {
@@ -262,6 +264,37 @@ export function createMemoryRepo(): Repository {
         for (const s of p.document.sections) keys.add(s.type);
       }
       return [...keys];
+    },
+
+    async listFolders(ownerId) {
+      return [...folders.values()]
+        .filter((f) => f.ownerId === ownerId)
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map(clone);
+    },
+
+    async createFolder(ownerId, name) {
+      const folder: Folder = { id: uid("fld"), ownerId, name: name.trim(), createdAt: now() };
+      folders.set(folder.id, folder);
+      return clone(folder);
+    },
+
+    async renameFolder(ownerId, id, name) {
+      const f = folders.get(id);
+      if (!f || f.ownerId !== ownerId) return null;
+      const updated: Folder = { ...f, name: name.trim() };
+      folders.set(id, updated);
+      return clone(updated);
+    },
+
+    async deleteFolder(ownerId, id) {
+      const f = folders.get(id);
+      if (!f || f.ownerId !== ownerId) return false;
+      folders.delete(id);
+      for (const [pid, p] of proposals) {
+        if (p.folderId === id && p.ownerId === ownerId) proposals.set(pid, { ...p, folderId: null });
+      }
+      return true;
     },
   };
 }

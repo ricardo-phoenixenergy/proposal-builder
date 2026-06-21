@@ -58,6 +58,13 @@ export class DuplicateEmailError extends Error {
   }
 }
 
+export interface Folder {
+  id: string;
+  ownerId: string;
+  name: string;
+  createdAt: string;
+}
+
 export interface SectionTypeRow {
   type: string;
   definition: import("@proposal/shared").SectionTypeSchema | null;
@@ -113,4 +120,10 @@ export interface Repository {
   setSectionTypeDeprecated(type: string, deprecated: boolean): Promise<SectionTypeRow | null>;
   /** Distinct section-type keys referenced by any stored proposal (freeze check). */
   listInUseTypeKeys(): Promise<string[]>;
+
+  /** Folders (flat, one level). Deleting a folder unfiles its proposals (folderId → null). */
+  listFolders(ownerId: string): Promise<Folder[]>;
+  createFolder(ownerId: string, name: string): Promise<Folder>;
+  renameFolder(ownerId: string, id: string, name: string): Promise<Folder | null>;
+  deleteFolder(ownerId: string, id: string): Promise<boolean>;
 }
