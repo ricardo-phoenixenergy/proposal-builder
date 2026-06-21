@@ -10,6 +10,10 @@ import { SectionTypeEditor } from "./SectionTypeEditor";
 function isBuiltIn(type: string): boolean {
   return builtInSectionTypes.some((t) => t.type === type);
 }
+/** The schema editor only surfaces text/paragraph fields, so only such types can be edited faithfully. */
+function canEditWithEditor(t: SectionTypeSchema): boolean {
+  return t.category === "text" && t.fields.every((f) => f.type === "text" || f.type === "paragraph");
+}
 function hasComponent(type: string): boolean {
   // a type renders styled only if a non-fallback component resolves for some variant
   return !resolveSection({ id: "_probe", type, data: {} }).unstyled;
@@ -68,6 +72,14 @@ export function SectionTypeList({
           const builtin = isBuiltIn(t.type);
           const used = inUse.includes(t.type);
           const unstyled = !hasComponent(t.type);
+          const editable = canEditWithEditor(t);
+          const editTitle = used
+            ? "In use — duplicate to change"
+            : !editable
+              ? "Editing data/matrix types isn't supported yet — duplicate"
+              : builtin
+                ? "Saves an override (the built-in stays as a fallback)"
+                : undefined;
           return (
             <li key={t.type} data-type={t.type} className="stlist__row">
               <div className="stlist__main">
@@ -87,8 +99,8 @@ export function SectionTypeList({
                 <button
                   type="button"
                   className="btn"
-                  disabled={builtin || used}
-                  title={builtin ? "Built-ins are immutable — duplicate" : used ? "In use — duplicate to change" : undefined}
+                  disabled={used || !editable}
+                  {...(editTitle ? { title: editTitle } : {})}
                   onClick={() => setEditor({ initial: t, mode: "edit" })}
                 >
                   Edit

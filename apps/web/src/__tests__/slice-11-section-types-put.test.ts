@@ -36,8 +36,19 @@ describe("PUT /api/section-types/[type]", () => {
     expect((await getRepo().listSectionTypeRows())[0]!.definition?.label).toBe("Renamed");
   });
 
-  it("409s editing a built-in", async () => {
-    const res = await PUT(put({ ...def, type: "text", label: "X" }), ctx("text"));
+  it("creates a same-key override when editing a not-in-use built-in", async () => {
+    const res = await PUT(put({ ...def, type: "text", label: "Custom Text" }), ctx("text"));
+    expect(res.status).toBe(200);
+    const row = (await getRepo().listSectionTypeRows()).find((r) => r.type === "text");
+    expect(row?.definition?.label).toBe("Custom Text");
+  });
+
+  it("409s editing an in-use built-in", async () => {
+    await getRepo().createProposal("owner_a", {
+      ...sampleProposal,
+      sections: [{ id: "s1", type: "text", data: { heading: "x", body: "y" } }],
+    });
+    const res = await PUT(put({ ...def, type: "text", label: "Nope" }), ctx("text"));
     expect(res.status).toBe(409);
   });
 

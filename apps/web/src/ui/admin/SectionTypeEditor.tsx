@@ -63,8 +63,22 @@ export function SectionTypeEditor({
   const save = async () => {
     setBusy(true);
     try {
-      if (editing) await updateSectionType(def.type, def);
-      else await createSectionType(def);
+      if (editing && initial) {
+        // Preserve the parts this text-only editor doesn't surface — category,
+        // variants/ranges/defaultVariant, schemaVersion, and any non-text fields
+        // (e.g. a dataset/matrix) — so overriding a built-in never silently
+        // drops them. The key is immutable on edit.
+        const preserved = initial.fields.filter((f) => f.type !== "text" && f.type !== "paragraph");
+        const merged: SectionTypeSchema = {
+          ...initial,
+          label: def.label,
+          type: initial.type,
+          fields: [...def.fields, ...preserved],
+        };
+        await updateSectionType(initial.type, merged);
+      } else {
+        await createSectionType(def);
+      }
       notify("success", editing ? "Type updated." : "Type created.");
       await onDone();
     } catch (e) {
