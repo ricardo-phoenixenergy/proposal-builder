@@ -19,4 +19,8 @@ export interface ProposalDocument {
   theme?: ThemeTokens;
   /** Global generation context shown to the AI on every call (§10). */
   brief?: string;
+  /** Page format id (§J); absent → A4 portrait. */
+  pageFormat?: string;
+  /** Render mode (§J): flowing "report" (default) or one-section-per-page "slides". */
+  pageMode?: "report" | "slides";
 }
