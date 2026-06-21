@@ -3,6 +3,7 @@ import { auth } from "../../auth";
 import { getMergedSectionTypes } from "../../src/server/registry/activeRegistry";
 import { getMergedTemplates } from "../../src/server/registry/activeTemplates";
 import { getRepo } from "../../src/server/repo";
+import { getActiveModel } from "../../src/server/aiModel";
 import { AdminDashboard } from "../../src/ui/admin/AdminDashboard";
 
 export const runtime = "nodejs";
@@ -12,11 +13,12 @@ export default async function AdminPage() {
   const session = await auth();
   if (!session?.user?.isAdmin) redirect("/");
 
-  const [sectionTypes, inUse, templates, inUseTemplates] = await Promise.all([
+  const [sectionTypes, inUse, templates, inUseTemplates, aiModel] = await Promise.all([
     getMergedSectionTypes(),
     getRepo().listInUseTypeKeys(),
     getMergedTemplates(),
     getRepo().listInUseTemplateIds(),
+    getActiveModel(),
   ]);
   return (
     <AdminDashboard
@@ -25,6 +27,7 @@ export default async function AdminPage() {
       currentUserId={session.user.id}
       templates={templates}
       inUseTemplates={inUseTemplates}
+      aiModel={aiModel}
     />
   );
 }
