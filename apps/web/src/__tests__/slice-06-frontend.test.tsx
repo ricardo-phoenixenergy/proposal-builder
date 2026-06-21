@@ -26,17 +26,11 @@ beforeEach(() => {
   });
 });
 
-describe("Inspector — model picker (settings)", () => {
-  it("updates the store model", () => {
-    render(<Inspector />);
-    act(() => {
-      fireEvent.change(screen.getByLabelText(/model/i), { target: { value: "claude-sonnet-4-6" } });
-    });
-    expect(useProposalStore.getState().model).toBe("claude-sonnet-4-6");
-  });
-});
+// NOTE: the per-user model picker was removed in Task 18.7 (model is now admin-only,
+// server-side). This test is removed; the "has no per-user model picker" assertion
+// lives in slice-18-inspector.test.tsx.
 
-describe("Inspector — Regenerate merges only the selected section", () => {
+describe("Inspector — Rewrite section merges only the selected section", () => {
   it("applies generated data to the selected section, leaving siblings untouched", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response(JSON.stringify({ data: { heading: "New", body: "New body" }, validation: { valid: true, errors: [] } }), {
@@ -46,17 +40,17 @@ describe("Inspector — Regenerate merges only the selected section", () => {
     );
 
     render(<Inspector />);
-    fireEvent.click(screen.getByRole("button", { name: /regenerate with ai/i }));
+    fireEvent.click(screen.getByRole("button", { name: /rewrite section with ai/i }));
 
     await waitFor(() => {
       const sections = useProposalStore.getState().document.sections;
-      expect(sections.find((s) => s.id === "cover")!.data).toEqual({ heading: "New", body: "New body" });
+      expect(sections.find((s) => s.id === "cover")!.data).toMatchObject({ heading: "New", body: "New body" });
     });
     // sibling untouched
     const sum = useProposalStore.getState().document.sections.find((s) => s.id === "sum")!;
     expect(sum.data).toEqual({ heading: "Keep", body: "Keep body" });
 
-    // posted the chosen model + brief to the proxy
+    // posted to the generate section proxy
     expect(globalThis.fetch).toHaveBeenCalledWith(
       "/api/generate/section",
       expect.objectContaining({ method: "POST" }),
