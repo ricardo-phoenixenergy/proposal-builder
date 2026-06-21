@@ -138,6 +138,7 @@ export function buildSectionSchema(types: SectionTypeSchema[]): JSONSchema {
       type: { type: "string" },
       variant: { type: "string" },
       locked: { type: "object", additionalProperties: { type: "boolean" } },
+      pageBreakBefore: { type: "boolean" },
       data: { type: "object" },
     },
     allOf,

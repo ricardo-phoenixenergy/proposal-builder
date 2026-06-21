@@ -62,3 +62,6 @@ export {
 
 // Sample content
 export { sampleProposal } from "./samples/sample-proposal";
+
+// Paged model
+export { PAGE } from "./render/page";
