@@ -13,8 +13,11 @@ describe("Outline — add section", () => {
     const before = useProposalStore.getState().document.sections.length;
 
     render(<Outline />);
-    const picker = screen.getByLabelText(/add section/i);
-    fireEvent.change(picker, { target: { value: "text" } });
+    // The new UI has one insert <select> per gap (aria-label "Insert section at N").
+    // The LAST one (index === sections.length) appends at the end.
+    const inserts = screen.getAllByLabelText(/insert section/i);
+    const appendPicker = inserts[inserts.length - 1]!;
+    fireEvent.change(appendPicker, { target: { value: "text" } });
 
     expect(useProposalStore.getState().document.sections).toHaveLength(before + 1);
     expect(useProposalStore.getState().document.sections.at(-1)!.type).toBe("text");

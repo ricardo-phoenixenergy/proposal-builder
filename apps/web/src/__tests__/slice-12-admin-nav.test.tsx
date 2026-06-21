@@ -16,7 +16,7 @@ afterEach(() => {
 
 describe("AdminDashboard nav", () => {
   it("switches from Section types to the Users panel", async () => {
-    render(<AdminDashboard sectionTypes={builtInSectionTypes} inUse={[]} currentUserId="me" templates={[]} inUseTemplates={[]} />);
+    render(<AdminDashboard sectionTypes={builtInSectionTypes} inUse={[]} currentUserId="me" templates={[]} inUseTemplates={[]} aiModel="claude-opus-4-8" />);
     // Section types panel is the default
     expect(screen.getByText("Executive summary")).toBeInTheDocument();
 

@@ -67,4 +67,6 @@ export interface Section {
   data: Record<string, unknown>;
   /** Per-field lock state, merged from the template (§7). */
   locked?: Record<string, boolean>;
+  /** Force this section to start on a new page in the paged model (§10.3). */
+  pageBreakBefore?: boolean;
 }

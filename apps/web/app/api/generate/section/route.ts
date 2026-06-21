@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { generateSection } from "../../../../src/server/generateSection";
 import { anthropicCreateMessage } from "../../../../src/server/anthropic";
 import { requireOwner } from "../../../../src/server/auth/guard";
+import { getActiveModel } from "../../../../src/server/aiModel";
 
 /**
  * POST /api/generate/section — generate one section's data (§10.1). Returns the
@@ -20,15 +21,22 @@ export async function POST(request: Request): Promise<Response> {
     return NextResponse.json({ error: "Expected { type, brief }" }, { status: 400 });
   }
 
-  const { type, brief, model, sectionId } = body as {
+  const { type, brief, instruction, sectionId } = body as {
     type: string;
     brief: string;
-    model?: string;
+    instruction?: string;
     sectionId?: string;
   };
 
+  const model = await getActiveModel();
   const result = await generateSection(
-    { type, brief, ...(model !== undefined ? { model } : {}), ...(sectionId !== undefined ? { sectionId } : {}) },
+    {
+      type,
+      brief,
+      model,
+      ...(instruction !== undefined ? { instruction } : {}),
+      ...(sectionId !== undefined ? { sectionId } : {}),
+    },
     anthropicCreateMessage,
   );
   if (!result.ok) return NextResponse.json({ error: result.error }, { status: 422 });

@@ -2,6 +2,7 @@ import { getSectionType } from "@proposal/shared";
 import { generateSection } from "../../../../src/server/generateSection";
 import { anthropicCreateMessage } from "../../../../src/server/anthropic";
 import { requireOwner } from "../../../../src/server/auth/guard";
+import { getActiveModel } from "../../../../src/server/aiModel";
 
 /**
  * POST /api/generate/proposal — stream a full draft (§10.1, §13.6). Generates
@@ -25,7 +26,7 @@ export async function POST(request: Request): Promise<Response> {
     });
   }
 
-  const { brief, types, model } = body as { brief: string; types: string[]; model?: string };
+  const { brief, types } = body as { brief: string; types: string[] };
   const textTypes = types.filter((t) => getSectionType(t)?.category === "text");
 
   const encoder = new TextEncoder();
@@ -34,10 +35,11 @@ export async function POST(request: Request): Promise<Response> {
       const send = (event: string, payload: unknown) =>
         controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`));
 
+      const model = await getActiveModel();
       for (let i = 0; i < textTypes.length; i++) {
         const type = textTypes[i]!;
         const result = await generateSection(
-          { type, brief, sectionId: `gen_${i}`, ...(model !== undefined ? { model } : {}) },
+          { type, brief, model, sectionId: `gen_${i}` },
           anthropicCreateMessage,
         );
         if (result.ok) send("section", { type, data: result.data, validation: result.validation });

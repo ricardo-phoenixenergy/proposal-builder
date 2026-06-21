@@ -1,10 +1,12 @@
 import type { ProposalDocument, ThemeTokens } from "@proposal/shared";
 import { ThemeProvider } from "../theme/ThemeProvider";
 import { SectionRenderer } from "./SectionRenderer";
+import "./paged.css";
 
 /**
- * Renders a whole proposal: every section in order, inside one theme scope so
- * all sections resolve their tokens from the same CSS variables.
+ * Renders a whole proposal as an A4 sheet. Each section is break-safe; sections
+ * flagged pageBreakBefore start a new page. The same paged CSS drives the PDF, so
+ * the export paginates exactly via Chromium (§10.3).
  */
 export function DocumentRenderer({
   document,
@@ -17,8 +19,8 @@ export function DocumentRenderer({
     <ThemeProvider theme={theme}>
       <article
         data-document={document.id}
+        className="paged-document"
         style={{
-          background: "var(--c-surface)",
           color: "var(--c-text)",
           fontFamily: "var(--f-body)",
           padding: "calc(56px * var(--space))",
@@ -28,7 +30,13 @@ export function DocumentRenderer({
         }}
       >
         {document.sections.map((section) => (
-          <SectionRenderer key={section.id} section={section} theme={theme} />
+          <div
+            key={section.id}
+            className="paged-section"
+            data-page-break-before={section.pageBreakBefore ? "true" : undefined}
+          >
+            <SectionRenderer section={section} theme={theme} />
+          </div>
         ))}
       </article>
     </ThemeProvider>

@@ -26,5 +26,7 @@ export const documentEnvelopeSchema = {
     themeId: { type: "string" },
     templateId: { type: "string" },
     sections: { type: "array" },
+    theme: { type: "object" },
+    brief: { type: "string" },
   },
 } as const;

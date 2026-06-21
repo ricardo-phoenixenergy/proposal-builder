@@ -1,12 +1,12 @@
 import {
   DEFAULT_MODEL,
-  buildGenerationDataSchema,
+  buildTextFieldsGenerationSchema,
   getSectionType,
   isSelectableModel,
   validateSection,
   type ValidationResult,
 } from "@proposal/shared";
-import { sectionUserPrompt, systemPrompt } from "./prompts";
+import { sectionRewritePrompt, sectionUserPrompt, systemPrompt } from "./prompts";
 
 /**
  * Abstracts the Anthropic call so the orchestration is testable without the SDK
@@ -23,6 +23,7 @@ export type CreateMessageFn = (args: {
 export interface GenerateSectionInput {
   type: string;
   brief: string;
+  instruction?: string;
   model?: string;
   sectionId?: string;
 }
@@ -48,8 +49,8 @@ export async function generateSection(
   const typeSchema = getSectionType(input.type);
   if (!typeSchema) return { ok: false, error: `Unknown section type: ${input.type}` };
 
-  const dataSchema = buildGenerationDataSchema(typeSchema);
-  if (typeSchema.category !== "text" || dataSchema === null) {
+  const dataSchema = buildTextFieldsGenerationSchema(typeSchema);
+  if (dataSchema === null) {
     return {
       ok: false,
       error: "AI draft isn't available for data sections — enter values via the grid or import.",
@@ -63,7 +64,10 @@ export async function generateSection(
     text = await createMessage({
       model,
       system: systemPrompt(),
-      user: sectionUserPrompt(typeSchema, input.brief),
+      user:
+        input.instruction !== undefined
+          ? sectionRewritePrompt(typeSchema, input.brief, input.instruction)
+          : sectionUserPrompt(typeSchema, input.brief),
       schema: dataSchema,
     });
   } catch (e) {

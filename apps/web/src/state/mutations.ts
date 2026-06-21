@@ -68,3 +68,33 @@ export function appendSection(document: ProposalDocument, type: string): Proposa
   };
   return { ...document, sections: [...document.sections, section] };
 }
+
+/** Insert a new section of `type` (schema-default data) at `index` (clamped). Pure. */
+export function insertSection(document: ProposalDocument, type: string, index: number): ProposalDocument {
+  const schema = getSectionType(type);
+  const id = `sec_${crypto.randomUUID().slice(0, 8)}`;
+  const section = {
+    id,
+    type,
+    ...(schema?.defaultVariant ? { variant: schema.defaultVariant } : {}),
+    data: emptyDataForType(type),
+  };
+  const at = Math.max(0, Math.min(index, document.sections.length));
+  return {
+    ...document,
+    sections: [...document.sections.slice(0, at), section, ...document.sections.slice(at)],
+  };
+}
+
+/** Remove a section by id, immutably. No-op if the id is absent. */
+export function removeSection(document: ProposalDocument, sectionId: string): ProposalDocument {
+  return { ...document, sections: document.sections.filter((s) => s.id !== sectionId) };
+}
+
+/** Toggle a section's manual page break, immutably. */
+export function setSectionPageBreak(doc: ProposalDocument, sectionId: string, value: boolean): ProposalDocument {
+  return {
+    ...doc,
+    sections: doc.sections.map((s) => (s.id === sectionId ? { ...s, pageBreakBefore: value } : s)),
+  };
+}

@@ -1,11 +1,13 @@
 import { and, desc, eq, sql } from "drizzle-orm";
-import type { ProposalDocument, Template, ThemeTokens } from "@proposal/shared";
+import { isSelectableModel, type GenerationModelId, type ProposalDocument, type Template, type ThemeTokens } from "@proposal/shared";
 import { getDb } from "../db/client";
-import { proposalVersions, proposals, folders, sectionTypeRows, templates, themes, users } from "../db/schema";
+import { appSettings, proposalVersions, proposals, folders, sectionTypeRows, templates, themes, users } from "../db/schema";
 import type { Folder, ProposalSummary, Repository, SectionTypeRow, StoredProposal, UserSummary } from "./types";
 import { DuplicateEmailError } from "./types";
 
 const uid = (prefix: string) => `${prefix}_${crypto.randomUUID().slice(0, 8)}`;
+
+const AI_MODEL_KEY = "ai_model";
 
 type ProposalRow = typeof proposals.$inferSelect;
 function toStored(row: ProposalRow): StoredProposal {
@@ -296,6 +298,18 @@ export function createPostgresRepo(): Repository {
       if (deleted.length === 0) return false;
       await db.update(proposals).set({ folderId: null }).where(and(eq(proposals.folderId, id), eq(proposals.ownerId, ownerId)));
       return true;
+    },
+
+    async getAiModel() {
+      const [row] = await db.select().from(appSettings).where(eq(appSettings.key, AI_MODEL_KEY));
+      return row && isSelectableModel(row.value) ? (row.value as GenerationModelId) : null;
+    },
+
+    async setAiModel(model) {
+      await db
+        .insert(appSettings)
+        .values({ key: AI_MODEL_KEY, value: model })
+        .onConflictDoUpdate({ target: appSettings.key, set: { value: model, updatedAt: new Date() } });
     },
   };
 }

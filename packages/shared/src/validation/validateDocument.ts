@@ -3,6 +3,7 @@ import type { ProposalDocument } from "../types/document";
 import { ajv } from "./ajv";
 import { documentEnvelopeSchema } from "../schema/document.schema";
 import { validateSection } from "./validateSection";
+import { validateTheme } from "./validateTheme";
 import type { ValidationError, ValidationResult } from "./result";
 
 const validateEnvelope = ajv.compile(documentEnvelopeSchema);
@@ -35,6 +36,12 @@ export function validateDocument(doc: ProposalDocument): ValidationResult {
   sections.forEach((section, i) => {
     errors.push(...validateSection(section, `/sections/${i}`).errors);
   });
+
+  if (doc?.theme !== undefined) {
+    for (const e of validateTheme(doc.theme).errors) {
+      errors.push({ ...e, path: `/theme${e.path}` });
+    }
+  }
 
   return { valid: errors.length === 0, errors };
 }

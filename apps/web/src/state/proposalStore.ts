@@ -1,9 +1,9 @@
 import { create } from "zustand";
-import type { GenerationModelId, ProposalDocument, SectionTypeSchema, Template, ThemeTokens } from "@proposal/shared";
-import { DEFAULT_MODEL, applyTemplate, builtInTemplates, sampleProposal, setActiveSectionTypes } from "@proposal/shared";
+import type { ProposalDocument, SectionTypeSchema, Template, ThemeTokens } from "@proposal/shared";
+import { applyTemplate, builtInTemplates, sampleProposal, setActiveSectionTypes } from "@proposal/shared";
 import { defaultTheme } from "../theme/defaultTheme";
 import { themes } from "../theme/themes";
-import { setSectionVariant, setSectionData, setSectionType, appendSection } from "./mutations";
+import { setSectionVariant, setSectionData, setSectionType, appendSection, insertSection, removeSection, setSectionPageBreak } from "./mutations";
 import * as persistence from "../client/persistence";
 import { fetchSectionTypes } from "../client/sectionTypes";
 import { fetchTemplates } from "../client/templates";
@@ -27,8 +27,6 @@ export interface ProposalState {
   document: ProposalDocument;
   theme: ThemeTokens;
   selectedId: string | null;
-  model: GenerationModelId;
-  brief: string;
   /** Persisted proposal id (null until saved to the backend). */
   proposalId: string | null;
   saveStatus: SaveStatus;
@@ -37,11 +35,16 @@ export interface ProposalState {
   notify: (kind: NotificationKind, message: string) => void;
   dismiss: (id: number) => void;
   setTheme: (theme: ThemeTokens) => void;
+  /** Clone the active theme into document.theme (editable custom theme). */
+  forkTheme: () => void;
+  /** Drop document.theme and revert to the preset referenced by themeId. */
+  unforkTheme: () => void;
+  /** Pick a preset by id; clears any fork. */
+  selectPreset: (presetId: string) => void;
   selectSection: (id: string | null) => void;
   setVariant: (sectionId: string, variant: string) => void;
   setSectionData: (sectionId: string, data: Record<string, unknown>) => void;
   setSectionType: (sectionId: string, type: string) => void;
-  setModel: (model: GenerationModelId) => void;
   setBrief: (brief: string) => void;
   /** Load a template: scaffold a fresh document and pin its theme (§7). */
   applyTemplate: (templateId: string) => void;
@@ -57,6 +60,12 @@ export interface ProposalState {
   loadSectionTypes: () => Promise<void>;
   /** Append a new section of the given type to the current document. */
   addSection: (type: string) => void;
+  /** Insert a new section of `type` at `index` and select it. */
+  insertSection: (type: string, index: number) => void;
+  /** Remove a section; clears the selection if it was the removed one. */
+  removeSection: (id: string) => void;
+  /** Toggle a section's manual page break. */
+  setPageBreakBefore: (sectionId: string, value: boolean) => void;
   /** Active templates (built-ins + authored, hydrated from the API). */
   templates: Template[];
   /** Fetch the merged template list from the API into the store. */
@@ -71,15 +80,29 @@ export const useProposalStore = create<ProposalState>((set, get) => ({
   document: sampleProposal,
   theme: defaultTheme,
   selectedId: sampleProposal.sections[0]?.id ?? null,
-  model: DEFAULT_MODEL,
-  brief: "",
   proposalId: null,
   saveStatus: "idle",
   notifications: [],
   notify: (kind, message) =>
     set((state) => ({ notifications: [...state.notifications, { id: ++notificationSeq, kind, message }] })),
   dismiss: (id) => set((state) => ({ notifications: state.notifications.filter((n) => n.id !== id) })),
-  setTheme: (theme) => set({ theme }),
+  setTheme: (theme) =>
+    set((state) => (state.document.theme ? { theme, document: { ...state.document, theme } } : { theme })),
+  forkTheme: () =>
+    set((state) => {
+      const forked = { ...state.theme, id: "custom", name: `Custom (from ${state.theme.name})` };
+      return { theme: forked, document: { ...state.document, theme: forked } };
+    }),
+  unforkTheme: () =>
+    set((state) => {
+      const { theme: _omit, ...rest } = state.document;
+      return { theme: themeById(state.document.themeId), document: rest };
+    }),
+  selectPreset: (presetId) =>
+    set((state) => {
+      const { theme: _omit, ...rest } = state.document;
+      return { theme: themeById(presetId), document: { ...rest, themeId: presetId } };
+    }),
   selectSection: (selectedId) => set({ selectedId }),
   setVariant: (sectionId, variant) =>
     set((state) => ({ document: setSectionVariant(state.document, sectionId, variant) })),
@@ -87,8 +110,7 @@ export const useProposalStore = create<ProposalState>((set, get) => ({
     set((state) => ({ document: setSectionData(state.document, sectionId, data) })),
   setSectionType: (sectionId, type) =>
     set((state) => ({ document: setSectionType(state.document, sectionId, type) })),
-  setModel: (model) => set({ model }),
-  setBrief: (brief) => set({ brief }),
+  setBrief: (brief) => set((state) => ({ document: { ...state.document, brief } })),
   applyTemplate: (templateId) => {
     const template = get().templates.find((t) => t.id === templateId);
     if (!template) return;
@@ -122,7 +144,7 @@ export const useProposalStore = create<ProposalState>((set, get) => ({
     const document = await persistence.loadProposal(id);
     set({
       document,
-      theme: themeById(document.themeId),
+      theme: document.theme ?? themeById(document.themeId),
       proposalId: id,
       selectedId: document.sections[0]?.id ?? null,
       saveStatus: "saved",
@@ -139,6 +161,19 @@ export const useProposalStore = create<ProposalState>((set, get) => ({
     }
   },
   addSection: (type) => set((state) => ({ document: appendSection(state.document, type) })),
+  insertSection: (type, index) =>
+    set((state) => {
+      const document = insertSection(state.document, type, index);
+      const at = Math.max(0, Math.min(index, state.document.sections.length));
+      return { document, selectedId: document.sections[at]?.id ?? state.selectedId };
+    }),
+  removeSection: (id) =>
+    set((state) => ({
+      document: removeSection(state.document, id),
+      selectedId: state.selectedId === id ? null : state.selectedId,
+    })),
+  setPageBreakBefore: (sectionId, value) =>
+    set((state) => ({ document: setSectionPageBreak(state.document, sectionId, value) })),
   templates: builtInTemplates,
   loadTemplates: async () => {
     try {
