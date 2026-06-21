@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import {
   listProposals,
   updateProposalMeta,
@@ -15,6 +14,7 @@ import { fetchFolders } from "../../client/folders";
 import { useProposalStore } from "../../state/proposalStore";
 import { FolderSidebar } from "./FolderSidebar";
 import { ProposalGrid } from "./ProposalGrid";
+import { NewProposalDialog } from "./NewProposalDialog";
 
 type Sort = "recent" | "title";
 
@@ -28,12 +28,12 @@ export function Dashboard({
   isAdmin: boolean;
 }) {
   const notify = useProposalStore((s) => s.notify);
-  const router = useRouter();
   const [proposals, setProposals] = useState(initialProposals);
   const [folders, setFolders] = useState(initialFolders);
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<Sort>("recent");
   const [selectedFolderId, setSelectedFolderId] = useState<"all" | null | string>("all");
+  const [showNew, setShowNew] = useState(false);
 
   const refresh = async () => {
     try {
@@ -135,19 +135,23 @@ export function Dashboard({
           <option value="recent">Recent</option>
           <option value="title">Title A–Z</option>
         </select>
-        <button type="button" className="btn btn--primary" onClick={() => router.push("/p/new")}>+ New</button>
+        <button type="button" className="btn btn--primary" onClick={() => setShowNew(true)}>+ New</button>
       </div>
 
       <div className="dash__body">
         <FolderSidebar folders={folders} counts={counts} selected={selectedFolderId} onSelect={setSelectedFolderId} onChange={refreshFolders} />
         <main className="dash__main">
           {proposals.length === 0 ? (
-            <div className="dash__empty"><p>No proposals yet.</p></div>
+            <div className="dash__empty">
+              <p>No proposals yet.</p>
+              <button type="button" className="btn btn--primary" onClick={() => setShowNew(true)}>+ New proposal</button>
+            </div>
           ) : (
             <ProposalGrid proposals={visible} folders={folders} handlers={handlers} />
           )}
         </main>
       </div>
+      {showNew ? <NewProposalDialog folders={folders} onClose={() => setShowNew(false)} /> : null}
     </div>
   );
 }
