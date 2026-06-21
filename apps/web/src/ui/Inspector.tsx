@@ -31,7 +31,6 @@ type Tab = "tokens" | "code";
 export function Inspector() {
   const document = useProposalStore((s) => s.document);
   const theme = useProposalStore((s) => s.theme);
-  const setTheme = useProposalStore((s) => s.setTheme);
   const forkTheme = useProposalStore((s) => s.forkTheme);
   const unforkTheme = useProposalStore((s) => s.unforkTheme);
   const selectPreset = useProposalStore((s) => s.selectPreset);
