@@ -28,7 +28,6 @@ export interface ProposalState {
   theme: ThemeTokens;
   selectedId: string | null;
   model: GenerationModelId;
-  brief: string;
   /** Persisted proposal id (null until saved to the backend). */
   proposalId: string | null;
   saveStatus: SaveStatus;
@@ -82,7 +81,6 @@ export const useProposalStore = create<ProposalState>((set, get) => ({
   theme: defaultTheme,
   selectedId: sampleProposal.sections[0]?.id ?? null,
   model: DEFAULT_MODEL,
-  brief: "",
   proposalId: null,
   saveStatus: "idle",
   notifications: [],
@@ -114,7 +112,7 @@ export const useProposalStore = create<ProposalState>((set, get) => ({
   setSectionType: (sectionId, type) =>
     set((state) => ({ document: setSectionType(state.document, sectionId, type) })),
   setModel: (model) => set({ model }),
-  setBrief: (brief) => set({ brief }),
+  setBrief: (brief) => set((state) => ({ document: { ...state.document, brief } })),
   applyTemplate: (templateId) => {
     const template = get().templates.find((t) => t.id === templateId);
     if (!template) return;

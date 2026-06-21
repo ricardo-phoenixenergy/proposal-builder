@@ -15,12 +15,14 @@ function docWith(sections: Section[]): ProposalDocument {
 
 beforeEach(() => {
   useProposalStore.setState({
-    document: docWith([
-      { id: "cover", type: "text", data: { heading: "Old", body: "Old body" } },
-      { id: "sum", type: "executive_summary", data: { heading: "Keep", body: "Keep body" } },
-    ]),
+    document: {
+      ...docWith([
+        { id: "cover", type: "text", data: { heading: "Old", body: "Old body" } },
+        { id: "sum", type: "executive_summary", data: { heading: "Keep", body: "Keep body" } },
+      ]),
+      brief: "Solar for Acme",
+    },
     selectedId: "cover",
-    brief: "Solar for Acme",
   });
 });
 
