@@ -8,6 +8,7 @@ import {
   isStructureLocked,
   isThemePinned,
   openTemplate,
+  PAGE_FORMATS,
   variantRangeWarnings,
 } from "@proposal/shared";
 import { resolveSection } from "../registry/componentRegistry";
@@ -45,6 +46,8 @@ export function Inspector() {
   const forkTheme = useProposalStore((s) => s.forkTheme);
   const unforkTheme = useProposalStore((s) => s.unforkTheme);
   const selectPreset = useProposalStore((s) => s.selectPreset);
+  const setPageFormat = useProposalStore((s) => s.setPageFormat);
+  const setPageMode = useProposalStore((s) => s.setPageMode);
   const isForked = document.theme !== undefined;
 
   const [tab, setTab] = useState<Tab>("tokens");
@@ -133,6 +136,24 @@ export function Inspector() {
                   ))}
               </select>
               {structureLocked ? <small className="meter">Structure & theme are locked by this template.</small> : null}
+            </div>
+
+            <div className="field">
+              <span className="field__label">Page format</span>
+              <select aria-label="Page format" value={document.pageFormat ?? "a4_portrait"} onChange={(e) => setPageFormat(e.target.value)}>
+                {PAGE_FORMATS.map((f) => (
+                  <option key={f.id} value={f.id}>
+                    {f.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <span className="field__label">Mode</span>
+              <select aria-label="Page mode" value={document.pageMode ?? "report"} onChange={(e) => setPageMode(e.target.value as "report" | "slides")}>
+                <option value="report">Report (flowing pages)</option>
+                <option value="slides">Slides (one section per page)</option>
+              </select>
             </div>
 
             <div className="group__sub">
