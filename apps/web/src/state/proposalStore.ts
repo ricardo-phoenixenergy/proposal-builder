@@ -3,7 +3,7 @@ import type { GenerationModelId, ProposalDocument, SectionTypeSchema, Template, 
 import { DEFAULT_MODEL, applyTemplate, builtInTemplates, sampleProposal, setActiveSectionTypes } from "@proposal/shared";
 import { defaultTheme } from "../theme/defaultTheme";
 import { themes } from "../theme/themes";
-import { setSectionVariant, setSectionData, setSectionType, appendSection, insertSection, removeSection } from "./mutations";
+import { setSectionVariant, setSectionData, setSectionType, appendSection, insertSection, removeSection, setSectionPageBreak } from "./mutations";
 import * as persistence from "../client/persistence";
 import { fetchSectionTypes } from "../client/sectionTypes";
 import { fetchTemplates } from "../client/templates";
@@ -66,6 +66,8 @@ export interface ProposalState {
   insertSection: (type: string, index: number) => void;
   /** Remove a section; clears the selection if it was the removed one. */
   removeSection: (id: string) => void;
+  /** Toggle a section's manual page break. */
+  setPageBreakBefore: (sectionId: string, value: boolean) => void;
   /** Active templates (built-ins + authored, hydrated from the API). */
   templates: Template[];
   /** Fetch the merged template list from the API into the store. */
@@ -174,6 +176,8 @@ export const useProposalStore = create<ProposalState>((set, get) => ({
       document: removeSection(state.document, id),
       selectedId: state.selectedId === id ? null : state.selectedId,
     })),
+  setPageBreakBefore: (sectionId, value) =>
+    set((state) => ({ document: setSectionPageBreak(state.document, sectionId, value) })),
   templates: builtInTemplates,
   loadTemplates: async () => {
     try {

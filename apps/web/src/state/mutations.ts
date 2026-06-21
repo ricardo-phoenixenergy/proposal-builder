@@ -90,3 +90,11 @@ export function insertSection(document: ProposalDocument, type: string, index: n
 export function removeSection(document: ProposalDocument, sectionId: string): ProposalDocument {
   return { ...document, sections: document.sections.filter((s) => s.id !== sectionId) };
 }
+
+/** Toggle a section's manual page break, immutably. */
+export function setSectionPageBreak(doc: ProposalDocument, sectionId: string, value: boolean): ProposalDocument {
+  return {
+    ...doc,
+    sections: doc.sections.map((s) => (s.id === sectionId ? { ...s, pageBreakBefore: value } : s)),
+  };
+}

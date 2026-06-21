@@ -41,6 +41,7 @@ export function Inspector() {
   const setBrief = useProposalStore((s) => s.setBrief);
   const notify = useProposalStore((s) => s.notify);
 
+  const setPageBreakBefore = useProposalStore((s) => s.setPageBreakBefore);
   const forkTheme = useProposalStore((s) => s.forkTheme);
   const unforkTheme = useProposalStore((s) => s.unforkTheme);
   const selectPreset = useProposalStore((s) => s.selectPreset);
@@ -331,6 +332,18 @@ export function Inspector() {
               );
             })}
           </div>
+
+          {!structureLocked ? (
+            <label className="field field--row">
+              <span className="field__label">Page break before this section</span>
+              <input
+                type="checkbox"
+                aria-label="Page break before this section"
+                checked={selected.pageBreakBefore ?? false}
+                onChange={(e) => setPageBreakBefore(selected.id, e.target.checked)}
+              />
+            </label>
+          ) : null}
 
           {!structureLocked && variants.length > 0 ? (
             <div className="field">
