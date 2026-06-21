@@ -11,7 +11,9 @@ import {
   type ProposalSummary,
 } from "../../client/persistence";
 import type { Folder } from "../../client/folders";
+import { fetchFolders } from "../../client/folders";
 import { useProposalStore } from "../../state/proposalStore";
+import { FolderSidebar } from "./FolderSidebar";
 import { ProposalGrid } from "./ProposalGrid";
 
 type Sort = "recent" | "title";
@@ -28,10 +30,10 @@ export function Dashboard({
   const notify = useProposalStore((s) => s.notify);
   const router = useRouter();
   const [proposals, setProposals] = useState(initialProposals);
-  const [folders] = useState(initialFolders);
+  const [folders, setFolders] = useState(initialFolders);
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<Sort>("recent");
-  const selectedFolderId: string | null | "all" = "all"; // sidebar wires this in Task 10
+  const [selectedFolderId, setSelectedFolderId] = useState<"all" | null | string>("all");
 
   const refresh = async () => {
     try {
@@ -40,6 +42,24 @@ export function Dashboard({
       notify("error", "Couldn't refresh proposals.");
     }
   };
+
+  const refreshFolders = async () => {
+    try {
+      setFolders(await fetchFolders());
+      setProposals(await listProposals());
+    } catch {
+      notify("error", "Couldn't refresh folders.");
+    }
+  };
+
+  const counts = useMemo(() => ({
+    all: proposals.length,
+    unfiled: proposals.filter((p) => p.folderId === null).length,
+    byFolder: folders.reduce<Record<string, number>>((acc, f) => {
+      acc[f.id] = proposals.filter((p) => p.folderId === f.id).length;
+      return acc;
+    }, {}),
+  }), [proposals, folders]);
 
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -118,15 +138,16 @@ export function Dashboard({
         <button type="button" className="btn btn--primary" onClick={() => router.push("/p/new")}>+ New</button>
       </div>
 
-      <main className="dash__main">
-        {proposals.length === 0 ? (
-          <div className="dash__empty">
-            <p>No proposals yet.</p>
-          </div>
-        ) : (
-          <ProposalGrid proposals={visible} folders={folders} handlers={handlers} />
-        )}
-      </main>
+      <div className="dash__body">
+        <FolderSidebar folders={folders} counts={counts} selected={selectedFolderId} onSelect={setSelectedFolderId} onChange={refreshFolders} />
+        <main className="dash__main">
+          {proposals.length === 0 ? (
+            <div className="dash__empty"><p>No proposals yet.</p></div>
+          ) : (
+            <ProposalGrid proposals={visible} folders={folders} handlers={handlers} />
+          )}
+        </main>
+      </div>
     </div>
   );
 }
