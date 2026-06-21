@@ -1,0 +1,36 @@
+/* Paged document model (§10.3). Same rules drive on-screen sheets and the PDF;
+   Chromium paginates the PDF via @page + the break rules — pixel-stable export. */
+@page {
+  size: A4;
+  margin: 18mm;
+}
+
+.paged-document {
+  width: 210mm;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.paged-section {
+  break-inside: avoid;
+}
+
+.paged-section[data-page-break-before="true"] {
+  break-before: page;
+}
+
+/* On screen only: a faint A4-height guide so users see roughly where pages fall.
+   Auto-split boundaries are approximate on screen; the PDF is exact. */
+@media screen {
+  .paged-document {
+    background: var(--c-surface);
+    background-image: repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent calc(297mm - 1px),
+      color-mix(in srgb, var(--c-line) 60%, transparent) calc(297mm - 1px),
+      color-mix(in srgb, var(--c-line) 60%, transparent) 297mm
+    );
+    box-shadow: 0 1px 8px rgba(0, 0, 0, 0.12);
+  }
+}
