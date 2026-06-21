@@ -1,0 +1,23 @@
+/* Print stylesheet for the PDF route. A4 with margins; sections avoid splitting
+   across pages. The document's own theme tokens drive colour/type. */
+@page {
+  size: A4;
+  margin: 18mm;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: #ffffff;
+}
+
+[data-print-root] [data-document] {
+  /* The sheet's editor padding/shadow is chrome; print uses @page margins instead. */
+  padding: 0 !important;
+  box-shadow: none !important;
+}
+
+[data-print-root] [data-section-type] {
+  break-inside: avoid;
+}

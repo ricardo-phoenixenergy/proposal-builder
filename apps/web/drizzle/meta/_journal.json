@@ -1,0 +1,41 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1781732328178,
+      "tag": "0000_ancient_beyonder",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1781791454673,
+      "tag": "0001_easy_captain_universe",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1781796230664,
+      "tag": "0002_panoramic_wolfpack",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1781803267902,
+      "tag": "0003_fixed_morgan_stark",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1781811472504,
+      "tag": "0004_loud_frightful_four",
+      "breakpoints": true
+    }
+  ]
+}

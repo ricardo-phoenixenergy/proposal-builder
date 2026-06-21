@@ -1,0 +1,58 @@
+import { getSectionType } from "@proposal/shared";
+import { generateSection } from "../../../../src/server/generateSection";
+import { anthropicCreateMessage } from "../../../../src/server/anthropic";
+import { requireOwner } from "../../../../src/server/auth/guard";
+
+/**
+ * POST /api/generate/proposal — stream a full draft (§10.1, §13.6). Generates
+ * text-category sections one at a time and emits one SSE `section` event per
+ * finished section, so copy appears progressively. Data sections are the user's
+ * to fill (grid/import), so they're skipped here.
+ */
+export async function POST(request: Request): Promise<Response> {
+  const owner = await requireOwner();
+  if (owner instanceof Response) return owner;
+  const body: unknown = await request.json().catch(() => null);
+  if (
+    !body ||
+    typeof body !== "object" ||
+    typeof (body as { brief?: unknown }).brief !== "string" ||
+    !Array.isArray((body as { types?: unknown }).types)
+  ) {
+    return new Response(JSON.stringify({ error: "Expected { brief, types[] }" }), {
+      status: 400,
+      headers: { "content-type": "application/json" },
+    });
+  }
+
+  const { brief, types, model } = body as { brief: string; types: string[]; model?: string };
+  const textTypes = types.filter((t) => getSectionType(t)?.category === "text");
+
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream({
+    async start(controller) {
+      const send = (event: string, payload: unknown) =>
+        controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`));
+
+      for (let i = 0; i < textTypes.length; i++) {
+        const type = textTypes[i]!;
+        const result = await generateSection(
+          { type, brief, sectionId: `gen_${i}`, ...(model !== undefined ? { model } : {}) },
+          anthropicCreateMessage,
+        );
+        if (result.ok) send("section", { type, data: result.data, validation: result.validation });
+        else send("error", { type, error: result.error });
+      }
+      send("done", { count: textTypes.length });
+      controller.close();
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      "content-type": "text/event-stream",
+      "cache-control": "no-cache",
+      connection: "keep-alive",
+    },
+  });
+}
