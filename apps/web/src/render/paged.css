@@ -1,36 +1,42 @@
-/* Paged document model (§10.3). Same rules drive on-screen sheets and the PDF;
-   Chromium paginates the PDF via @page + the break rules — pixel-stable export. */
-@page {
-  size: A4;
-  margin: 18mm;
-}
-
+/* Paged document model (§10.3, §J). The page SIZE is set per-format by the
+   /print route's injected @page rule; this file carries break rules + screen
+   chrome. Chromium paginates the PDF via @page + these rules (printBackground on). */
 .paged-document {
-  width: 210mm;
   margin: 0 auto;
   box-sizing: border-box;
 }
 
+/* Report mode: sections flow, stay break-safe, honour manual breaks. */
 .paged-section {
   break-inside: avoid;
 }
-
 .paged-section[data-page-break-before="true"] {
   break-before: page;
 }
 
-/* On screen only: a faint A4-height guide so users see roughly where pages fall.
-   Auto-split boundaries are approximate on screen; the PDF is exact. */
+/* Slides mode: one section per page. */
+.paged-slide {
+  break-after: page;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+.paged-slide:last-child {
+  break-after: auto;
+}
+
+/* On screen only: show each sheet/slide as a discrete card. */
 @media screen {
   .paged-document {
     background: var(--c-surface);
-    background-image: repeating-linear-gradient(
-      to bottom,
-      transparent 0,
-      transparent calc(297mm - 1px),
-      color-mix(in srgb, var(--c-line) 60%, transparent) calc(297mm - 1px),
-      color-mix(in srgb, var(--c-line) 60%, transparent) 297mm
-    );
+    box-shadow: 0 1px 8px rgba(0, 0, 0, 0.12);
+  }
+  .paged-document[data-page-mode="slides"] {
+    background: transparent;
+    box-shadow: none;
+    gap: 16px;
+  }
+  .paged-document[data-page-mode="slides"] .paged-slide {
+    background: var(--c-surface);
     box-shadow: 0 1px 8px rgba(0, 0, 0, 0.12);
   }
 }
