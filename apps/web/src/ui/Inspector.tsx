@@ -32,6 +32,10 @@ export function Inspector() {
   const document = useProposalStore((s) => s.document);
   const theme = useProposalStore((s) => s.theme);
   const setTheme = useProposalStore((s) => s.setTheme);
+  const forkTheme = useProposalStore((s) => s.forkTheme);
+  const unforkTheme = useProposalStore((s) => s.unforkTheme);
+  const selectPreset = useProposalStore((s) => s.selectPreset);
+  const isForked = useProposalStore((s) => s.document.theme !== undefined);
   const selectedId = useProposalStore((s) => s.selectedId);
   const sections = useProposalStore((s) => s.document.sections);
   const setVariant = useProposalStore((s) => s.setVariant);
@@ -102,14 +106,8 @@ export function Inspector() {
         <fieldset disabled={pinned} style={{ border: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 10 }}>
           <div className="field">
             <span className="field__label">Preset</span>
-            <select
-              aria-label="Theme preset"
-              value={theme.id}
-              onChange={(e) => {
-                const next = themes.find((t) => t.id === e.target.value);
-                if (next) setTheme(next);
-              }}
-            >
+            <select aria-label="Theme preset" value={isForked ? "custom" : theme.id} onChange={(e) => selectPreset(e.target.value)}>
+              {isForked ? <option value="custom">Custom (forked)</option> : null}
               {themes.map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.name}
@@ -118,24 +116,41 @@ export function Inspector() {
             </select>
           </div>
 
-          <div className="tabs" role="tablist" aria-label="Theme editor">
-            <button type="button" className="tab" role="tab" aria-selected={tab === "tokens"} onClick={() => setTab("tokens")}>
-              Tokens
-            </button>
-            <button type="button" className="tab" role="tab" aria-selected={tab === "code"} onClick={() => setTab("code")}>
-              Code
-            </button>
-          </div>
-
-          {tab === "tokens" ? (
-            <ThemeForm />
-          ) : (
-            <div className="editor-frame">
-              <CodeEditor />
+          {!isForked ? (
+            <div className="field">
+              <button type="button" className="btn btn--ghost" onClick={forkTheme}>
+                Fork to edit
+              </button>
+              <small className="meter">Presets are read-only. Fork to customise colours, fonts, and the logo.</small>
             </div>
-          )}
+          ) : (
+            <>
+              <div className="tabs" role="tablist" aria-label="Theme editor">
+                <button type="button" className="tab" role="tab" aria-selected={tab === "tokens"} onClick={() => setTab("tokens")}>
+                  Tokens
+                </button>
+                <button type="button" className="tab" role="tab" aria-selected={tab === "code"} onClick={() => setTab("code")}>
+                  Code
+                </button>
+              </div>
 
-          <AssetUpload />
+              {tab === "tokens" ? (
+                <ThemeForm />
+              ) : (
+                <div className="editor-frame">
+                  <CodeEditor />
+                </div>
+              )}
+
+              <AssetUpload />
+
+              <div className="field">
+                <button type="button" className="btn btn--ghost" onClick={unforkTheme}>
+                  Revert to preset
+                </button>
+              </div>
+            </>
+          )}
         </fieldset>
       </div>
 
