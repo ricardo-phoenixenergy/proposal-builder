@@ -28,5 +28,7 @@ export const documentEnvelopeSchema = {
     sections: { type: "array" },
     theme: { type: "object" },
     brief: { type: "string" },
+    pageFormat: { type: "string" },
+    pageMode: { enum: ["report", "slides"] },
   },
 } as const;

@@ -1,9 +1,7 @@
-/* Print stylesheet for the PDF route. A4 with margins; sections avoid splitting
-   across pages. The document's own theme tokens drive colour/type. */
-@page {
-  size: A4;
-  margin: 18mm;
-}
+/* Print stylesheet for the PDF route. The page SIZE + margin come from the
+   format's @page rule injected by the route (see page.tsx → pageCss); this file
+   only carries non-page chrome. Sections avoid splitting across pages; the
+   document's own theme tokens drive colour/type. */
 
 html,
 body {

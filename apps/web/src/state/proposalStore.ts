@@ -66,6 +66,10 @@ export interface ProposalState {
   removeSection: (id: string) => void;
   /** Toggle a section's manual page break. */
   setPageBreakBefore: (sectionId: string, value: boolean) => void;
+  /** Set the document page format (§J). */
+  setPageFormat: (id: string) => void;
+  /** Set the document render mode (§J). */
+  setPageMode: (mode: "report" | "slides") => void;
   /** Active templates (built-ins + authored, hydrated from the API). */
   templates: Template[];
   /** Fetch the merged template list from the API into the store. */
@@ -174,6 +178,8 @@ export const useProposalStore = create<ProposalState>((set, get) => ({
     })),
   setPageBreakBefore: (sectionId, value) =>
     set((state) => ({ document: setSectionPageBreak(state.document, sectionId, value) })),
+  setPageFormat: (id) => set((state) => ({ document: { ...state.document, pageFormat: id } })),
+  setPageMode: (mode) => set((state) => ({ document: { ...state.document, pageMode: mode } })),
   templates: builtInTemplates,
   loadTemplates: async () => {
     try {

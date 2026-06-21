@@ -64,4 +64,11 @@ export {
 export { sampleProposal } from "./samples/sample-proposal";
 
 // Paged model
-export { PAGE } from "./render/page";
+export {
+  PAGE,
+  PAGE_FORMATS,
+  DEFAULT_PAGE_FORMAT,
+  getPageFormat,
+  pageCss,
+  type PageFormat,
+} from "./render/page";
