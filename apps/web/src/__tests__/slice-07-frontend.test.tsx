@@ -4,6 +4,8 @@ import { App } from "../App";
 import { Inspector } from "../ui/Inspector";
 import { useProposalStore } from "../state/proposalStore";
 
+vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: vi.fn(), push: vi.fn() }) }));
+
 // App now calls loadSectionTypes and loadTemplates on mount. Stub fetch so tests
 // remain hermetic — jsdom has no real fetch.
 beforeEach(() => {

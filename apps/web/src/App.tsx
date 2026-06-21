@@ -1,4 +1,7 @@
+"use client";
+
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useProposalStore } from "./state/proposalStore";
 import { DocumentRenderer } from "./render/DocumentRenderer";
 import { Outline } from "./ui/Outline";
@@ -25,6 +28,7 @@ export function App({ id }: { id?: string } = {}) {
   const loadProposal = useProposalStore((s) => s.load);
   const loadSectionTypes = useProposalStore((s) => s.loadSectionTypes);
   const loadTemplates = useProposalStore((s) => s.loadTemplates);
+  const router = useRouter();
 
   useEffect(() => {
     void loadSectionTypes();
@@ -32,8 +36,10 @@ export function App({ id }: { id?: string } = {}) {
   }, [loadSectionTypes, loadTemplates]);
 
   useEffect(() => {
-    if (id && id !== proposalId) void loadProposal(id);
-  }, [id, proposalId, loadProposal]);
+    if (id && id !== proposalId) {
+      void loadProposal(id).catch(() => router.replace("/"));
+    }
+  }, [id, proposalId, loadProposal, router]);
 
   const loading = Boolean(id) && proposalId !== id;
   if (loading) {

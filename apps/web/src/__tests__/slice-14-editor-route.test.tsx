@@ -4,6 +4,8 @@ import { sampleProposal } from "@proposal/shared";
 import { App } from "../App";
 import { useProposalStore } from "../state/proposalStore";
 
+vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: vi.fn(), push: vi.fn() }) }));
+
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
