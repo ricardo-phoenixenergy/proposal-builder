@@ -66,6 +66,6 @@ export async function generateField(
 
   // Validate just this field by isolating errors whose path references the field key.
   const full = validateSection({ id: input.sectionId ?? "draft", type: input.type, data: { [input.fieldKey]: value } });
-  const errors = full.errors.filter((e) => e.path.includes(input.fieldKey));
+  const errors = full.errors.filter((e) => e.path.split("/").includes(input.fieldKey));
   return { ok: true, value, validation: { valid: errors.length === 0, errors } };
 }

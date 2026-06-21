@@ -1,6 +1,6 @@
 import { create } from "zustand";
-import type { GenerationModelId, ProposalDocument, SectionTypeSchema, Template, ThemeTokens } from "@proposal/shared";
-import { DEFAULT_MODEL, applyTemplate, builtInTemplates, sampleProposal, setActiveSectionTypes } from "@proposal/shared";
+import type { ProposalDocument, SectionTypeSchema, Template, ThemeTokens } from "@proposal/shared";
+import { applyTemplate, builtInTemplates, sampleProposal, setActiveSectionTypes } from "@proposal/shared";
 import { defaultTheme } from "../theme/defaultTheme";
 import { themes } from "../theme/themes";
 import { setSectionVariant, setSectionData, setSectionType, appendSection, insertSection, removeSection, setSectionPageBreak } from "./mutations";
@@ -27,7 +27,6 @@ export interface ProposalState {
   document: ProposalDocument;
   theme: ThemeTokens;
   selectedId: string | null;
-  model: GenerationModelId;
   /** Persisted proposal id (null until saved to the backend). */
   proposalId: string | null;
   saveStatus: SaveStatus;
@@ -46,7 +45,6 @@ export interface ProposalState {
   setVariant: (sectionId: string, variant: string) => void;
   setSectionData: (sectionId: string, data: Record<string, unknown>) => void;
   setSectionType: (sectionId: string, type: string) => void;
-  setModel: (model: GenerationModelId) => void;
   setBrief: (brief: string) => void;
   /** Load a template: scaffold a fresh document and pin its theme (§7). */
   applyTemplate: (templateId: string) => void;
@@ -82,7 +80,6 @@ export const useProposalStore = create<ProposalState>((set, get) => ({
   document: sampleProposal,
   theme: defaultTheme,
   selectedId: sampleProposal.sections[0]?.id ?? null,
-  model: DEFAULT_MODEL,
   proposalId: null,
   saveStatus: "idle",
   notifications: [],
@@ -113,7 +110,6 @@ export const useProposalStore = create<ProposalState>((set, get) => ({
     set((state) => ({ document: setSectionData(state.document, sectionId, data) })),
   setSectionType: (sectionId, type) =>
     set((state) => ({ document: setSectionType(state.document, sectionId, type) })),
-  setModel: (model) => set({ model }),
   setBrief: (brief) => set((state) => ({ document: { ...state.document, brief } })),
   applyTemplate: (templateId) => {
     const template = get().templates.find((t) => t.id === templateId);
