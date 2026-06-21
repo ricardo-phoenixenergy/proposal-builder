@@ -3,7 +3,7 @@ import type { GenerationModelId, ProposalDocument, SectionTypeSchema, Template, 
 import { DEFAULT_MODEL, applyTemplate, builtInTemplates, sampleProposal, setActiveSectionTypes } from "@proposal/shared";
 import { defaultTheme } from "../theme/defaultTheme";
 import { themes } from "../theme/themes";
-import { setSectionVariant, setSectionData, setSectionType, appendSection } from "./mutations";
+import { setSectionVariant, setSectionData, setSectionType, appendSection, insertSection, removeSection } from "./mutations";
 import * as persistence from "../client/persistence";
 import { fetchSectionTypes } from "../client/sectionTypes";
 import { fetchTemplates } from "../client/templates";
@@ -57,6 +57,10 @@ export interface ProposalState {
   loadSectionTypes: () => Promise<void>;
   /** Append a new section of the given type to the current document. */
   addSection: (type: string) => void;
+  /** Insert a new section of `type` at `index` and select it. */
+  insertSection: (type: string, index: number) => void;
+  /** Remove a section; clears the selection if it was the removed one. */
+  removeSection: (id: string) => void;
   /** Active templates (built-ins + authored, hydrated from the API). */
   templates: Template[];
   /** Fetch the merged template list from the API into the store. */
@@ -139,6 +143,17 @@ export const useProposalStore = create<ProposalState>((set, get) => ({
     }
   },
   addSection: (type) => set((state) => ({ document: appendSection(state.document, type) })),
+  insertSection: (type, index) =>
+    set((state) => {
+      const document = insertSection(state.document, type, index);
+      const at = Math.max(0, Math.min(index, state.document.sections.length));
+      return { document, selectedId: document.sections[at]?.id ?? state.selectedId };
+    }),
+  removeSection: (id) =>
+    set((state) => ({
+      document: removeSection(state.document, id),
+      selectedId: state.selectedId === id ? null : state.selectedId,
+    })),
   templates: builtInTemplates,
   loadTemplates: async () => {
     try {
