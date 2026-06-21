@@ -13,21 +13,38 @@ import { SignOutButton } from "./ui/SignOutButton";
  * The three-pane editor shell (§11): outline · live preview · inspector. The
  * chrome uses a fixed palette (globals.css, --ui-*); only the document inside the
  * sheet re-themes. Fully client-side and store-driven — no backend.
+ *
+ * When `id` is provided the shell loads that proposal on mount and shows a
+ * loading state until `proposalId` matches. A ← Dashboard link is always shown
+ * when `id` is set so the user can return to the dashboard.
  */
-export function App() {
+export function App({ id }: { id?: string } = {}) {
   const document = useProposalStore((s) => s.document);
   const theme = useProposalStore((s) => s.theme);
+  const proposalId = useProposalStore((s) => s.proposalId);
+  const loadProposal = useProposalStore((s) => s.load);
   const loadSectionTypes = useProposalStore((s) => s.loadSectionTypes);
   const loadTemplates = useProposalStore((s) => s.loadTemplates);
+
   useEffect(() => {
     void loadSectionTypes();
     void loadTemplates();
   }, [loadSectionTypes, loadTemplates]);
 
+  useEffect(() => {
+    if (id && id !== proposalId) void loadProposal(id);
+  }, [id, proposalId, loadProposal]);
+
+  const loading = Boolean(id) && proposalId !== id;
+  if (loading) {
+    return <div className="app app--loading">Loading proposal…</div>;
+  }
+
   return (
     <div className="app">
       <header className="topbar">
         <div className="topbar__brand">
+          <a className="btn btn--ghost" href="/">← Dashboard</a>
           <span className="topbar__title">{document.title}</span>
           <span className="topbar__sub">{document.client.name}</span>
         </div>
