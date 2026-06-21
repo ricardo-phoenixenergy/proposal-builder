@@ -37,6 +37,12 @@ export interface ProposalState {
   notify: (kind: NotificationKind, message: string) => void;
   dismiss: (id: number) => void;
   setTheme: (theme: ThemeTokens) => void;
+  /** Clone the active theme into document.theme (editable custom theme). */
+  forkTheme: () => void;
+  /** Drop document.theme and revert to the preset referenced by themeId. */
+  unforkTheme: () => void;
+  /** Pick a preset by id; clears any fork. */
+  selectPreset: (presetId: string) => void;
   selectSection: (id: string | null) => void;
   setVariant: (sectionId: string, variant: string) => void;
   setSectionData: (sectionId: string, data: Record<string, unknown>) => void;
@@ -83,7 +89,23 @@ export const useProposalStore = create<ProposalState>((set, get) => ({
   notify: (kind, message) =>
     set((state) => ({ notifications: [...state.notifications, { id: ++notificationSeq, kind, message }] })),
   dismiss: (id) => set((state) => ({ notifications: state.notifications.filter((n) => n.id !== id) })),
-  setTheme: (theme) => set({ theme }),
+  setTheme: (theme) =>
+    set((state) => (state.document.theme ? { theme, document: { ...state.document, theme } } : { theme })),
+  forkTheme: () =>
+    set((state) => {
+      const forked = { ...state.theme, id: "custom", name: `Custom (from ${state.theme.name})` };
+      return { theme: forked, document: { ...state.document, theme: forked } };
+    }),
+  unforkTheme: () =>
+    set((state) => {
+      const { theme: _omit, ...rest } = state.document;
+      return { theme: themeById(state.document.themeId), document: rest };
+    }),
+  selectPreset: (presetId) =>
+    set((state) => {
+      const { theme: _omit, ...rest } = state.document;
+      return { theme: themeById(presetId), document: { ...rest, themeId: presetId } };
+    }),
   selectSection: (selectedId) => set({ selectedId }),
   setVariant: (sectionId, variant) =>
     set((state) => ({ document: setSectionVariant(state.document, sectionId, variant) })),
@@ -126,7 +148,7 @@ export const useProposalStore = create<ProposalState>((set, get) => ({
     const document = await persistence.loadProposal(id);
     set({
       document,
-      theme: themeById(document.themeId),
+      theme: document.theme ?? themeById(document.themeId),
       proposalId: id,
       selectedId: document.sections[0]?.id ?? null,
       saveStatus: "saved",
