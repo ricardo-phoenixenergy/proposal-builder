@@ -5,23 +5,67 @@ import { validateSectionTypeDefinition, type FieldSchema, type SectionTypeSchema
 import { createSectionType, updateSectionType } from "../../client/sectionTypes";
 import { useProposalStore } from "../../state/proposalStore";
 
-type DraftField = { key: string; label: string; type: "text" | "paragraph"; required: boolean; limit: string };
+type DraftFieldType = "text" | "paragraph" | "list" | "dataset" | "matrix";
+type LimitKey = "maxChars" | "maxWords" | "maxRows" | "maxColumns" | "maxSeries";
+
+type DraftField = {
+  key: string;
+  label: string;
+  type: DraftFieldType;
+  required: boolean;
+  maxChars: string;
+  maxWords: string;
+  maxRows: string;
+  maxColumns: string;
+  maxSeries: string;
+};
+
+const FIELD_TYPES: DraftFieldType[] = ["text", "paragraph", "list", "dataset", "matrix"];
+
+/** Which limit inputs apply to each field type, with friendly placeholders. */
+function limitsFor(type: DraftFieldType): { key: LimitKey; placeholder: string }[] {
+  switch (type) {
+    case "text":
+      return [{ key: "maxChars", placeholder: "max chars" }];
+    case "paragraph":
+      return [{ key: "maxWords", placeholder: "max words" }];
+    case "list":
+      return [{ key: "maxRows", placeholder: "max items" }];
+    case "dataset":
+      return [
+        { key: "maxRows", placeholder: "max rows" },
+        { key: "maxColumns", placeholder: "max cols" },
+        { key: "maxSeries", placeholder: "max series" },
+      ];
+    case "matrix":
+      return [
+        { key: "maxRows", placeholder: "max metrics" },
+        { key: "maxColumns", placeholder: "max options" },
+      ];
+  }
+}
+
+/** A data type is one that carries a tabular field (dataset/matrix); everything else is text. */
+function deriveCategory(fields: DraftField[]): "text" | "data" {
+  return fields.some((f) => f.type === "dataset" || f.type === "matrix") ? "data" : "text";
+}
 
 function toDef(typeKey: string, label: string, fields: DraftField[]): SectionTypeSchema {
+  const num = (s: string): number | undefined => (s.trim() !== "" ? Number(s) : undefined);
   return {
     type: typeKey.trim(),
     label: label.trim(),
-    category: "text",
+    category: deriveCategory(fields),
     schemaVersion: 1,
     variants: [],
-    fields: fields.map<FieldSchema>((f) => ({
-      key: f.key.trim(),
-      label: f.label.trim(),
-      type: f.type,
-      required: f.required,
-      ...(f.limit.trim() !== "" && f.type === "text" ? { maxChars: Number(f.limit) } : {}),
-      ...(f.limit.trim() !== "" && f.type === "paragraph" ? { maxWords: Number(f.limit) } : {}),
-    })),
+    fields: fields.map<FieldSchema>((f) => {
+      const base: FieldSchema = { key: f.key.trim(), label: f.label.trim(), type: f.type, required: f.required };
+      for (const { key } of limitsFor(f.type)) {
+        const v = num(f[key]);
+        if (v !== undefined) base[key] = v;
+      }
+      return base;
+    }),
   };
 }
 
@@ -44,9 +88,13 @@ export function SectionTypeEditor({
     (initial?.fields ?? []).map((f) => ({
       key: f.key,
       label: f.label ?? "",
-      type: f.type === "paragraph" ? "paragraph" : "text",
+      type: f.type,
       required: !!f.required,
-      limit: String(f.maxChars ?? f.maxWords ?? ""),
+      maxChars: String(f.maxChars ?? ""),
+      maxWords: String(f.maxWords ?? ""),
+      maxRows: String(f.maxRows ?? ""),
+      maxColumns: String(f.maxColumns ?? ""),
+      maxSeries: String(f.maxSeries ?? ""),
     })),
   );
   const [busy, setBusy] = useState(false);
@@ -55,7 +103,10 @@ export function SectionTypeEditor({
   const result = useMemo(() => validateSectionTypeDefinition(def), [def]);
 
   const addField = () =>
-    setFields((f) => [...f, { key: "", label: "", type: "text", required: false, limit: "" }]);
+    setFields((f) => [
+      ...f,
+      { key: "", label: "", type: "text", required: false, maxChars: "", maxWords: "", maxRows: "", maxColumns: "", maxSeries: "" },
+    ]);
   const patch = (i: number, p: Partial<DraftField>) =>
     setFields((f) => f.map((x, j) => (j === i ? { ...x, ...p } : x)));
   const remove = (i: number) => setFields((f) => f.filter((_, j) => j !== i));
@@ -64,16 +115,15 @@ export function SectionTypeEditor({
     setBusy(true);
     try {
       if (editing && initial) {
-        // Preserve the parts this text-only editor doesn't surface — category,
-        // variants/ranges/defaultVariant, schemaVersion, and any non-text fields
-        // (e.g. a dataset/matrix) — so overriding a built-in never silently
-        // drops them. The key is immutable on edit.
-        const preserved = initial.fields.filter((f) => f.type !== "text" && f.type !== "paragraph");
+        // Preserve developer-authored layout metadata the editor doesn't surface —
+        // variants/ranges/defaultVariant and schemaVersion — while taking the
+        // edited label, fields, and derived category. Key is immutable on edit.
         const merged: SectionTypeSchema = {
           ...initial,
-          label: def.label,
           type: initial.type,
-          fields: [...def.fields, ...preserved],
+          label: def.label,
+          category: def.category,
+          fields: def.fields,
         };
         await updateSectionType(initial.type, merged);
       } else {
@@ -91,7 +141,10 @@ export function SectionTypeEditor({
   return (
     <div className="steditor">
       <h2>{editing ? "Edit type" : "New section type"}</h2>
-      <p className="meter">Authored types render unstyled (generic fallback) until a developer registers a component.</p>
+      <p className="meter">
+        Types render unstyled (generic fallback) until a developer registers a component. Editing a built-in saves an
+        override; the original stays as a fallback.
+      </p>
 
       <label className="field">
         <span className="field__label">Type key</span>
@@ -101,6 +154,7 @@ export function SectionTypeEditor({
         <span className="field__label">Label</span>
         <input aria-label="Label" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Case study" />
       </label>
+      <p className="meter">Category: <strong>{def.category}</strong> (a dataset or matrix field makes a type “data”).</p>
 
       <div className="field">
         <span className="field__label">Fields</span>
@@ -108,17 +162,23 @@ export function SectionTypeEditor({
           <div key={i} className="steditor__field">
             <input aria-label="Field key" value={f.key} onChange={(e) => patch(i, { key: e.target.value })} placeholder="key" />
             <input aria-label="Field label" value={f.label} onChange={(e) => patch(i, { label: e.target.value })} placeholder="Label" />
-            <select aria-label="Field type" value={f.type} onChange={(e) => patch(i, { type: e.target.value as DraftField["type"] })}>
-              <option value="text">text</option>
-              <option value="paragraph">paragraph</option>
+            <select aria-label="Field type" value={f.type} onChange={(e) => patch(i, { type: e.target.value as DraftFieldType })}>
+              {FIELD_TYPES.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
             </select>
-            <input
-              aria-label="Field limit"
-              type="number"
-              value={f.limit}
-              onChange={(e) => patch(i, { limit: e.target.value })}
-              placeholder={f.type === "text" ? "max chars" : "max words"}
-            />
+            {limitsFor(f.type).map((lim) => (
+              <input
+                key={lim.key}
+                aria-label={`Field ${lim.placeholder}`}
+                type="number"
+                value={f[lim.key]}
+                onChange={(e) => patch(i, { [lim.key]: e.target.value } as Partial<DraftField>)}
+                placeholder={lim.placeholder}
+              />
+            ))}
             <label className="steditor__req">
               <input type="checkbox" checked={f.required} onChange={(e) => patch(i, { required: e.target.checked })} /> required
             </label>

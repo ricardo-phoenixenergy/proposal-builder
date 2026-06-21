@@ -42,6 +42,29 @@ describe("SectionTypeEditor", () => {
     await waitFor(() => expect(onDone).toHaveBeenCalled());
   });
 
+  it("create mode: a dataset field yields a data-category definition", async () => {
+    const fetchMock = vi.fn(async () => new Response(null, { status: 201 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<SectionTypeEditor onDone={vi.fn()} onCancel={vi.fn()} />);
+    fireEvent.change(screen.getByLabelText(/type key/i), { target: { value: "metrics_table" } });
+    fireEvent.change(screen.getByLabelText(/^label/i), { target: { value: "Metrics table" } });
+    fireEvent.click(screen.getByRole("button", { name: /add field/i }));
+    fireEvent.change(screen.getByLabelText(/field key/i), { target: { value: "dataset" } });
+    fireEvent.change(screen.getByLabelText(/field label/i), { target: { value: "Dataset" } });
+    fireEvent.change(screen.getByLabelText(/field type/i), { target: { value: "dataset" } });
+
+    const save = screen.getByRole("button", { name: /save/i });
+    await waitFor(() => expect(save).toBeEnabled());
+    fireEvent.click(save);
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/section-types", expect.objectContaining({ method: "POST" })));
+    const call = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    const sent = JSON.parse(call[1].body as string) as { category: string; fields: { type: string }[] };
+    expect(sent.category).toBe("data");
+    expect(sent.fields[0]!.type).toBe("dataset");
+  });
+
   it("edit mode: type-key is disabled, PUT /api/section-types/:type on save, onDone called", async () => {
     const fetchMock = vi.fn(async () => new Response(null, { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);

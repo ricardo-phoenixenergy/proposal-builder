@@ -1,7 +1,9 @@
 import type { ValidationError, ValidationResult } from "./result";
 
 const TYPE_KEY = /^[a-z][a-z0-9_]*$/;
-const ALLOWED_FIELD_TYPES = ["text", "paragraph"] as const; // this slice
+const ALLOWED_FIELD_TYPES = ["text", "paragraph", "list", "dataset", "matrix"] as const;
+const ALLOWED_CATEGORIES = ["text", "data"] as const;
+const LIMIT_KEYS = ["maxChars", "maxWords", "maxRows", "maxColumns", "maxSeries"] as const;
 
 function isPositiveInt(value: unknown): boolean {
   return typeof value === "number" && Number.isInteger(value) && value > 0;
@@ -10,7 +12,7 @@ function isPositiveInt(value: unknown): boolean {
 /**
  * Meta-validation for an authored section-type definition (§5.1 Builder).
  * The "schema for schemas": guards what a user may author before it joins the
- * registry. Text-only this slice. Errors use field-pointer paths.
+ * registry. Errors use field-pointer paths.
  */
 export function validateSectionTypeDefinition(def: unknown): ValidationResult {
   const errors: ValidationError[] = [];
@@ -27,8 +29,8 @@ export function validateSectionTypeDefinition(def: unknown): ValidationResult {
   if (typeof d["label"] !== "string" || d["label"].trim() === "") {
     push("/label", "label is required");
   }
-  if (d["category"] !== "text") {
-    push("/category", 'category must be "text" in this version');
+  if (!ALLOWED_CATEGORIES.includes(d["category"] as (typeof ALLOWED_CATEGORIES)[number])) {
+    push("/category", 'category must be "text" or "data"');
   }
 
   const fields = d["fields"];
@@ -49,13 +51,12 @@ export function validateSectionTypeDefinition(def: unknown): ValidationResult {
         push(`/fields/${i}/label`, "field label is required");
       }
       if (!ALLOWED_FIELD_TYPES.includes(f["type"] as (typeof ALLOWED_FIELD_TYPES)[number])) {
-        push(`/fields/${i}/type`, "field type must be text or paragraph in this version");
+        push(`/fields/${i}/type`, "field type must be one of text, paragraph, list, dataset, matrix");
       }
-      if (f["maxChars"] !== undefined && !isPositiveInt(f["maxChars"])) {
-        push(`/fields/${i}/maxChars`, "maxChars must be a positive integer");
-      }
-      if (f["maxWords"] !== undefined && !isPositiveInt(f["maxWords"])) {
-        push(`/fields/${i}/maxWords`, "maxWords must be a positive integer");
+      for (const limit of LIMIT_KEYS) {
+        if (f[limit] !== undefined && !isPositiveInt(f[limit])) {
+          push(`/fields/${i}/${limit}`, `${limit} must be a positive integer`);
+        }
       }
     });
   }
