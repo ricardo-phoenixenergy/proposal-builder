@@ -6,6 +6,7 @@ import { verifyRenderToken } from "../../../src/server/auth/renderToken";
 import { defaultTheme } from "../../../src/theme/defaultTheme";
 import { themes } from "../../../src/theme/themes";
 import { PrintDocument } from "../../../src/print/PrintDocument";
+import { resolvePrintTheme } from "../../../src/print/resolveTheme";
 
 /**
  * The PDF render target (§10.3). Headless Chromium loads this route; it renders
@@ -31,6 +32,6 @@ export default async function PrintPage({
   const stored = await getRepo().getProposal(id);
   if (!stored) return <div data-print-missing={id}>Proposal not found.</div>;
 
-  const theme = themes.find((t) => t.id === stored.document.themeId) ?? defaultTheme;
+  const theme = resolvePrintTheme(stored.document, themes, defaultTheme);
   return <PrintDocument document={stored.document} theme={theme} />;
 }
