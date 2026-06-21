@@ -7,15 +7,18 @@ export interface SectionGenerationResult {
   error?: string;
 }
 
-/**
- * Client → backend proxy call to generate one section's data. The browser never
- * talks to Anthropic directly (§3); it posts the chosen model + brief to our
- * Route Handler, which holds the key.
- */
+export interface FieldGenerationResult {
+  ok: boolean;
+  value?: unknown;
+  validation?: ValidationResult;
+  error?: string;
+}
+
+/** Section rewrite: redo all text fields. The model is the admin setting (server-side). */
 export async function requestSectionGeneration(input: {
   type: string;
   brief: string;
-  model: string;
+  instruction?: string;
   sectionId?: string;
 }): Promise<SectionGenerationResult> {
   const res = await fetch("/api/generate/section", {
@@ -29,5 +32,36 @@ export async function requestSectionGeneration(input: {
     error?: string;
   };
   if (!res.ok) return { ok: false, error: body.error ?? `Request failed (${res.status})` };
-  return { ok: true, ...(body.data ? { data: body.data } : {}), ...(body.validation ? { validation: body.validation } : {}) };
+  return {
+    ok: true,
+    ...(body.data ? { data: body.data } : {}),
+    ...(body.validation ? { validation: body.validation } : {}),
+  };
+}
+
+/** Per-field rewrite: redo a single AI-composable field. */
+export async function requestFieldGeneration(input: {
+  type: string;
+  fieldKey: string;
+  brief: string;
+  instruction?: string;
+  currentValue?: string;
+  sectionId?: string;
+}): Promise<FieldGenerationResult> {
+  const res = await fetch("/api/generate/field", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  const body = (await res.json().catch(() => ({}))) as {
+    value?: unknown;
+    validation?: ValidationResult;
+    error?: string;
+  };
+  if (!res.ok) return { ok: false, error: body.error ?? `Request failed (${res.status})` };
+  return {
+    ok: true,
+    value: body.value,
+    ...(body.validation ? { validation: body.validation } : {}),
+  };
 }
