@@ -1,4 +1,4 @@
-import type { ProposalDocument, Template, ThemeTokens } from "@proposal/shared";
+import type { GenerationModelId, ProposalDocument, Template, ThemeTokens } from "@proposal/shared";
 
 export interface ProposalSummary {
   id: string;
@@ -126,4 +126,8 @@ export interface Repository {
   createFolder(ownerId: string, name: string): Promise<Folder>;
   renameFolder(ownerId: string, id: string, name: string): Promise<Folder | null>;
   deleteFolder(ownerId: string, id: string): Promise<boolean>;
+
+  /** App-wide AI model setting (admin-configured, §10). null when unset. */
+  getAiModel(): Promise<GenerationModelId | null>;
+  setAiModel(model: GenerationModelId): Promise<void>;
 }

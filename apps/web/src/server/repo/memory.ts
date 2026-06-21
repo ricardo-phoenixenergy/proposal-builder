@@ -1,3 +1,4 @@
+import { isSelectableModel, type GenerationModelId } from "@proposal/shared";
 import type { ProposalDocument, ThemeTokens } from "@proposal/shared";
 import type {
   Folder,
@@ -40,6 +41,7 @@ export function createMemoryRepo(): Repository {
   const users = new Map<string, StoredUser>(); // keyed by lowercased email
   const sectionTypeRows = new Map<string, SectionTypeRow>();
   const folders = new Map<string, Folder>(); // keyed by folder id
+  let aiModel: GenerationModelId | null = null;
 
   return {
     async listProposals(ownerId) {
@@ -295,6 +297,14 @@ export function createMemoryRepo(): Repository {
         if (p.folderId === id && p.ownerId === ownerId) proposals.set(pid, { ...p, folderId: null });
       }
       return true;
+    },
+
+    async getAiModel() {
+      return isSelectableModel(aiModel) ? aiModel : null;
+    },
+
+    async setAiModel(model) {
+      aiModel = model;
     },
   };
 }

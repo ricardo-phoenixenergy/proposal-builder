@@ -55,3 +55,10 @@ export const sectionTypeRows = pgTable("section_types", {
   deprecated: boolean("deprecated").notNull().default(false),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+/** App-wide key/value settings (§10). Currently holds the admin-set AI model under "ai_model". */
+export const appSettings = pgTable("app_settings", {
+  key: text("key").primaryKey(),
+  value: text("value").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
