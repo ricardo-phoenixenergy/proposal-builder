@@ -52,7 +52,13 @@ export {
   isSelectableModel,
   type GenerationModelId,
 } from "./generation/models";
-export { buildGenerationDataSchema } from "./generation/generationSchema";
+export {
+  buildGenerationDataSchema,
+  buildTextFieldsGenerationSchema,
+  buildFieldGenerationSchema,
+  fieldKind,
+  type FieldKind,
+} from "./generation/generationSchema";
 
 // Sample content
 export { sampleProposal } from "./samples/sample-proposal";

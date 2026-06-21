@@ -42,3 +42,43 @@ export function buildGenerationDataSchema(typeSchema: SectionTypeSchema): JSONSc
   }
   return { type: "object", required, additionalProperties: false, properties };
 }
+
+export type FieldKind = "ai" | "data" | "manual";
+
+/** Classify a field: text-shaped = AI-composable; tabular = manual data; anything else = plain. */
+export function fieldKind(field: FieldSchema): FieldKind {
+  switch (field.type) {
+    case "text":
+    case "paragraph":
+    case "list":
+      return "ai";
+    case "dataset":
+    case "matrix":
+      return "data";
+    default:
+      return "manual";
+  }
+}
+
+/** Generation schema over AI-composable fields ONLY (skips tabular). Null if none. */
+export function buildTextFieldsGenerationSchema(typeSchema: SectionTypeSchema): JSONSchema | null {
+  const properties: JSONSchema = {};
+  const required: string[] = [];
+  for (const field of typeSchema.fields) {
+    if (fieldKind(field) !== "ai") continue;
+    const fieldSchema = fieldToGenerationSchema(field);
+    if (fieldSchema === null) continue;
+    properties[field.key] = fieldSchema;
+    if (field.required) required.push(field.key);
+  }
+  if (Object.keys(properties).length === 0) return null;
+  return { type: "object", required, additionalProperties: false, properties };
+}
+
+/** Generation schema for one AI-composable field, as { value }. Null otherwise. */
+export function buildFieldGenerationSchema(field: FieldSchema): JSONSchema | null {
+  if (fieldKind(field) !== "ai") return null;
+  const fieldSchema = fieldToGenerationSchema(field);
+  if (fieldSchema === null) return null;
+  return { type: "object", required: ["value"], additionalProperties: false, properties: { value: fieldSchema } };
+}
