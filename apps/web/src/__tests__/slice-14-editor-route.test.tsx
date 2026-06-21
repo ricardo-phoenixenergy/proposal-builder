@@ -28,4 +28,12 @@ describe("editor /p/[id]", () => {
     await waitFor(() => expect(screen.getByText("Loaded One")).toBeInTheDocument());
     expect(screen.getByRole("link", { name: /dashboard/i })).toBeInTheDocument();
   });
+
+  it("shows an Admin link in the topbar only when the user is an admin", () => {
+    stubFetch();
+    const { rerender } = render(<App isAdmin />);
+    expect(screen.getByRole("link", { name: /admin/i })).toBeInTheDocument();
+    rerender(<App />);
+    expect(screen.queryByRole("link", { name: /admin/i })).not.toBeInTheDocument();
+  });
 });

@@ -21,7 +21,7 @@ import { SignOutButton } from "./ui/SignOutButton";
  * loading state until `proposalId` matches. A ← Dashboard link is always shown
  * when `id` is set so the user can return to the dashboard.
  */
-export function App({ id }: { id?: string } = {}) {
+export function App({ id, isAdmin }: { id?: string; isAdmin?: boolean } = {}) {
   const document = useProposalStore((s) => s.document);
   const theme = useProposalStore((s) => s.theme);
   const proposalId = useProposalStore((s) => s.proposalId);
@@ -57,6 +57,7 @@ export function App({ id }: { id?: string } = {}) {
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <SaveControl />
           <ExportGate />
+          {isAdmin ? <a className="btn btn--ghost" href="/admin">Admin</a> : null}
           <SignOutButton />
         </div>
       </header>
