@@ -3,12 +3,15 @@ import type { ProposalDocument, Template, ThemeTokens } from "@proposal/shared";
 export interface ProposalSummary {
   id: string;
   title: string;
+  client: string;
+  folderId: string | null;
   updatedAt: string;
 }
 export interface StoredProposal {
   id: string;
   ownerId: string;
   document: ProposalDocument;
+  folderId: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -69,7 +72,9 @@ export interface SectionTypeRow {
  */
 export interface Repository {
   listProposals(ownerId: string): Promise<ProposalSummary[]>;
-  createProposal(ownerId: string, document: ProposalDocument): Promise<StoredProposal>;
+  createProposal(ownerId: string, document: ProposalDocument, folderId?: string | null): Promise<StoredProposal>;
+  updateProposalMeta(id: string, patch: { title?: string; folderId?: string | null }): Promise<ProposalSummary | null>;
+  duplicateProposal(ownerId: string, id: string): Promise<StoredProposal | null>;
   getProposal(id: string): Promise<StoredProposal | null>;
   /** Autosave: replace the document, bump updatedAt. Returns null if unknown. */
   saveProposal(id: string, document: ProposalDocument): Promise<StoredProposal | null>;
