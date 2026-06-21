@@ -8,6 +8,8 @@
 
 **Prerequisites:** Node 20+ and npm; a free account at https://neon.tech.
 
+> **If you're following the Vercel-first order** (`2026-06-21-vercel-deploy.md`), provision Neon in Vercel first, then get `DATABASE_URL`/`AUTH_SECRET` locally via `vercel env pull` instead of creating a separate Neon project (steps 1–2 below). Use a **Neon dev branch** for local so you don't write into prod data. Then continue from step 3 (migrate) here.
+
 ---
 
 ## Steps

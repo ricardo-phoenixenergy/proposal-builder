@@ -8,21 +8,14 @@
 - **Auth:** next-auth v5, JWT sessions. Needs `AUTH_SECRET`; it trusts the Vercel host automatically (detects the `VERCEL` env).
 - **PDF export:** the export route runs on the Node runtime and, on Vercel, launches `puppeteer-core` + `@sparticuz/chromium-min`, fetching a Chromium "pack" tar at cold start. Works out of the box; may need extra function memory.
 
-**Decision (made):** provision the database via the **Neon Vercel Marketplace integration**.
+**Decision (made):** **Vercel-first order** — push to GitHub, import to Vercel, provision Neon **natively in Vercel** (Marketplace), then pull that same config to local with `vercel env pull`. One database + one set of secrets, no hand-copying connection strings.
 
 ---
 
 ## Steps
 
-### 0. Put the repo under version control (it isn't a git repo yet)
-Secrets are safe — `.gitignore` already ignores `.env*.local`.
-```
-git init
-git add -A
-git commit -m "Proposal builder"
-```
-Then create a GitHub repo and push (recommended — gives Vercel CI + preview deploys).
-**Alternative without GitHub:** `npm i -g vercel`, then `vercel` from the repo root to link + deploy, `vercel --prod` for production. (You still do the env + DB + migrate + admin steps below.)
+### 0. Version control — DONE ✅
+Repo initialised, committed, and pushed to `https://github.com/ricardo-phoenixenergy/proposal-builder.git` (branch `main`). `.gitignore` keeps `.env*.local` out of git. Future changes: `git add -A && git commit && git push`.
 
 ### 1. Import the project into Vercel
 - vercel.com → **Add New → Project** → import the repo.
@@ -60,6 +53,21 @@ Make sure the exported `DATABASE_URL` is the **prod** one for this command (note
 - Trigger a deploy (push to the connected branch, or `vercel --prod`).
 - Open the deployment URL → `/signin` → sign in with the admin → editor loads; `/admin` loads.
 - Smoke: create + save a proposal (DB), Regenerate a section (Anthropic), upload a logo (Blob), export a PDF.
+
+---
+
+## Local development against the same Neon (recommended once Vercel is set up)
+Instead of hand-creating a local DB, pull the project's env from Vercel:
+```
+npm i -g vercel
+vercel link            # pick the ricardo-phoenixenergy/proposal-builder project (run from repo root)
+cd apps/web && vercel env pull .env.local   # writes ALL project env vars into apps/web/.env.local
+```
+Two caveats:
+1. **`vercel env pull` OVERWRITES `apps/web/.env.local`.** Add `ANTHROPIC_API_KEY` (and `AUTH_SECRET`) to Vercel **before** pulling, or they won't be in the pulled file. Back the file up first if unsure.
+2. **This points local at the production Neon by default.** To avoid writing prod data while developing, create a **Neon dev branch** (Neon dashboard → Branches) and use its connection string for local (`DATABASE_URL` in `apps/web/.env.local`) instead of the pulled prod one. Migrate that branch too (Step 5, pointed at the branch URL).
+
+After pulling/setting env: run migrations + create an admin against whichever DB local points at (Steps 5–6), then `npm run dev`. See `2026-06-21-local-testing.md` for the local smoke tests + troubleshooting.
 
 ---
 
