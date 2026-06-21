@@ -1,0 +1,24 @@
+{
+  "//": "Local type-checking config that INCLUDES test files + vitest setup. The production build uses tsconfig.json (tests excluded) so Vercel needn't install test-only types. Run via `npm run typecheck`.",
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "incremental": false
+  },
+  "include": [
+    "next-env.d.ts",
+    "auth.ts",
+    "auth.config.ts",
+    "middleware.ts",
+    "types/**/*.d.ts",
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "app/**/*.ts",
+    "app/**/*.tsx",
+    "vitest.setup.ts",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    ".next"
+  ]
+}

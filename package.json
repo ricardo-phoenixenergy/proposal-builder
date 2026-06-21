@@ -13,7 +13,7 @@
     "start": "npm run start -w @proposal/web",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit -p packages/shared/tsconfig.json && tsc --noEmit -p apps/web/tsconfig.json"
+    "typecheck": "tsc --noEmit -p packages/shared/tsconfig.json && tsc --noEmit -p apps/web/tsconfig.test.json"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.6.3",
