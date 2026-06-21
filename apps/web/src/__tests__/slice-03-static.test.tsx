@@ -8,6 +8,8 @@ import { App } from "../App";
 import { defaultTheme } from "../theme/defaultTheme";
 import { midnightTheme } from "../theme/themes";
 
+vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: vi.fn(), push: vi.fn() }) }));
+
 // App now calls loadSectionTypes and loadTemplates on mount. Stub fetch so tests
 // remain hermetic — jsdom has no real fetch.
 beforeEach(() => {

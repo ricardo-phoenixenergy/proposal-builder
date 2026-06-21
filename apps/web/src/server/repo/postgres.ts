@@ -1,8 +1,8 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 import type { ProposalDocument, Template, ThemeTokens } from "@proposal/shared";
 import { getDb } from "../db/client";
-import { proposalVersions, proposals, sectionTypeRows, templates, themes, users } from "../db/schema";
-import type { Repository, SectionTypeRow, StoredProposal, UserSummary } from "./types";
+import { proposalVersions, proposals, folders, sectionTypeRows, templates, themes, users } from "../db/schema";
+import type { Folder, ProposalSummary, Repository, SectionTypeRow, StoredProposal, UserSummary } from "./types";
 import { DuplicateEmailError } from "./types";
 
 const uid = (prefix: string) => `${prefix}_${crypto.randomUUID().slice(0, 8)}`;
@@ -13,10 +13,19 @@ function toStored(row: ProposalRow): StoredProposal {
     id: row.id,
     ownerId: row.ownerId,
     document: row.document,
+    folderId: row.folderId ?? null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
 }
+
+const toProposalSummary = (r: ProposalRow): ProposalSummary => ({
+  id: r.id,
+  title: r.document.title,
+  client: r.document.client?.name ?? "",
+  folderId: r.folderId ?? null,
+  updatedAt: r.updatedAt.toISOString(),
+});
 
 type UserRow = typeof users.$inferSelect;
 const toUserSummary = (r: UserRow): UserSummary => ({
@@ -34,14 +43,34 @@ export function createPostgresRepo(): Repository {
   return {
     async listProposals(ownerId) {
       const rows = await db.select().from(proposals).where(eq(proposals.ownerId, ownerId));
-      return rows.map((r) => ({ id: r.id, title: r.document.title, updatedAt: r.updatedAt.toISOString() }));
+      return rows.map(toProposalSummary);
     },
 
-    async createProposal(ownerId, document) {
+    async createProposal(ownerId, document, folderId = null) {
       const id = uid("prop");
       const [row] = await db
         .insert(proposals)
-        .values({ id, ownerId, document: { ...document, id } })
+        .values({ id, ownerId, document: { ...document, id }, folderId })
+        .returning();
+      return toStored(row!);
+    },
+
+    async updateProposalMeta(id, patch) {
+      const [existing] = await db.select().from(proposals).where(eq(proposals.id, id));
+      if (!existing) return null;
+      const document = patch.title !== undefined ? { ...existing.document, title: patch.title } : existing.document;
+      const folderId = patch.folderId !== undefined ? patch.folderId : existing.folderId;
+      const [row] = await db.update(proposals).set({ document, folderId }).where(eq(proposals.id, id)).returning();
+      return toProposalSummary(row!);
+    },
+
+    async duplicateProposal(ownerId, id) {
+      const [src] = await db.select().from(proposals).where(and(eq(proposals.id, id), eq(proposals.ownerId, ownerId)));
+      if (!src) return null;
+      const newId = uid("prop");
+      const [row] = await db
+        .insert(proposals)
+        .values({ id: newId, ownerId, document: { ...src.document, id: newId, title: `Copy of ${src.document.title}` }, folderId: src.folderId })
         .returning();
       return toStored(row!);
     },
@@ -241,6 +270,32 @@ export function createPostgresRepo(): Repository {
         sql`SELECT DISTINCT s->>'type' AS type FROM proposals, jsonb_array_elements(document->'sections') AS s`,
       );
       return ((rows as unknown as { rows?: { type: string }[] }).rows ?? (rows as unknown as { type: string }[])).map((r: { type: string }) => r.type).filter(Boolean);
+    },
+
+    async listFolders(ownerId) {
+      const rows = await db.select().from(folders).where(eq(folders.ownerId, ownerId)).orderBy(folders.name);
+      return rows.map<Folder>((r) => ({ id: r.id, ownerId: r.ownerId, name: r.name, createdAt: r.createdAt.toISOString() }));
+    },
+
+    async createFolder(ownerId, name) {
+      const [row] = await db.insert(folders).values({ id: uid("fld"), ownerId, name: name.trim() }).returning();
+      return { id: row!.id, ownerId: row!.ownerId, name: row!.name, createdAt: row!.createdAt.toISOString() };
+    },
+
+    async renameFolder(ownerId, id, name) {
+      const [row] = await db
+        .update(folders)
+        .set({ name: name.trim() })
+        .where(and(eq(folders.id, id), eq(folders.ownerId, ownerId)))
+        .returning();
+      return row ? { id: row.id, ownerId: row.ownerId, name: row.name, createdAt: row.createdAt.toISOString() } : null;
+    },
+
+    async deleteFolder(ownerId, id) {
+      const deleted = await db.delete(folders).where(and(eq(folders.id, id), eq(folders.ownerId, ownerId))).returning();
+      if (deleted.length === 0) return false;
+      await db.update(proposals).set({ folderId: null }).where(and(eq(proposals.folderId, id), eq(proposals.ownerId, ownerId)));
+      return true;
     },
   };
 }

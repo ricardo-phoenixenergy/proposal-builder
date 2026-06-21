@@ -2,9 +2,17 @@ import { boolean, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import type { ProposalDocument, Template, ThemeTokens } from "@proposal/shared";
 
 /** §12 data model. Content/structure/presentation kept intact as JSONB. */
+export const folders = pgTable("folders", {
+  id: text("id").primaryKey(),
+  ownerId: text("owner_id").notNull(),
+  name: text("name").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const proposals = pgTable("proposals", {
   id: text("id").primaryKey(),
   ownerId: text("owner_id").notNull(),
+  folderId: text("folder_id"),
   document: jsonb("document").$type<ProposalDocument>().notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

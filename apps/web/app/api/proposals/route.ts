@@ -14,10 +14,13 @@ export async function GET(): Promise<Response> {
 export async function POST(request: Request): Promise<Response> {
   const owner = await getOwner();
   if (!owner) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const document = (await request.json().catch(() => null)) as ProposalDocument | null;
+  const body = (await request.json().catch(() => null)) as { document?: ProposalDocument; folderId?: string | null } | ProposalDocument | null;
+  // Back-compat: accept either a bare document or { document, folderId }.
+  const document = (body && "document" in (body as object) ? (body as { document?: ProposalDocument }).document : (body as ProposalDocument)) ?? null;
+  const folderId = body && "folderId" in (body as object) ? ((body as { folderId?: string | null }).folderId ?? null) : null;
   if (!document || typeof document !== "object" || !Array.isArray(document.sections)) {
     return NextResponse.json({ error: "Expected a ProposalDocument" }, { status: 400 });
   }
-  const proposal = await getRepo().createProposal(owner, document);
+  const proposal = await getRepo().createProposal(owner, document, folderId);
   return NextResponse.json({ proposal }, { status: 201 });
 }

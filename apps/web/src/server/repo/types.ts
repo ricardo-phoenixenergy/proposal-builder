@@ -3,12 +3,15 @@ import type { ProposalDocument, Template, ThemeTokens } from "@proposal/shared";
 export interface ProposalSummary {
   id: string;
   title: string;
+  client: string;
+  folderId: string | null;
   updatedAt: string;
 }
 export interface StoredProposal {
   id: string;
   ownerId: string;
   document: ProposalDocument;
+  folderId: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -55,6 +58,13 @@ export class DuplicateEmailError extends Error {
   }
 }
 
+export interface Folder {
+  id: string;
+  ownerId: string;
+  name: string;
+  createdAt: string;
+}
+
 export interface SectionTypeRow {
   type: string;
   definition: import("@proposal/shared").SectionTypeSchema | null;
@@ -69,7 +79,9 @@ export interface SectionTypeRow {
  */
 export interface Repository {
   listProposals(ownerId: string): Promise<ProposalSummary[]>;
-  createProposal(ownerId: string, document: ProposalDocument): Promise<StoredProposal>;
+  createProposal(ownerId: string, document: ProposalDocument, folderId?: string | null): Promise<StoredProposal>;
+  updateProposalMeta(id: string, patch: { title?: string; folderId?: string | null }): Promise<ProposalSummary | null>;
+  duplicateProposal(ownerId: string, id: string): Promise<StoredProposal | null>;
   getProposal(id: string): Promise<StoredProposal | null>;
   /** Autosave: replace the document, bump updatedAt. Returns null if unknown. */
   saveProposal(id: string, document: ProposalDocument): Promise<StoredProposal | null>;
@@ -108,4 +120,10 @@ export interface Repository {
   setSectionTypeDeprecated(type: string, deprecated: boolean): Promise<SectionTypeRow | null>;
   /** Distinct section-type keys referenced by any stored proposal (freeze check). */
   listInUseTypeKeys(): Promise<string[]>;
+
+  /** Folders (flat, one level). Deleting a folder unfiles its proposals (folderId → null). */
+  listFolders(ownerId: string): Promise<Folder[]>;
+  createFolder(ownerId: string, name: string): Promise<Folder>;
+  renameFolder(ownerId: string, id: string, name: string): Promise<Folder | null>;
+  deleteFolder(ownerId: string, id: string): Promise<boolean>;
 }
