@@ -1,10 +1,18 @@
-"use client";
+import { redirect } from "next/navigation";
+import { getSessionUser } from "../src/server/auth/sessionUser";
+import { getRepo } from "../src/server/repo";
+import { Dashboard } from "../src/ui/dashboard/Dashboard";
 
-// The editor is fully interactive (Zustand state, live preview, variant/theme
-// swapping), so the page is a thin client shell around <App/>. RSC is reserved
-// for the print route, which Puppeteer renders server-side (slice 9).
-import { App } from "../src/App";
+export const runtime = "nodejs";
 
-export default function Page() {
-  return <App />;
+/** Home — the signed-in user's proposal dashboard. */
+export default async function HomePage() {
+  const user = await getSessionUser();
+  if (!user) redirect("/signin");
+
+  const [proposals, folders] = await Promise.all([
+    getRepo().listProposals(user.id),
+    getRepo().listFolders(user.id),
+  ]);
+  return <Dashboard initialProposals={proposals} initialFolders={folders} isAdmin={user.isAdmin} />;
 }
