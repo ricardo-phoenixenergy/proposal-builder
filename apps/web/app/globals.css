@@ -22,6 +22,7 @@
   --ui-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --ui-shadow: 0 1px 2px rgba(20, 22, 28, 0.05), 0 10px 30px rgba(20, 22, 28, 0.07);
   --ui-shadow-sheet: 0 2px 6px rgba(20, 22, 28, 0.08), 0 24px 60px rgba(20, 22, 28, 0.12);
+  --ui-danger: #c0392b;
 }
 
 * {
@@ -640,6 +641,8 @@ ul.notice li + li {
 .dash__count { opacity: 0.6; }
 .dash__folderrow { display: flex; align-items: center; }
 .dash__addfolder { margin-top: 10px; }
+.dash__folderedit, .dash__folderdel { border: 0; background: transparent; cursor: pointer; padding: 4px 6px; opacity: 0.55; border-radius: 6px; }
+.dash__folderedit:hover, .dash__folderdel:hover { opacity: 1; background: var(--ui-panel); }
 .dash__main { flex: 1; padding: 18px; overflow: auto; }
 .dash__empty { text-align: center; color: var(--ui-ink); opacity: 0.8; padding: 60px 0; display: flex; flex-direction: column; gap: 14px; align-items: center; }
 .pgrid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
@@ -652,7 +655,7 @@ ul.notice li + li {
 .pcard__menu button { text-align: left; padding: 7px 10px; border: 0; background: transparent; color: var(--ui-ink); border-radius: 6px; cursor: pointer; }
 .pcard__submenu { border-top: 1px solid var(--ui-line-strong); border-bottom: 1px solid var(--ui-line-strong); margin: 4px 0; padding: 4px 0; }
 .pcard__submenu-label { display: block; font-size: 0.75em; opacity: 0.6; padding: 4px 10px; }
-.pcard__danger { color: #c0392b; }
+.pcard__danger { color: var(--ui-danger); }
 .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 50; }
 .modal__card { background: var(--ui-panel); color: var(--ui-ink); border-radius: 14px; padding: 22px; width: 420px; max-width: calc(100vw - 32px); display: flex; flex-direction: column; gap: 12px; }
 .modal__actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px; }

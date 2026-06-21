@@ -15,6 +15,7 @@ import { useProposalStore } from "../../state/proposalStore";
 import { FolderSidebar } from "./FolderSidebar";
 import { ProposalGrid } from "./ProposalGrid";
 import { NewProposalDialog } from "./NewProposalDialog";
+import { SignOutButton } from "../SignOutButton";
 
 type Sort = "recent" | "title";
 
@@ -125,7 +126,7 @@ export function Dashboard({
         <span className="topbar__title">Proposal Generator</span>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           {isAdmin ? <a className="btn btn--ghost" href="/admin">Admin</a> : null}
-          <a className="btn btn--ghost" href="/api/auth/signout">Sign out</a>
+          <SignOutButton />
         </div>
       </header>
 
