@@ -7,19 +7,21 @@ import { invalidateActiveRegistry } from "../../../../src/server/registry/active
 
 type Ctx = { params: Promise<{ type: string }> };
 
-/** PUT — edit an authored type. Built-ins and in-use types are frozen (409). */
+/**
+ * PUT — edit a type. Authored types are updated in place; built-ins are
+ * customised via a same-key authored OVERRIDE (the code definition stays as a
+ * fallback). In-use types stay frozen (409) so stored proposals can't drift.
+ */
 export async function PUT(request: Request, { params }: Ctx): Promise<Response> {
   const admin = await requireAdmin();
   if (admin instanceof Response) return admin;
   const { type } = await params;
 
-  if (builtInSectionTypes.some((t) => t.type === type)) {
-    return NextResponse.json({ error: "Built-in types are immutable — duplicate it instead" }, { status: 409 });
-  }
-
+  const isBuiltIn = builtInSectionTypes.some((t) => t.type === type);
   const rows = await getRepo().listSectionTypeRows();
   const existing = rows.find((r) => r.type === type && r.definition);
-  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  // Editable if it's a built-in (override) or an existing authored row; else unknown.
+  if (!existing && !isBuiltIn) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   if ((await getRepo().listInUseTypeKeys()).includes(type)) {
     return NextResponse.json({ error: "Type is in use — duplicate it to change it" }, { status: 409 });
@@ -31,7 +33,7 @@ export async function PUT(request: Request, { params }: Ctx): Promise<Response> 
     return NextResponse.json({ error: "Invalid section type", errors: result.errors }, { status: 400 });
   }
   // Key is immutable on edit: keep the path's type.
-  const row = await getRepo().upsertSectionType({ type, definition: { ...(def as SectionTypeSchema), type }, deprecated: existing.deprecated });
+  const row = await getRepo().upsertSectionType({ type, definition: { ...(def as SectionTypeSchema), type }, deprecated: existing?.deprecated ?? false });
   invalidateActiveRegistry();
   return NextResponse.json({ sectionType: row.definition });
 }
