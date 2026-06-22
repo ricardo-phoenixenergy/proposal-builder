@@ -21,6 +21,7 @@ import { DataGrid } from "./DataGrid";
 import { ColumnMapping } from "./ColumnMapping";
 import { MatrixEditor } from "./MatrixEditor";
 import { AssetUpload } from "./AssetUpload";
+import { ImageField } from "./ImageField";
 
 type Tab = "tokens" | "code";
 
@@ -302,6 +303,18 @@ export function Inspector() {
 
               if (kind === "manual") {
                 const value = typeof selected.data[field.key] === "string" ? (selected.data[field.key] as string) : "";
+                if (field.type === "image") {
+                  return (
+                    <ImageField
+                      key={field.key}
+                      label={label}
+                      fieldKey={field.key}
+                      value={value}
+                      disabled={locked}
+                      onChange={(url) => setField(field.key, url)}
+                    />
+                  );
+                }
                 return (
                   <label className="field" key={field.key}>
                     <span className="field__label">{label}</span>
