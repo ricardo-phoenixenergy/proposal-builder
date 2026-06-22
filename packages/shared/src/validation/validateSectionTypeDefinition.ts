@@ -1,7 +1,8 @@
 import type { ValidationError, ValidationResult } from "./result";
 
 const TYPE_KEY = /^[a-z][a-z0-9_]*$/;
-const ALLOWED_FIELD_TYPES = ["text", "paragraph", "list", "dataset", "matrix"] as const;
+const FIELD_KEY = /^[a-z][a-zA-Z0-9_]*$/;
+const ALLOWED_FIELD_TYPES = ["text", "paragraph", "list", "dataset", "matrix", "image"] as const;
 const ALLOWED_CATEGORIES = ["text", "data"] as const;
 const LIMIT_KEYS = ["maxChars", "maxWords", "maxRows", "maxColumns", "maxSeries"] as const;
 
@@ -40,7 +41,7 @@ export function validateSectionTypeDefinition(def: unknown): ValidationResult {
     const seen = new Set<string>();
     fields.forEach((field, i) => {
       const f = field as Record<string, unknown>;
-      if (typeof f["key"] !== "string" || !TYPE_KEY.test(f["key"])) {
+      if (typeof f["key"] !== "string" || !FIELD_KEY.test(f["key"])) {
         push(`/fields/${i}/key`, "field key must be a lowercase slug");
       } else if (seen.has(f["key"])) {
         push(`/fields/${i}/key`, `duplicate field key "${f["key"]}"`);
@@ -51,7 +52,7 @@ export function validateSectionTypeDefinition(def: unknown): ValidationResult {
         push(`/fields/${i}/label`, "field label is required");
       }
       if (!ALLOWED_FIELD_TYPES.includes(f["type"] as (typeof ALLOWED_FIELD_TYPES)[number])) {
-        push(`/fields/${i}/type`, "field type must be one of text, paragraph, list, dataset, matrix");
+        push(`/fields/${i}/type`, "field type must be one of text, paragraph, list, dataset, matrix, image");
       }
       for (const limit of LIMIT_KEYS) {
         if (f[limit] !== undefined && !isPositiveInt(f[limit])) {

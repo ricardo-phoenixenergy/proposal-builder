@@ -5,7 +5,7 @@ import { validateSectionTypeDefinition, type FieldSchema, type SectionTypeSchema
 import { createSectionType, updateSectionType } from "../../client/sectionTypes";
 import { useProposalStore } from "../../state/proposalStore";
 
-type DraftFieldType = "text" | "paragraph" | "list" | "dataset" | "matrix";
+type DraftFieldType = "text" | "paragraph" | "list" | "dataset" | "matrix" | "image";
 type LimitKey = "maxChars" | "maxWords" | "maxRows" | "maxColumns" | "maxSeries";
 
 type DraftField = {
@@ -20,7 +20,7 @@ type DraftField = {
   maxSeries: string;
 };
 
-const FIELD_TYPES: DraftFieldType[] = ["text", "paragraph", "list", "dataset", "matrix"];
+const FIELD_TYPES: DraftFieldType[] = ["text", "paragraph", "list", "dataset", "matrix", "image"];
 
 /** Which limit inputs apply to each field type, with friendly placeholders. */
 function limitsFor(type: DraftFieldType): { key: LimitKey; placeholder: string }[] {
@@ -42,6 +42,8 @@ function limitsFor(type: DraftFieldType): { key: LimitKey; placeholder: string }
         { key: "maxRows", placeholder: "max metrics" },
         { key: "maxColumns", placeholder: "max options" },
       ];
+    case "image":
+      return []; // no limits for image fields
   }
 }
 

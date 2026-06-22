@@ -28,6 +28,9 @@ function fieldToProperty(field: FieldSchema): JSONSchema {
       if (field.maxRows !== undefined) prop["maxItems"] = field.maxRows;
       return prop;
     }
+    case "image":
+      // A per-proposal image is stored as its uploaded URL (a string).
+      return { type: "string" };
     case "dataset":
       return datasetProperty(field);
     case "matrix":

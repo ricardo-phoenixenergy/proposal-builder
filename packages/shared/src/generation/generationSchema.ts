@@ -20,6 +20,8 @@ function fieldToGenerationSchema(field: FieldSchema): JSONSchema | null {
       return { type: "string" };
     case "list":
       return { type: "array", items: { type: "string" } };
+    case "image":
+      return null; // user-uploaded, never AI-generated
     case "dataset":
     case "matrix":
       return null; // not AI-generated
@@ -55,6 +57,8 @@ export function fieldKind(field: FieldSchema): FieldKind {
     case "dataset":
     case "matrix":
       return "data";
+    case "image":
+      return "manual";
     default:
       return "manual";
   }
