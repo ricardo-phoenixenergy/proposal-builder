@@ -12,7 +12,7 @@ const coverType: SectionTypeSchema = {
   category: "text",
   fields: [
     { key: "title", type: "text", label: "Title", required: true, maxChars: 60 },
-    { key: "coverImage", type: "image", label: "Cover image" },
+    { key: "cover_image", type: "image", label: "Cover image" },
   ],
   variants: [],
   schemaVersion: 1,
@@ -22,7 +22,7 @@ afterEach(() => resetSectionTypesForTests());
 
 describe("image field type", () => {
   it("classifies image as a manual (non-AI) field", () => {
-    expect(fieldKind({ key: "coverImage", type: "image" })).toBe("manual");
+    expect(fieldKind({ key: "cover_image", type: "image" })).toBe("manual");
   });
 
   it("derives a string JSON Schema property for an image field", () => {
@@ -30,7 +30,7 @@ describe("image field type", () => {
       allOf: { then: { properties: { data: { properties: Record<string, unknown> } } } }[];
     };
     const dataProps = schema.allOf[0]!.then.properties.data.properties;
-    expect(dataProps.coverImage).toEqual({ type: "string" });
+    expect(dataProps.cover_image).toEqual({ type: "string" });
   });
 
   it("excludes a type with an image field from AI data generation", () => {
@@ -39,7 +39,7 @@ describe("image field type", () => {
 
   it("scaffolds an empty image field as an empty string", () => {
     setActiveSectionTypes([coverType]);
-    expect(emptyDataForType("cover_test").coverImage).toBe("");
+    expect(emptyDataForType("cover_test").cover_image).toBe("");
   });
 
   it("accepts a section-type definition with an image field", () => {
@@ -47,7 +47,7 @@ describe("image field type", () => {
       type: "cover_test",
       label: "Cover",
       category: "text",
-      fields: [{ key: "coverImage", type: "image", label: "Cover image" }],
+      fields: [{ key: "cover_image", type: "image", label: "Cover image" }],
     });
     expect(result.valid).toBe(true);
   });
