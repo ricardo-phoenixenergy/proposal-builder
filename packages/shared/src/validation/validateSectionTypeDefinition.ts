@@ -1,7 +1,7 @@
 import type { ValidationError, ValidationResult } from "./result";
 
 const TYPE_KEY = /^[a-z][a-z0-9_]*$/;
-const ALLOWED_FIELD_TYPES = ["text", "paragraph", "list", "dataset", "matrix"] as const;
+const ALLOWED_FIELD_TYPES = ["text", "paragraph", "list", "dataset", "matrix", "image"] as const;
 const ALLOWED_CATEGORIES = ["text", "data"] as const;
 const LIMIT_KEYS = ["maxChars", "maxWords", "maxRows", "maxColumns", "maxSeries"] as const;
 
@@ -51,7 +51,7 @@ export function validateSectionTypeDefinition(def: unknown): ValidationResult {
         push(`/fields/${i}/label`, "field label is required");
       }
       if (!ALLOWED_FIELD_TYPES.includes(f["type"] as (typeof ALLOWED_FIELD_TYPES)[number])) {
-        push(`/fields/${i}/type`, "field type must be one of text, paragraph, list, dataset, matrix");
+        push(`/fields/${i}/type`, "field type must be one of text, paragraph, list, dataset, matrix, image");
       }
       for (const limit of LIMIT_KEYS) {
         if (f[limit] !== undefined && !isPositiveInt(f[limit])) {

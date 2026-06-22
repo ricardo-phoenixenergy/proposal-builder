@@ -15,6 +15,9 @@ export function emptyDataForType(type: string): Record<string, unknown> {
       case "list":
         data[field.key] = [];
         break;
+      case "image":
+        data[field.key] = "";
+        break;
       case "dataset":
         data[field.key] = { columns: [], rows: [] };
         break;

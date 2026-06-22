@@ -7,7 +7,7 @@
  * representations cannot drift (§5.1).
  */
 
-export type FieldType = "text" | "paragraph" | "dataset" | "matrix" | "list";
+export type FieldType = "text" | "paragraph" | "dataset" | "matrix" | "list" | "image";
 
 export interface FieldSchema {
   key: string;
