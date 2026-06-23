@@ -13,12 +13,14 @@ export function SectionRenderer({
   section,
   theme,
   registry,
+  pageFormat,
 }: {
   section: Section;
   theme: ThemeTokens;
   registry?: ComponentRegistry;
+  pageFormat?: string;
 }) {
-  const { Component, unstyled, variant } = resolveSection(section, registry);
+  const { Component, unstyled, variant } = resolveSection(section, registry, pageFormat);
   return (
     <div
       data-section-type={section.type}

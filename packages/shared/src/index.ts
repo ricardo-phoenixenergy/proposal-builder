@@ -12,6 +12,15 @@ export {
   resetSectionTypesForTests,
 } from "./registry/sectionTypes";
 
+// Active-layouts registry
+export {
+  setActiveLayouts,
+  getLayout,
+  listLayoutVariants,
+  layoutsRevision,
+  resetLayoutsForTests,
+} from "./registry/layouts";
+
 // Derived JSON Schemas
 export { buildSectionSchema, sectionSchema } from "./schema/section.schema";
 export { documentEnvelopeSchema } from "./schema/document.schema";
@@ -26,6 +35,7 @@ export { validateForExport } from "./validation/validateForExport";
 export { variantRangeWarnings, type VariantWarning } from "./validation/variantRange";
 export { validateSectionTypeDefinition } from "./validation/validateSectionTypeDefinition";
 export { validateTemplateDefinition } from "./validation/validateTemplateDefinition";
+export { validateLayout } from "./validation/validateLayout";
 
 // Templates + lock state (§7)
 export { openTemplate, prelimTemplate } from "./templates/sampleTemplates";
@@ -72,3 +82,6 @@ export {
   pageCss,
   type PageFormat,
 } from "./render/page";
+
+// Layout render
+export { compileBlockStyle, spaceToken } from "./render/layoutStyle";

@@ -13,3 +13,30 @@ export type {
   ComparisonMatrix,
 } from "./data";
 export type { SlotLock, Slot, Template } from "./template";
+export {
+  TOKEN_COLORS,
+  TOKEN_FONTS,
+  SIZE_SCALES,
+  SPACE_SCALES,
+  ALIGNS,
+  WEIGHTS,
+  CHART_KINDS,
+  LEAF_KINDS,
+  CONTAINER_KINDS,
+} from "./layout";
+export type {
+  TokenColor,
+  TokenFont,
+  SizeScale,
+  SpaceScale,
+  Align,
+  Weight,
+  LayoutChartKind,
+  BlockStyle,
+  LeafBlock,
+  ImageRef,
+  BlockBackground,
+  ContainerBlock,
+  Block,
+  SectionLayout,
+} from "./layout";
