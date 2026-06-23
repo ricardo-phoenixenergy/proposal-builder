@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getAtPath, updateAtPath, insertChild, removeAtPath } from "../ui/admin/layoutTree";
+import { getAtPath, updateAtPath, insertChild, removeAtPath, moveAtPath } from "../ui/admin/layoutTree";
 import type { Block } from "@proposal/shared";
 
 // root stack → [ columns[ [stack[heading]], [stack[paragraph]] ] ]
@@ -11,6 +11,20 @@ const tree = (): Block => ({
       columns: [
         [{ kind: "stack", children: [{ kind: "heading", field: "title" }] }],
         [{ kind: "stack", children: [{ kind: "paragraph", field: "body" }] }],
+      ],
+    },
+  ],
+});
+
+// a column whose nested stack holds two leaves, for reorder tests
+const twoInColumn = (): Block => ({
+  kind: "stack",
+  children: [
+    {
+      kind: "columns",
+      columns: [
+        [{ kind: "stack", children: [{ kind: "heading", field: "title" }, { kind: "divider" }] }],
+        [{ kind: "stack", children: [] }],
       ],
     },
   ],
@@ -39,6 +53,13 @@ describe("layoutTree — columns traversal", () => {
     const next = removeAtPath(tree(), [0, 0, 0, 0]);
     const stack = getAtPath(next, [0, 0, 0]) as { children: Block[] };
     expect(stack.children.length).toBe(0);
+  });
+
+  it("moveAtPath reorders siblings inside a column's nested stack", () => {
+    const next = moveAtPath(twoInColumn(), [0, 0, 0, 1], -1); // move divider up past the heading
+    const stack = getAtPath(next, [0, 0, 0]) as { children: Block[] };
+    expect(stack.children[0]).toMatchObject({ kind: "divider" });
+    expect(stack.children[1]).toMatchObject({ kind: "heading", field: "title" });
   });
 
   it("still handles pure stack paths (5a behaviour)", () => {

@@ -55,4 +55,31 @@ describe("LayoutEditor background group", () => {
       minHeight: "page",
     });
   });
+
+  it("selecting '— none —' for the image clears the binding (no stale image key)", async () => {
+    const fetchMock = vi.fn(async () => new Response(null, { status: 201 }));
+    vi.stubGlobal("fetch", fetchMock);
+    render(<LayoutEditor type="cover" pageFormat="a4_portrait" mode="create" onDone={vi.fn()} onCancel={vi.fn()} />);
+    fireEvent.change(screen.getByLabelText("Layout name"), { target: { value: "Cover" } });
+    fireEvent.change(screen.getByLabelText("Layout variant"), { target: { value: "cover" } });
+    fireEvent.click(screen.getByRole("button", { name: /add heading/i }));
+    fireEvent.change(screen.getByLabelText("bind-0"), { target: { value: "title" } });
+    fireEvent.click(screen.getByLabelText("select-root"));
+
+    // bind then unbind the image; keep an overlay so a background still exists
+    fireEvent.change(screen.getByLabelText("bg-image-field"), { target: { value: "cover_image" } });
+    fireEvent.change(screen.getByLabelText("bg-overlay-color"), { target: { value: "primary" } });
+    fireEvent.change(screen.getByLabelText("bg-image-field"), { target: { value: "" } });
+
+    const save = screen.getByRole("button", { name: /^save/i });
+    await waitFor(() => expect(save).toBeEnabled());
+    fireEvent.click(save);
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    const body = JSON.parse((fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body as string) as {
+      root: { background?: { image?: unknown; overlay?: { color: string } } };
+    };
+    expect(body.root.background?.overlay).toMatchObject({ color: "primary" });
+    expect(body.root.background && "image" in body.root.background).toBe(false);
+  });
 });
