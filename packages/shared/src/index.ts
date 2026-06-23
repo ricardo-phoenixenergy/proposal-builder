@@ -26,6 +26,7 @@ export { validateForExport } from "./validation/validateForExport";
 export { variantRangeWarnings, type VariantWarning } from "./validation/variantRange";
 export { validateSectionTypeDefinition } from "./validation/validateSectionTypeDefinition";
 export { validateTemplateDefinition } from "./validation/validateTemplateDefinition";
+export { validateLayout } from "./validation/validateLayout";
 
 // Templates + lock state (§7)
 export { openTemplate, prelimTemplate } from "./templates/sampleTemplates";
