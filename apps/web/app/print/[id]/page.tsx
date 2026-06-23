@@ -7,6 +7,8 @@ import { defaultTheme } from "../../../src/theme/defaultTheme";
 import { themes } from "../../../src/theme/themes";
 import { PrintDocument } from "../../../src/print/PrintDocument";
 import { resolvePrintTheme } from "../../../src/print/resolveTheme";
+import { refreshActiveRegistry } from "../../../src/server/registry/activeRegistry";
+import { refreshActiveLayouts } from "../../../src/server/registry/activeLayouts";
 import { getPageFormat, pageCss } from "@proposal/shared";
 
 /**
@@ -32,6 +34,11 @@ export default async function PrintPage({
 
   const stored = await getRepo().getProposal(id);
   if (!stored) return <div data-print-missing={id}>Proposal not found.</div>;
+
+  // The /print RSC runs server-side; its shared registries start empty. Hydrate
+  // authored section types + layouts so resolveSection renders them in the PDF.
+  await refreshActiveRegistry();
+  await refreshActiveLayouts();
 
   const theme = resolvePrintTheme(stored.document, themes, defaultTheme);
   return (
