@@ -669,3 +669,14 @@ ul.notice li + li {
 .ltree__row { display: flex; flex-direction: column; }
 .ltree__bar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .ltree__palette { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* Layout style inspector + columns + background (§E/5b) */
+.lstyle { display: flex; flex-direction: column; gap: 6px; }
+.lstyle__row { display: flex; align-items: center; gap: 8px; font: 12px ui-sans-serif; color: var(--ui-muted, #6b7280); }
+.lswatches { display: flex; gap: 4px; flex-wrap: wrap; }
+.lswatch { width: 20px; height: 20px; border-radius: 4px; border: 1px solid var(--c-line, #e2e2e2); cursor: pointer; }
+.lswatch--none { background: #fff; font-size: 11px; line-height: 1; }
+.lbg { border: 1px solid var(--c-line, #e2e2e2); border-radius: 8px; padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; }
+.ltree__columns { display: flex; gap: 8px; padding-left: 16px; border-left: 1px solid var(--c-line, #e2e2e2); margin-top: 4px; }
+.ltree__column { flex: 1; border: 1px dashed var(--c-line, #e2e2e2); border-radius: 6px; padding: 6px; }
+.ltree__kv { padding-left: 16px; display: flex; flex-direction: column; gap: 4px; }
