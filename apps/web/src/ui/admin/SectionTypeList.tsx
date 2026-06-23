@@ -6,6 +6,7 @@ import { resolveSection } from "../../registry/componentRegistry";
 import { setSectionTypeDeprecated } from "../../client/sectionTypes";
 import { useProposalStore } from "../../state/proposalStore";
 import { SectionTypeEditor } from "./SectionTypeEditor";
+import { SectionLayoutsView } from "./SectionLayoutsView";
 
 function isBuiltIn(type: string): boolean {
   return builtInSectionTypes.some((t) => t.type === type);
@@ -26,6 +27,7 @@ export function SectionTypeList({
 }) {
   const notify = useProposalStore((s) => s.notify);
   const [editor, setEditor] = useState<{ initial?: SectionTypeSchema; mode: "create" | "edit" } | null>(null);
+  const [layoutsFor, setLayoutsFor] = useState<string | null>(null);
 
   const refresh = async () => {
     const res = await fetch("/api/section-types");
@@ -53,6 +55,10 @@ export function SectionTypeList({
         onCancel={() => setEditor(null)}
       />
     );
+  }
+
+  if (layoutsFor) {
+    return <SectionLayoutsView type={layoutsFor} onBack={() => setLayoutsFor(null)} />;
   }
 
   return (
@@ -100,6 +106,9 @@ export function SectionTypeList({
                 </button>
                 <button type="button" className="btn" onClick={() => void onDeprecate(t.type, !t.deprecated)}>
                   {t.deprecated ? "Restore" : "Deprecate"}
+                </button>
+                <button type="button" className="btn" onClick={() => setLayoutsFor(t.type)}>
+                  Layouts
                 </button>
               </div>
             </li>
