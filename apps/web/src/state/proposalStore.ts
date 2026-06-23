@@ -1,11 +1,12 @@
 import { create } from "zustand";
-import type { ProposalDocument, SectionTypeSchema, Template, ThemeTokens } from "@proposal/shared";
-import { applyTemplate, builtInTemplates, sampleProposal, setActiveSectionTypes } from "@proposal/shared";
+import type { ProposalDocument, SectionLayout, SectionTypeSchema, Template, ThemeTokens } from "@proposal/shared";
+import { applyTemplate, builtInTemplates, sampleProposal, setActiveSectionTypes, setActiveLayouts } from "@proposal/shared";
 import { defaultTheme } from "../theme/defaultTheme";
 import { themes } from "../theme/themes";
 import { setSectionVariant, setSectionData, setSectionType, appendSection, insertSection, removeSection, setSectionPageBreak } from "./mutations";
 import * as persistence from "../client/persistence";
 import { fetchSectionTypes } from "../client/sectionTypes";
+import { fetchLayouts } from "../client/layouts";
 import { fetchTemplates } from "../client/templates";
 
 export type SaveStatus = "idle" | "saving" | "saved" | "error";
@@ -58,6 +59,10 @@ export interface ProposalState {
   sectionTypes: SectionTypeSchema[];
   /** Fetch section types from the API and hydrate the shared registry. */
   loadSectionTypes: () => Promise<void>;
+  /** Active authored layouts (hydrated from the API into the shared registry). */
+  layouts: SectionLayout[];
+  /** Fetch layouts from the API and hydrate the shared registry. */
+  loadLayouts: () => Promise<void>;
   /** Append a new section of the given type to the current document. */
   addSection: (type: string) => void;
   /** Insert a new section of `type` at `index` and select it. */
@@ -162,6 +167,16 @@ export const useProposalStore = create<ProposalState>((set, get) => ({
       set({ sectionTypes: types });
     } catch {
       get().notify("error", "Couldn't load section types.");
+    }
+  },
+  layouts: [],
+  loadLayouts: async () => {
+    try {
+      const layouts = await fetchLayouts();
+      setActiveLayouts(layouts); // hydrate the shared registry used by resolveSection
+      set({ layouts });
+    } catch {
+      get().notify("error", "Couldn't load layouts.");
     }
   },
   addSection: (type) => set((state) => ({ document: appendSection(state.document, type) })),

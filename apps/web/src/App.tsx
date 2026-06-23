@@ -28,12 +28,14 @@ export function App({ id, isAdmin }: { id?: string; isAdmin?: boolean } = {}) {
   const loadProposal = useProposalStore((s) => s.load);
   const loadSectionTypes = useProposalStore((s) => s.loadSectionTypes);
   const loadTemplates = useProposalStore((s) => s.loadTemplates);
+  const loadLayouts = useProposalStore((s) => s.loadLayouts);
   const router = useRouter();
 
   useEffect(() => {
     void loadSectionTypes();
     void loadTemplates();
-  }, [loadSectionTypes, loadTemplates]);
+    void loadLayouts();
+  }, [loadSectionTypes, loadTemplates, loadLayouts]);
 
   useEffect(() => {
     if (id && id !== proposalId) {

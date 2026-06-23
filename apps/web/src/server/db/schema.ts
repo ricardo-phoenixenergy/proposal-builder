@@ -56,6 +56,21 @@ export const sectionTypeRows = pgTable("section_types", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+/** Authored section layouts (§D). Global (Builder-managed). Identity is the
+ *  composite (type, variant, pageFormat), carried as the `id` PK so upserts are
+ *  deterministic. The full SectionLayout lives in `layout`; type/variant/page_format
+ *  are denormalised for querying. No deprecated flag — layouts are edited/deleted
+ *  freely (a deleted layout just falls back to the code/generic renderer). */
+export const sectionLayoutRows = pgTable("section_layouts", {
+  id: text("id").primaryKey(), // `${type}:${variant}:${pageFormat}`
+  type: text("type").notNull(),
+  variant: text("variant").notNull(),
+  pageFormat: text("page_format").notNull(),
+  name: text("name").notNull(),
+  layout: jsonb("layout").$type<import("@proposal/shared").SectionLayout>().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 /** App-wide key/value settings (§10). Currently holds the admin-set AI model under "ai_model". */
 export const appSettings = pgTable("app_settings", {
   key: text("key").primaryKey(),
