@@ -12,6 +12,15 @@ export {
   resetSectionTypesForTests,
 } from "./registry/sectionTypes";
 
+// Active-layouts registry
+export {
+  setActiveLayouts,
+  getLayout,
+  listLayoutVariants,
+  layoutsRevision,
+  resetLayoutsForTests,
+} from "./registry/layouts";
+
 // Derived JSON Schemas
 export { buildSectionSchema, sectionSchema } from "./schema/section.schema";
 export { documentEnvelopeSchema } from "./schema/document.schema";
