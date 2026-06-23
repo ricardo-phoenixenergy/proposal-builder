@@ -1,6 +1,6 @@
 import type { Key, ReactNode } from "react";
-import type { Block, SectionLayout, ThemeTokens } from "@proposal/shared";
-import { compileBlockStyle, spaceToken, getSectionType } from "@proposal/shared";
+import type { Block, BlockBackground, ImageRef, SectionLayout, ThemeTokens } from "@proposal/shared";
+import { compileBlockStyle, spaceToken, getSectionType, getPageFormat } from "@proposal/shared";
 import { DataTable } from "../components/sections/DataTable";
 import { ComparisonMatrix } from "../components/sections/ComparisonMatrix";
 import { ChartView } from "../components/charts/ChartView";
@@ -10,6 +10,55 @@ type Data = Record<string, unknown>;
 const asText = (v: unknown): string => (typeof v === "string" ? v : "");
 const asList = (v: unknown): string[] => (Array.isArray(v) ? v.map((x) => String(x)) : []);
 
+/** minHeight scale → a rem block-height (v1 choice; "page" is handled separately). */
+const MINH_REM: Record<string, number> = { xs: 8, sm: 12, md: 16, lg: 24, xl: 36 };
+
+function resolveImageUrl(image: ImageRef | undefined, data: Data): string | undefined {
+  if (!image) return undefined;
+  if ("assetUrl" in image) return image.assetUrl || undefined;
+  const v = data[image.field];
+  return typeof v === "string" && v !== "" ? v : undefined;
+}
+
+/** Wrap a container's children in a positioned background (image + token overlay, §I). */
+function withBackground(
+  bg: BlockBackground,
+  data: Data,
+  pageFormat: string | undefined,
+  inner: ReactNode,
+  k: Key,
+): ReactNode {
+  const url = resolveImageUrl(bg.image, data);
+  const minHeight =
+    bg.minHeight === "page"
+      ? `${getPageFormat(pageFormat).heightMm - 2 * getPageFormat(pageFormat).marginMm}mm`
+      : bg.minHeight
+        ? `${MINH_REM[bg.minHeight]}rem`
+        : undefined;
+  return (
+    <div
+      key={k}
+      data-bg="true"
+      style={{
+        position: "relative",
+        backgroundImage: url ? `url(${url})` : undefined,
+        backgroundSize: bg.position ?? "cover",
+        backgroundPosition: "center",
+        minHeight,
+        overflow: "hidden",
+      }}
+    >
+      {bg.overlay ? (
+        <div
+          data-bg-overlay="true"
+          style={{ position: "absolute", inset: 0, background: `var(--c-${bg.overlay.color})`, opacity: bg.overlay.opacity / 100 }}
+        />
+      ) : null}
+      <div style={{ position: "relative" }}>{inner}</div>
+    </div>
+  );
+}
+
 /**
  * Safe layout interpreter (§C): a recursive `switch` over known block kinds. There
  * is NO code execution and NO raw-HTML injection — content is rendered as text,
@@ -17,7 +66,7 @@ const asList = (v: unknown): string[] => (Array.isArray(v) ? v.map((x) => String
  * token CSS only. Unknown kinds/props are skipped (never thrown), so a layout
  * authored against an older schema degrades gracefully.
  */
-function renderBlock(block: Block, data: Data, theme: ThemeTokens, layoutType: string, k: Key): ReactNode {
+function renderBlock(block: Block, data: Data, theme: ThemeTokens, layoutType: string, pageFormat: string | undefined, k: Key): ReactNode {
   const style = compileBlockStyle(block.style);
   switch (block.kind) {
     case "heading":
@@ -88,30 +137,32 @@ function renderBlock(block: Block, data: Data, theme: ThemeTokens, layoutType: s
           {block.text}
         </span>
       );
-    case "stack":
-      return (
+    case "stack": {
+      const inner = (
         <div
-          key={k}
           data-block="stack"
           style={{ display: "flex", flexDirection: "column", gap: block.gap ? spaceToken(block.gap) : undefined, ...style }}
         >
-          {block.children.map((child, i) => renderBlock(child, data, theme, layoutType, i))}
+          {block.children.map((child, i) => renderBlock(child, data, theme, layoutType, pageFormat, i))}
         </div>
       );
-    case "columns":
-      return (
+      return block.background ? withBackground(block.background, data, pageFormat, inner, k) : <div key={k}>{inner}</div>;
+    }
+    case "columns": {
+      const inner = (
         <div
-          key={k}
           data-block="columns"
           style={{ display: "flex", flexDirection: "row", gap: block.gap ? spaceToken(block.gap) : undefined, ...style }}
         >
           {block.columns.map((col, i) => (
             <div key={i} data-column={i} style={{ flex: block.widths?.[i] ?? 1 }}>
-              {col.map((child, j) => renderBlock(child, data, theme, layoutType, j))}
+              {col.map((child, j) => renderBlock(child, data, theme, layoutType, pageFormat, j))}
             </div>
           ))}
         </div>
       );
+      return block.background ? withBackground(block.background, data, pageFormat, inner, k) : <div key={k}>{inner}</div>;
+    }
     default:
       return null; // unknown kind — skip, never throw
   }
@@ -121,14 +172,16 @@ export function LayoutRenderer({
   layout,
   data,
   theme,
+  pageFormat,
 }: {
   layout: SectionLayout;
   data: Data;
   theme: ThemeTokens;
+  pageFormat?: string;
 }) {
   return (
     <div data-layout={`${layout.type}:${layout.variant}`}>
-      {renderBlock(layout.root, data, theme, layout.type, "root")}
+      {renderBlock(layout.root, data, theme, layout.type, pageFormat, "root")}
     </div>
   );
 }
