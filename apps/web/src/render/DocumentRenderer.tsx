@@ -38,7 +38,7 @@ export function DocumentRenderer({
         {document.sections.map((section) =>
           slides ? (
             <div key={section.id} className="paged-slide" style={{ height: `${fmt.heightMm}mm` }}>
-              <SectionRenderer section={section} theme={theme} />
+              <SectionRenderer section={section} theme={theme} {...(document.pageFormat !== undefined ? { pageFormat: document.pageFormat } : {})} />
             </div>
           ) : (
             <div
@@ -46,7 +46,7 @@ export function DocumentRenderer({
               className="paged-section"
               data-page-break-before={section.pageBreakBefore ? "true" : undefined}
             >
-              <SectionRenderer section={section} theme={theme} />
+              <SectionRenderer section={section} theme={theme} {...(document.pageFormat !== undefined ? { pageFormat: document.pageFormat } : {})} />
             </div>
           ),
         )}

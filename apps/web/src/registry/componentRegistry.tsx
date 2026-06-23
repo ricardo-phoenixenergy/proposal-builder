@@ -1,6 +1,7 @@
-import { getSectionType, type Section } from "@proposal/shared";
+import { getSectionType, getLayout, listLayoutVariants, type Section } from "@proposal/shared";
 import type { RegisteredVariant, ResolvedSection, SectionComponentProps } from "./registry.types";
 import { GenericSection } from "../components/fallback/GenericSection";
+import { LayoutRenderer } from "../render/LayoutRenderer";
 import { ExecutiveSummary } from "../components/sections/ExecutiveSummary";
 import { ExecutiveSummaryBanner } from "../components/sections/ExecutiveSummaryBanner";
 import { TextSection } from "../components/sections/TextSection";
@@ -50,18 +51,32 @@ for (const kind of ["bar", "line", "pie", "area"] as ChartKind[]) {
 }
 
 /**
- * Resolve a section to a component (§4.4): registry lookup on (type, chosen
- * variant), else the generic fallback. A schemaVersion drift between the
- * registered layout and the current type warns rather than breaks (§5.4).
+ * Resolve a section to a component (§C/§J). Precedence: an authored layout for
+ * (type, variant, pageFormat) → the registered code component → the generic
+ * fallback. An authored layout renders via the safe `LayoutRenderer`.
  */
 export function resolveSection(
   section: Section,
   registry: ComponentRegistry = defaultRegistry,
+  pageFormat?: string,
 ): ResolvedSection {
   const typeSchema = getSectionType(section.type);
   const variant = section.variant ?? typeSchema?.defaultVariant;
-  const entry = variant ? registry.get(key(section.type, variant)) : undefined;
 
+  // 1. Authored layout wins (format-aware).
+  if (variant) {
+    const layout = getLayout(section.type, variant, pageFormat);
+    if (layout) {
+      const Layout = (props: SectionComponentProps) => (
+        <LayoutRenderer layout={layout} data={props.data} theme={props.theme} {...(pageFormat !== undefined ? { pageFormat } : {})} />
+      );
+      Layout.displayName = `Layout(${section.type}:${variant})`;
+      return { Component: Layout, unstyled: false, variant };
+    }
+  }
+
+  // 2. Code component.
+  const entry = variant ? registry.get(key(section.type, variant)) : undefined;
   if (entry && variant) {
     if (typeSchema && entry.schemaVersion !== typeSchema.schemaVersion) {
       console.warn(
@@ -72,5 +87,18 @@ export function resolveSection(
     return { Component: entry.component, unstyled: false, variant };
   }
 
+  // 3. Generic fallback.
   return { Component: GenericSection, unstyled: true };
+}
+
+/** Selectable variants for a type at a format: code variants ∪ authored variants (§C). */
+export function availableVariants(
+  type: string,
+  pageFormat?: string,
+  registry: ComponentRegistry = defaultRegistry,
+): string[] {
+  const prefix = `${type}:`;
+  const code = [...registry.keys()].filter((k) => k.startsWith(prefix)).map((k) => k.slice(prefix.length));
+  const authored = listLayoutVariants(type, pageFormat);
+  return [...new Set([...code, ...authored])];
 }
