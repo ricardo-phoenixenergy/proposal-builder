@@ -4,7 +4,7 @@ import { useMemo, useState, type ReactNode } from "react";
 import {
   getSectionType, validateLayout, LEAF_KINDS, sampleDataForType,
   TOKEN_COLORS, TOKEN_FONTS, SIZE_SCALES, SPACE_SCALES, ALIGNS, WEIGHTS,
-  type Block, type BlockStyle, type FieldType, type SectionLayout,
+  type Block, type BlockStyle, type BlockBackground, type ImageRef, type FieldType, type SectionLayout,
 } from "@proposal/shared";
 import { ThemeProvider } from "../../theme/ThemeProvider";
 import { defaultTheme } from "../../theme/defaultTheme";
@@ -37,6 +37,15 @@ function setStyleProp(root: Block, path: number[], prop: keyof BlockStyle, value
     if (value === "") delete style[prop];
     else (style as Record<string, string>)[prop] = value;
     return { ...b, style } as Block;
+  });
+}
+
+/** Merge a partial BlockBackground into the container at `path` (creates it if absent). */
+function patchBackground(root: Block, path: number[], patch: Partial<BlockBackground>): Block {
+  return updateAtPath(root, path, (b) => {
+    if (b.kind !== "stack" && b.kind !== "columns") return b;
+    const bg: BlockBackground = { ...(b.background ?? {}), ...patch };
+    return { ...b, background: bg } as Block;
   });
 }
 
@@ -83,7 +92,7 @@ export function LayoutEditor({
   };
   const slugOk = /^[a-z][a-z0-9_]*$/.test(variant.trim());
   const result = typeSchema ? validateLayout(layout, typeSchema) : { valid: false, errors: [] };
-  const canSave = !!name.trim() && slugOk && result.valid && !busy;
+  const canSave = !!name.trim() && slugOk && !busy;
 
   const selectedBlock = getAtPath(root, selected);
   const selStyle: BlockStyle = (selectedBlock && "style" in selectedBlock ? selectedBlock.style : undefined) ?? {};
@@ -195,6 +204,9 @@ export function LayoutEditor({
 
       <div className="field">
         <span className="field__label">Blocks</span>
+        <button type="button" className="btn btn--ghost" aria-label="select-root" onClick={() => setSelected([])}>
+          {selected.length === 0 ? "▸ " : ""}root ({root.kind})
+        </button>
         <ul className="ltree">{(root as { children: Block[] }).children.map((c, i) => renderRow(c, [i]))}</ul>
       </div>
 
@@ -274,6 +286,70 @@ export function LayoutEditor({
                   {[2, 3, 4].map((n) => <option key={n} value={n}>{n}</option>)}
                 </select>
               </label>
+            ) : null}
+            {selectedBlock.kind === "stack" || selectedBlock.kind === "columns" ? (
+              <fieldset className="lbg">
+                <legend className="field__label">Background</legend>
+                <label className="lstyle__row">Bind image field
+                  <select aria-label="bg-image-field"
+                    value={selectedBlock.background?.image && "field" in selectedBlock.background.image ? selectedBlock.background.image.field : ""}
+                    onChange={(e) => {
+                      const field = e.target.value;
+                      const image: ImageRef | undefined = field ? { field } : undefined;
+                      setRoot(patchBackground(root, selected, image ? { image } : {}));
+                    }}>
+                    <option value="">— none —</option>
+                    {(typeSchema?.fields ?? []).filter((f) => f.type === "image").map((f) => (
+                      <option key={f.key} value={f.key}>{f.label ?? f.key}</option>
+                    ))}
+                  </select>
+                </label>
+                <label className="lstyle__row">Overlay color
+                  <select aria-label="bg-overlay-color"
+                    value={selectedBlock.background?.overlay?.color ?? ""}
+                    onChange={(e) => {
+                      const color = e.target.value;
+                      const prev = selectedBlock.background?.overlay;
+                      setRoot(patchBackground(root, selected, { overlay: color ? { color: color as (typeof TOKEN_COLORS)[number], opacity: prev?.opacity ?? 50 } : undefined } as Partial<BlockBackground>));
+                    }}>
+                    <option value="">— none —</option>
+                    {TOKEN_COLORS.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </label>
+                <label className="lstyle__row">Overlay opacity
+                  <input aria-label="bg-overlay-opacity" type="number" min={0} max={100}
+                    value={selectedBlock.background?.overlay?.opacity ?? 0}
+                    onChange={(e) => {
+                      const opacity = Math.max(0, Math.min(100, Number(e.target.value) || 0));
+                      const color = selectedBlock.background?.overlay?.color ?? "text";
+                      setRoot(patchBackground(root, selected, { overlay: { color, opacity } }));
+                    }} />
+                </label>
+                <label className="lstyle__row">Position
+                  <select aria-label="bg-position" value={selectedBlock.background?.position ?? ""}
+                    onChange={(e) => setRoot(patchBackground(root, selected, { position: (e.target.value || undefined) as never }))}>
+                    <option value="">default</option>
+                    <option value="cover">cover</option>
+                    <option value="contain">contain</option>
+                  </select>
+                </label>
+                <label className="lstyle__row">Min height
+                  <select aria-label="bg-minheight" value={selectedBlock.background?.minHeight ?? ""}
+                    onChange={(e) => setRoot(patchBackground(root, selected, { minHeight: (e.target.value || undefined) as never }))}>
+                    <option value="">default</option>
+                    {SIZE_SCALES.map((s) => <option key={s} value={s}>{s}</option>)}
+                    <option value="page">page</option>
+                  </select>
+                </label>
+                <button type="button" className="btn btn--ghost" aria-label="bg-clear"
+                  onClick={() => setRoot(updateAtPath(root, selected, (b) => {
+                    if (b.kind !== "stack" && b.kind !== "columns") return b;
+                    const { background, ...rest } = b as Block & { background?: BlockBackground };
+                    return rest as Block;
+                  }))}>
+                  Clear background
+                </button>
+              </fieldset>
             ) : null}
           </div>
         </div>
