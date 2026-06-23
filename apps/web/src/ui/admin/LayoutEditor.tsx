@@ -26,6 +26,7 @@ const STATIC_KINDS = ["callout", "text"];
 // keyValue is excluded from 5a (it needs the multi-field editor that lands in 5b).
 const PALETTE: { kind: string; label: string }[] = [
   { kind: "stack", label: "Stack" },
+  { kind: "columns", label: "Columns" },
   ...LEAF_KINDS.filter((k) => k !== "keyValue").map((k) => ({ kind: k, label: k })),
 ];
 
@@ -42,6 +43,8 @@ function setStyleProp(root: Block, path: number[], prop: keyof BlockStyle, value
 /** A default block for a palette kind. */
 function blankBlock(kind: string): Block {
   if (kind === "stack") return { kind: "stack", children: [] };
+  if (kind === "columns")
+    return { kind: "columns", columns: [[{ kind: "stack", children: [] }], [{ kind: "stack", children: [] }]] } as Block;
   if (kind === "chart") return { kind: "chart", field: "", chart: "bar" } as Block;
   if (STATIC_KINDS.includes(kind)) return { kind, text: "" } as Block;
   if (kind === "logo" || kind === "divider") return { kind } as Block;
@@ -144,6 +147,22 @@ export function LayoutEditor({
         </div>
         {block.kind === "stack" ? (
           <ul className="ltree__children">{block.children.map((c, i) => renderRow(c, [...path, i]))}</ul>
+        ) : block.kind === "columns" ? (
+          <div className="ltree__columns">
+            {block.columns.map((col, ci) => (
+              <div key={ci} className="ltree__column" data-column={ci}>
+                <div className="meter">col {ci + 1}</div>
+                <button type="button" className="btn btn--ghost" aria-label={`add-to-column-${path.join("-")}-${ci}-0`}
+                  onClick={() => setRoot(insertChild(root, [...path, ci, 0], blankBlock("heading")))}>
+                  + heading
+                </button>
+                {/* each column holds one nested stack at index 0 */}
+                <ul className="ltree__children">
+                  {(col[0] && col[0].kind === "stack" ? col[0].children : []).map((c, j) => renderRow(c, [...path, ci, 0, j]))}
+                </ul>
+              </div>
+            ))}
+          </div>
         ) : null}
       </li>
     );
@@ -237,6 +256,22 @@ export function LayoutEditor({
                   onChange={(e) => setRoot(updateAtPath(root, selected, (b) => ({ ...b, gap: e.target.value || undefined }) as Block))}>
                   <option value="">default</option>
                   {SPACE_SCALES.map((s) => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </label>
+            ) : null}
+            {selectedBlock.kind === "columns" ? (
+              <label className="lstyle__row">Columns
+                <select aria-label="style-columns" value={selectedBlock.columns.length}
+                  onChange={(e) => {
+                    const n = Number(e.target.value);
+                    setRoot(updateAtPath(root, selected, (b) => {
+                      const cols = (b as { columns: Block[][] }).columns;
+                      const next = cols.slice(0, n);
+                      while (next.length < n) next.push([{ kind: "stack", children: [] }]);
+                      return { ...b, columns: next } as Block;
+                    }));
+                  }}>
+                  {[2, 3, 4].map((n) => <option key={n} value={n}>{n}</option>)}
                 </select>
               </label>
             ) : null}
