@@ -662,3 +662,10 @@ ul.notice li + li {
 .modal__card { background: var(--ui-panel); color: var(--ui-ink); border-radius: 14px; padding: 22px; width: 420px; max-width: calc(100vw - 32px); display: flex; flex-direction: column; gap: 12px; }
 .modal__actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px; }
 .app--loading { display: flex; align-items: center; justify-content: center; min-height: 100vh; opacity: 0.7; }
+
+/* Layout block-tree editor (§E) */
+.ltree { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.ltree__children { list-style: none; margin: 4px 0 0; padding-left: 16px; border-left: 1px solid var(--c-line, #e2e2e2); display: flex; flex-direction: column; gap: 4px; }
+.ltree__row { display: flex; flex-direction: column; }
+.ltree__bar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.ltree__palette { display: flex; flex-wrap: wrap; gap: 6px; }
