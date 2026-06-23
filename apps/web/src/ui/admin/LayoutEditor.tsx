@@ -23,11 +23,10 @@ const BINDING: Partial<Record<string, FieldType[]>> = {
   matrix: ["matrix"],
 };
 const STATIC_KINDS = ["callout", "text"];
-// keyValue is excluded from 5a (it needs the multi-field editor that lands in 5b).
 const PALETTE: { kind: string; label: string }[] = [
   { kind: "stack", label: "Stack" },
   { kind: "columns", label: "Columns" },
-  ...LEAF_KINDS.filter((k) => k !== "keyValue").map((k) => ({ kind: k, label: k })),
+  ...LEAF_KINDS.map((k) => ({ kind: k, label: k })),
 ];
 
 /** Set one BlockStyle prop (or clear it when value is "") on the block at `path`. */
@@ -57,6 +56,7 @@ function blankBlock(kind: string): Block {
   if (kind === "chart") return { kind: "chart", field: "", chart: "bar" } as Block;
   if (STATIC_KINDS.includes(kind)) return { kind, text: "" } as Block;
   if (kind === "logo" || kind === "divider") return { kind } as Block;
+  if (kind === "keyValue") return { kind: "keyValue", fields: [] } as Block;
   return { kind, field: "" } as Block; // heading/paragraph/list/table/matrix
 }
 
@@ -154,6 +154,31 @@ export function LayoutEditor({
           <button type="button" className="btn btn--ghost" aria-label={`down-${pid}`} onClick={() => setRoot(moveAtPath(root, path, 1))}>↓</button>
           <button type="button" className="btn btn--ghost" aria-label={`remove-${pid}`} onClick={() => setRoot(removeAtPath(root, path))}>✕</button>
         </div>
+        {block.kind === "keyValue" ? (
+          <div className="ltree__kv">
+            {block.fields.map((fk, fi) => (
+              <div key={fi} className="lstyle__row">
+                <select aria-label={`kv-field-${pid}-${fi}`} value={fk}
+                  onChange={(e) => setRoot(updateAtPath(root, path, (b) => {
+                    const fields = [...(b as { fields: string[] }).fields];
+                    fields[fi] = e.target.value;
+                    return { ...b, fields } as Block;
+                  }))}>
+                  <option value="">— field —</option>
+                  {(typeSchema?.fields ?? []).filter((f) => f.type === "text" || f.type === "paragraph").map((f) => (
+                    <option key={f.key} value={f.key}>{f.label ?? f.key}</option>
+                  ))}
+                </select>
+                <button type="button" className="btn btn--ghost" aria-label={`kv-remove-${pid}-${fi}`}
+                  onClick={() => setRoot(updateAtPath(root, path, (b) => ({ ...b, fields: (b as { fields: string[] }).fields.filter((_, i) => i !== fi) }) as Block))}>✕</button>
+              </div>
+            ))}
+            <button type="button" className="btn btn--ghost" aria-label={`kv-add-${pid}`}
+              onClick={() => setRoot(updateAtPath(root, path, (b) => ({ ...b, fields: [...(b as { fields: string[] }).fields, ""] }) as Block))}>
+              + field
+            </button>
+          </div>
+        ) : null}
         {block.kind === "stack" ? (
           <ul className="ltree__children">{block.children.map((c, i) => renderRow(c, [...path, i]))}</ul>
         ) : block.kind === "columns" ? (
