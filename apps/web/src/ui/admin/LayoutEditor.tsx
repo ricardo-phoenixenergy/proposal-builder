@@ -92,7 +92,7 @@ export function LayoutEditor({
   };
   const slugOk = /^[a-z][a-z0-9_]*$/.test(variant.trim());
   const result = typeSchema ? validateLayout(layout, typeSchema) : { valid: false, errors: [] };
-  const canSave = !!name.trim() && slugOk && !busy;
+  const canSave = !!name.trim() && slugOk && result.valid && !busy;
 
   const selectedBlock = getAtPath(root, selected);
   const selStyle: BlockStyle = (selectedBlock && "style" in selectedBlock ? selectedBlock.style : undefined) ?? {};

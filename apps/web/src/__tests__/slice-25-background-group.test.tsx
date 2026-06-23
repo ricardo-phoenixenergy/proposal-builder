@@ -30,8 +30,10 @@ describe("LayoutEditor background group", () => {
     fireEvent.change(screen.getByLabelText("Layout name"), { target: { value: "Cover" } });
     fireEvent.change(screen.getByLabelText("Layout variant"), { target: { value: "cover" } });
 
-    // add a block so the root stack has content + select the ROOT to edit its background
+    // add a block so the root stack has content; bind it so the layout validates
+    // (Save stays gated by validateLayout), then select the ROOT to edit its background
     fireEvent.click(screen.getByRole("button", { name: /add heading/i }));
+    fireEvent.change(screen.getByLabelText("bind-0"), { target: { value: "title" } });
     fireEvent.click(screen.getByLabelText("select-root"));
 
     fireEvent.change(screen.getByLabelText("bg-image-field"), { target: { value: "cover_image" } });
