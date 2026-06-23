@@ -4,7 +4,7 @@ import { useMemo, useState, type ReactNode } from "react";
 import {
   getSectionType, validateLayout, LEAF_KINDS, sampleDataForType,
   TOKEN_COLORS, TOKEN_FONTS, SIZE_SCALES, SPACE_SCALES, ALIGNS, WEIGHTS,
-  type Block, type BlockStyle, type BlockBackground, type ImageRef, type FieldType, type SectionLayout,
+  type Block, type BlockStyle, type BlockBackground, type FieldType, type SectionLayout,
 } from "@proposal/shared";
 import { ThemeProvider } from "../../theme/ThemeProvider";
 import { defaultTheme } from "../../theme/defaultTheme";
@@ -320,8 +320,16 @@ export function LayoutEditor({
                     value={selectedBlock.background?.image && "field" in selectedBlock.background.image ? selectedBlock.background.image.field : ""}
                     onChange={(e) => {
                       const field = e.target.value;
-                      const image: ImageRef | undefined = field ? { field } : undefined;
-                      setRoot(patchBackground(root, selected, image ? { image } : {}));
+                      if (field) {
+                        setRoot(patchBackground(root, selected, { image: { field } }));
+                      } else {
+                        // "— none —": drop the image key entirely (don't leave a stale binding)
+                        setRoot(updateAtPath(root, selected, (b) => {
+                          if ((b.kind !== "stack" && b.kind !== "columns") || !b.background) return b;
+                          const { image: _drop, ...restBg } = b.background;
+                          return { ...b, background: restBg } as Block;
+                        }));
+                      }
                     }}>
                     <option value="">— none —</option>
                     {(typeSchema?.fields ?? []).filter((f) => f.type === "image").map((f) => (
