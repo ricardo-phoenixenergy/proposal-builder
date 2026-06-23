@@ -72,3 +72,6 @@ export {
   pageCss,
   type PageFormat,
 } from "./render/page";
+
+// Layout render
+export { compileBlockStyle, spaceToken } from "./render/layoutStyle";
