@@ -1,7 +1,7 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 import { isSelectableModel, type GenerationModelId, type ProposalDocument, type Template, type ThemeTokens } from "@proposal/shared";
 import { getDb } from "../db/client";
-import { appSettings, proposalVersions, proposals, folders, sectionTypeRows, templates, themes, users } from "../db/schema";
+import { appSettings, proposalVersions, proposals, folders, sectionLayoutRows, sectionTypeRows, templates, themes, users } from "../db/schema";
 import type { Folder, ProposalSummary, Repository, SectionTypeRow, StoredProposal, UserSummary } from "./types";
 import { DuplicateEmailError } from "./types";
 
@@ -310,6 +310,28 @@ export function createPostgresRepo(): Repository {
         .insert(appSettings)
         .values({ key: AI_MODEL_KEY, value: model })
         .onConflictDoUpdate({ target: appSettings.key, set: { value: model, updatedAt: new Date() } });
+    },
+
+    async listSectionLayouts() {
+      const rows = await db.select().from(sectionLayoutRows);
+      return rows.map((r) => r.layout);
+    },
+    async upsertSectionLayout(layout) {
+      const id = `${layout.type}:${layout.variant}:${layout.pageFormat}`;
+      const [row] = await db
+        .insert(sectionLayoutRows)
+        .values({ id, type: layout.type, variant: layout.variant, pageFormat: layout.pageFormat, name: layout.name, layout })
+        .onConflictDoUpdate({
+          target: sectionLayoutRows.id,
+          set: { name: layout.name, layout, updatedAt: new Date() },
+        })
+        .returning();
+      return row!.layout;
+    },
+    async deleteSectionLayout(type, variant, pageFormat) {
+      const id = `${type}:${variant}:${pageFormat}`;
+      const deleted = await db.delete(sectionLayoutRows).where(eq(sectionLayoutRows.id, id)).returning();
+      return deleted.length > 0;
     },
   };
 }

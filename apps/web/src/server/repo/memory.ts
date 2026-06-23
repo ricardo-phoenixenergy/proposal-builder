@@ -42,6 +42,8 @@ export function createMemoryRepo(): Repository {
   const sectionTypeRows = new Map<string, SectionTypeRow>();
   const folders = new Map<string, Folder>(); // keyed by folder id
   let aiModel: GenerationModelId | null = null;
+  const sectionLayoutRows = new Map<string, import("@proposal/shared").SectionLayout>();
+  const layoutKey = (type: string, variant: string, pageFormat: string) => `${type}:${variant}:${pageFormat}`;
 
   return {
     async listProposals(ownerId) {
@@ -305,6 +307,17 @@ export function createMemoryRepo(): Repository {
 
     async setAiModel(model) {
       aiModel = model;
+    },
+
+    async listSectionLayouts() {
+      return [...sectionLayoutRows.values()].map(clone);
+    },
+    async upsertSectionLayout(layout) {
+      sectionLayoutRows.set(layoutKey(layout.type, layout.variant, layout.pageFormat), clone(layout));
+      return clone(layout);
+    },
+    async deleteSectionLayout(type, variant, pageFormat) {
+      return sectionLayoutRows.delete(layoutKey(type, variant, pageFormat));
     },
   };
 }

@@ -130,4 +130,9 @@ export interface Repository {
   /** App-wide AI model setting (admin-configured, §10). null when unset. */
   getAiModel(): Promise<GenerationModelId | null>;
   setAiModel(model: GenerationModelId): Promise<void>;
+
+  /** Authored section layouts (§D). Global; identity = (type, variant, pageFormat). */
+  listSectionLayouts(): Promise<import("@proposal/shared").SectionLayout[]>;
+  upsertSectionLayout(layout: import("@proposal/shared").SectionLayout): Promise<import("@proposal/shared").SectionLayout>;
+  deleteSectionLayout(type: string, variant: string, pageFormat: string): Promise<boolean>;
 }
