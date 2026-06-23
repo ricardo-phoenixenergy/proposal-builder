@@ -3,7 +3,8 @@
 import { useMemo, useState, type ReactNode } from "react";
 import {
   getSectionType, validateLayout, LEAF_KINDS, sampleDataForType,
-  type Block, type FieldType, type SectionLayout,
+  TOKEN_COLORS, TOKEN_FONTS, SIZE_SCALES, SPACE_SCALES, ALIGNS, WEIGHTS,
+  type Block, type BlockStyle, type BlockBackground, type ImageRef, type FieldType, type SectionLayout,
 } from "@proposal/shared";
 import { ThemeProvider } from "../../theme/ThemeProvider";
 import { defaultTheme } from "../../theme/defaultTheme";
@@ -22,18 +23,40 @@ const BINDING: Partial<Record<string, FieldType[]>> = {
   matrix: ["matrix"],
 };
 const STATIC_KINDS = ["callout", "text"];
-// keyValue is excluded from 5a (it needs the multi-field editor that lands in 5b).
 const PALETTE: { kind: string; label: string }[] = [
   { kind: "stack", label: "Stack" },
-  ...LEAF_KINDS.filter((k) => k !== "keyValue").map((k) => ({ kind: k, label: k })),
+  { kind: "columns", label: "Columns" },
+  ...LEAF_KINDS.map((k) => ({ kind: k, label: k })),
 ];
+
+/** Set one BlockStyle prop (or clear it when value is "") on the block at `path`. */
+function setStyleProp(root: Block, path: number[], prop: keyof BlockStyle, value: string): Block {
+  return updateAtPath(root, path, (b) => {
+    const style: BlockStyle = { ...(("style" in b ? b.style : undefined) ?? {}) };
+    if (value === "") delete style[prop];
+    else (style as Record<string, string>)[prop] = value;
+    return { ...b, style } as Block;
+  });
+}
+
+/** Merge a partial BlockBackground into the container at `path` (creates it if absent). */
+function patchBackground(root: Block, path: number[], patch: Partial<BlockBackground>): Block {
+  return updateAtPath(root, path, (b) => {
+    if (b.kind !== "stack" && b.kind !== "columns") return b;
+    const bg: BlockBackground = { ...(b.background ?? {}), ...patch };
+    return { ...b, background: bg } as Block;
+  });
+}
 
 /** A default block for a palette kind. */
 function blankBlock(kind: string): Block {
   if (kind === "stack") return { kind: "stack", children: [] };
+  if (kind === "columns")
+    return { kind: "columns", columns: [[{ kind: "stack", children: [] }], [{ kind: "stack", children: [] }]] } as Block;
   if (kind === "chart") return { kind: "chart", field: "", chart: "bar" } as Block;
   if (STATIC_KINDS.includes(kind)) return { kind, text: "" } as Block;
   if (kind === "logo" || kind === "divider") return { kind } as Block;
+  if (kind === "keyValue") return { kind: "keyValue", fields: [] } as Block;
   return { kind, field: "" } as Block; // heading/paragraph/list/table/matrix
 }
 
@@ -70,6 +93,9 @@ export function LayoutEditor({
   const slugOk = /^[a-z][a-z0-9_]*$/.test(variant.trim());
   const result = typeSchema ? validateLayout(layout, typeSchema) : { valid: false, errors: [] };
   const canSave = !!name.trim() && slugOk && result.valid && !busy;
+
+  const selectedBlock = getAtPath(root, selected);
+  const selStyle: BlockStyle = (selectedBlock && "style" in selectedBlock ? selectedBlock.style : undefined) ?? {};
 
   const addBlock = (kind: string) => {
     const target = getAtPath(root, selected);
@@ -128,8 +154,49 @@ export function LayoutEditor({
           <button type="button" className="btn btn--ghost" aria-label={`down-${pid}`} onClick={() => setRoot(moveAtPath(root, path, 1))}>↓</button>
           <button type="button" className="btn btn--ghost" aria-label={`remove-${pid}`} onClick={() => setRoot(removeAtPath(root, path))}>✕</button>
         </div>
+        {block.kind === "keyValue" ? (
+          <div className="ltree__kv">
+            {block.fields.map((fk, fi) => (
+              <div key={fi} className="lstyle__row">
+                <select aria-label={`kv-field-${pid}-${fi}`} value={fk}
+                  onChange={(e) => setRoot(updateAtPath(root, path, (b) => {
+                    const fields = [...(b as { fields: string[] }).fields];
+                    fields[fi] = e.target.value;
+                    return { ...b, fields } as Block;
+                  }))}>
+                  <option value="">— field —</option>
+                  {(typeSchema?.fields ?? []).filter((f) => f.type === "text" || f.type === "paragraph").map((f) => (
+                    <option key={f.key} value={f.key}>{f.label ?? f.key}</option>
+                  ))}
+                </select>
+                <button type="button" className="btn btn--ghost" aria-label={`kv-remove-${pid}-${fi}`}
+                  onClick={() => setRoot(updateAtPath(root, path, (b) => ({ ...b, fields: (b as { fields: string[] }).fields.filter((_, i) => i !== fi) }) as Block))}>✕</button>
+              </div>
+            ))}
+            <button type="button" className="btn btn--ghost" aria-label={`kv-add-${pid}`}
+              onClick={() => setRoot(updateAtPath(root, path, (b) => ({ ...b, fields: [...(b as { fields: string[] }).fields, ""] }) as Block))}>
+              + field
+            </button>
+          </div>
+        ) : null}
         {block.kind === "stack" ? (
           <ul className="ltree__children">{block.children.map((c, i) => renderRow(c, [...path, i]))}</ul>
+        ) : block.kind === "columns" ? (
+          <div className="ltree__columns">
+            {block.columns.map((col, ci) => (
+              <div key={ci} className="ltree__column" data-column={ci}>
+                <div className="meter">col {ci + 1}</div>
+                <button type="button" className="btn btn--ghost" aria-label={`add-to-column-${path.join("-")}-${ci}-0`}
+                  onClick={() => setRoot(insertChild(root, [...path, ci, 0], blankBlock("heading")))}>
+                  + heading
+                </button>
+                {/* each column holds one nested stack at index 0 */}
+                <ul className="ltree__children">
+                  {(col[0] && col[0].kind === "stack" ? col[0].children : []).map((c, j) => renderRow(c, [...path, ci, 0, j]))}
+                </ul>
+              </div>
+            ))}
+          </div>
         ) : null}
       </li>
     );
@@ -162,8 +229,156 @@ export function LayoutEditor({
 
       <div className="field">
         <span className="field__label">Blocks</span>
+        <button type="button" className="btn btn--ghost" aria-label="select-root" onClick={() => setSelected([])}>
+          {selected.length === 0 ? "▸ " : ""}root ({root.kind})
+        </button>
         <ul className="ltree">{(root as { children: Block[] }).children.map((c, i) => renderRow(c, [i]))}</ul>
       </div>
+
+      {selectedBlock ? (
+        <div className="field">
+          <span className="field__label">Style · {selectedBlock.kind}</span>
+          <div className="lstyle">
+            <label className="lstyle__row">Font
+              <select aria-label="style-font" value={selStyle.font ?? ""} onChange={(e) => setRoot(setStyleProp(root, selected, "font", e.target.value))}>
+                <option value="">default</option>
+                {TOKEN_FONTS.map((f) => <option key={f} value={f}>{f}</option>)}
+              </select>
+            </label>
+            <label className="lstyle__row">Size
+              <select aria-label="style-size" value={selStyle.size ?? ""} onChange={(e) => setRoot(setStyleProp(root, selected, "size", e.target.value))}>
+                <option value="">default</option>
+                {SIZE_SCALES.map((s) => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </label>
+            <label className="lstyle__row">Weight
+              <select aria-label="style-weight" value={selStyle.weight ?? ""} onChange={(e) => setRoot(setStyleProp(root, selected, "weight", e.target.value))}>
+                <option value="">default</option>
+                {WEIGHTS.map((w) => <option key={w} value={w}>{w}</option>)}
+              </select>
+            </label>
+            <label className="lstyle__row">Align
+              <select aria-label="style-align" value={selStyle.align ?? ""} onChange={(e) => setRoot(setStyleProp(root, selected, "align", e.target.value))}>
+                <option value="">default</option>
+                {ALIGNS.map((a) => <option key={a} value={a}>{a}</option>)}
+              </select>
+            </label>
+            <label className="lstyle__row">Padding
+              <select aria-label="style-padding" value={selStyle.padding ?? ""} onChange={(e) => setRoot(setStyleProp(root, selected, "padding", e.target.value))}>
+                <option value="">default</option>
+                {SPACE_SCALES.map((s) => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </label>
+            <div className="lstyle__row">Color
+              <div className="lswatches">
+                <button type="button" aria-label="color-none" className="lswatch lswatch--none" onClick={() => setRoot(setStyleProp(root, selected, "color", ""))}>—</button>
+                {TOKEN_COLORS.map((c) => (
+                  <button key={c} type="button" aria-label={`color-${c}`} className="lswatch"
+                    style={{ background: defaultTheme.colors[c] }} onClick={() => setRoot(setStyleProp(root, selected, "color", c))} />
+                ))}
+              </div>
+            </div>
+            <div className="lstyle__row">Background
+              <div className="lswatches">
+                <button type="button" aria-label="bg-none" className="lswatch lswatch--none" onClick={() => setRoot(setStyleProp(root, selected, "background", ""))}>—</button>
+                {TOKEN_COLORS.map((c) => (
+                  <button key={c} type="button" aria-label={`bg-${c}`} className="lswatch"
+                    style={{ background: defaultTheme.colors[c] }} onClick={() => setRoot(setStyleProp(root, selected, "background", c))} />
+                ))}
+              </div>
+            </div>
+            {selectedBlock.kind === "stack" || selectedBlock.kind === "columns" ? (
+              <label className="lstyle__row">Gap
+                <select aria-label="style-gap" value={"gap" in selectedBlock ? selectedBlock.gap ?? "" : ""}
+                  onChange={(e) => setRoot(updateAtPath(root, selected, (b) => ({ ...b, gap: e.target.value || undefined }) as Block))}>
+                  <option value="">default</option>
+                  {SPACE_SCALES.map((s) => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </label>
+            ) : null}
+            {selectedBlock.kind === "columns" ? (
+              <label className="lstyle__row">Columns
+                <select aria-label="style-columns" value={selectedBlock.columns.length}
+                  onChange={(e) => {
+                    const n = Number(e.target.value);
+                    setRoot(updateAtPath(root, selected, (b) => {
+                      const cols = (b as { columns: Block[][] }).columns;
+                      const next = cols.slice(0, n);
+                      while (next.length < n) next.push([{ kind: "stack", children: [] }]);
+                      return { ...b, columns: next } as Block;
+                    }));
+                  }}>
+                  {[2, 3, 4].map((n) => <option key={n} value={n}>{n}</option>)}
+                </select>
+              </label>
+            ) : null}
+            {selectedBlock.kind === "stack" || selectedBlock.kind === "columns" ? (
+              <fieldset className="lbg">
+                <legend className="field__label">Background</legend>
+                <label className="lstyle__row">Bind image field
+                  <select aria-label="bg-image-field"
+                    value={selectedBlock.background?.image && "field" in selectedBlock.background.image ? selectedBlock.background.image.field : ""}
+                    onChange={(e) => {
+                      const field = e.target.value;
+                      const image: ImageRef | undefined = field ? { field } : undefined;
+                      setRoot(patchBackground(root, selected, image ? { image } : {}));
+                    }}>
+                    <option value="">— none —</option>
+                    {(typeSchema?.fields ?? []).filter((f) => f.type === "image").map((f) => (
+                      <option key={f.key} value={f.key}>{f.label ?? f.key}</option>
+                    ))}
+                  </select>
+                </label>
+                <label className="lstyle__row">Overlay color
+                  <select aria-label="bg-overlay-color"
+                    value={selectedBlock.background?.overlay?.color ?? ""}
+                    onChange={(e) => {
+                      const color = e.target.value;
+                      const prev = selectedBlock.background?.overlay;
+                      setRoot(patchBackground(root, selected, { overlay: color ? { color: color as (typeof TOKEN_COLORS)[number], opacity: prev?.opacity ?? 50 } : undefined } as Partial<BlockBackground>));
+                    }}>
+                    <option value="">— none —</option>
+                    {TOKEN_COLORS.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </label>
+                <label className="lstyle__row">Overlay opacity
+                  <input aria-label="bg-overlay-opacity" type="number" min={0} max={100}
+                    value={selectedBlock.background?.overlay?.opacity ?? 0}
+                    onChange={(e) => {
+                      const opacity = Math.max(0, Math.min(100, Number(e.target.value) || 0));
+                      const color = selectedBlock.background?.overlay?.color ?? "text";
+                      setRoot(patchBackground(root, selected, { overlay: { color, opacity } }));
+                    }} />
+                </label>
+                <label className="lstyle__row">Position
+                  <select aria-label="bg-position" value={selectedBlock.background?.position ?? ""}
+                    onChange={(e) => setRoot(patchBackground(root, selected, { position: (e.target.value || undefined) as never }))}>
+                    <option value="">default</option>
+                    <option value="cover">cover</option>
+                    <option value="contain">contain</option>
+                  </select>
+                </label>
+                <label className="lstyle__row">Min height
+                  <select aria-label="bg-minheight" value={selectedBlock.background?.minHeight ?? ""}
+                    onChange={(e) => setRoot(patchBackground(root, selected, { minHeight: (e.target.value || undefined) as never }))}>
+                    <option value="">default</option>
+                    {SIZE_SCALES.map((s) => <option key={s} value={s}>{s}</option>)}
+                    <option value="page">page</option>
+                  </select>
+                </label>
+                <button type="button" className="btn btn--ghost" aria-label="bg-clear"
+                  onClick={() => setRoot(updateAtPath(root, selected, (b) => {
+                    if (b.kind !== "stack" && b.kind !== "columns") return b;
+                    const { background, ...rest } = b as Block & { background?: BlockBackground };
+                    return rest as Block;
+                  }))}>
+                  Clear background
+                </button>
+              </fieldset>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
 
       <div className="field">
         <span className="field__label">Preview ({type})</span>
