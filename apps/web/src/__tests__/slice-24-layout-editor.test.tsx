@@ -43,7 +43,8 @@ describe("LayoutEditor", () => {
     fireEvent.click(save);
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/section-layouts", expect.objectContaining({ method: "POST" })));
-    const body = JSON.parse((fetchMock.mock.calls[0]![1] as RequestInit).body as string) as {
+    const call = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    const body = JSON.parse(call[1].body as string) as {
       type: string; variant: string; pageFormat: string; name: string; root: { kind: string; children: { kind: string; field?: string }[] };
     };
     expect(body).toMatchObject({ type: "cover", variant: "classic", pageFormat: "a4_portrait", name: "Classic" });
