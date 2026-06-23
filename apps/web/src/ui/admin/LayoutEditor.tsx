@@ -3,7 +3,8 @@
 import { useMemo, useState, type ReactNode } from "react";
 import {
   getSectionType, validateLayout, LEAF_KINDS, sampleDataForType,
-  type Block, type FieldType, type SectionLayout,
+  TOKEN_COLORS, TOKEN_FONTS, SIZE_SCALES, SPACE_SCALES, ALIGNS, WEIGHTS,
+  type Block, type BlockStyle, type FieldType, type SectionLayout,
 } from "@proposal/shared";
 import { ThemeProvider } from "../../theme/ThemeProvider";
 import { defaultTheme } from "../../theme/defaultTheme";
@@ -27,6 +28,16 @@ const PALETTE: { kind: string; label: string }[] = [
   { kind: "stack", label: "Stack" },
   ...LEAF_KINDS.filter((k) => k !== "keyValue").map((k) => ({ kind: k, label: k })),
 ];
+
+/** Set one BlockStyle prop (or clear it when value is "") on the block at `path`. */
+function setStyleProp(root: Block, path: number[], prop: keyof BlockStyle, value: string): Block {
+  return updateAtPath(root, path, (b) => {
+    const style: BlockStyle = { ...(("style" in b ? b.style : undefined) ?? {}) };
+    if (value === "") delete style[prop];
+    else (style as Record<string, string>)[prop] = value;
+    return { ...b, style } as Block;
+  });
+}
 
 /** A default block for a palette kind. */
 function blankBlock(kind: string): Block {
@@ -70,6 +81,9 @@ export function LayoutEditor({
   const slugOk = /^[a-z][a-z0-9_]*$/.test(variant.trim());
   const result = typeSchema ? validateLayout(layout, typeSchema) : { valid: false, errors: [] };
   const canSave = !!name.trim() && slugOk && result.valid && !busy;
+
+  const selectedBlock = getAtPath(root, selected);
+  const selStyle: BlockStyle = (selectedBlock && "style" in selectedBlock ? selectedBlock.style : undefined) ?? {};
 
   const addBlock = (kind: string) => {
     const target = getAtPath(root, selected);
@@ -164,6 +178,71 @@ export function LayoutEditor({
         <span className="field__label">Blocks</span>
         <ul className="ltree">{(root as { children: Block[] }).children.map((c, i) => renderRow(c, [i]))}</ul>
       </div>
+
+      {selectedBlock ? (
+        <div className="field">
+          <span className="field__label">Style · {selectedBlock.kind}</span>
+          <div className="lstyle">
+            <label className="lstyle__row">Font
+              <select aria-label="style-font" value={selStyle.font ?? ""} onChange={(e) => setRoot(setStyleProp(root, selected, "font", e.target.value))}>
+                <option value="">default</option>
+                {TOKEN_FONTS.map((f) => <option key={f} value={f}>{f}</option>)}
+              </select>
+            </label>
+            <label className="lstyle__row">Size
+              <select aria-label="style-size" value={selStyle.size ?? ""} onChange={(e) => setRoot(setStyleProp(root, selected, "size", e.target.value))}>
+                <option value="">default</option>
+                {SIZE_SCALES.map((s) => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </label>
+            <label className="lstyle__row">Weight
+              <select aria-label="style-weight" value={selStyle.weight ?? ""} onChange={(e) => setRoot(setStyleProp(root, selected, "weight", e.target.value))}>
+                <option value="">default</option>
+                {WEIGHTS.map((w) => <option key={w} value={w}>{w}</option>)}
+              </select>
+            </label>
+            <label className="lstyle__row">Align
+              <select aria-label="style-align" value={selStyle.align ?? ""} onChange={(e) => setRoot(setStyleProp(root, selected, "align", e.target.value))}>
+                <option value="">default</option>
+                {ALIGNS.map((a) => <option key={a} value={a}>{a}</option>)}
+              </select>
+            </label>
+            <label className="lstyle__row">Padding
+              <select aria-label="style-padding" value={selStyle.padding ?? ""} onChange={(e) => setRoot(setStyleProp(root, selected, "padding", e.target.value))}>
+                <option value="">default</option>
+                {SPACE_SCALES.map((s) => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </label>
+            <div className="lstyle__row">Color
+              <div className="lswatches">
+                <button type="button" aria-label="color-none" className="lswatch lswatch--none" onClick={() => setRoot(setStyleProp(root, selected, "color", ""))}>—</button>
+                {TOKEN_COLORS.map((c) => (
+                  <button key={c} type="button" aria-label={`color-${c}`} className="lswatch"
+                    style={{ background: defaultTheme.colors[c] }} onClick={() => setRoot(setStyleProp(root, selected, "color", c))} />
+                ))}
+              </div>
+            </div>
+            <div className="lstyle__row">Background
+              <div className="lswatches">
+                <button type="button" aria-label="bg-none" className="lswatch lswatch--none" onClick={() => setRoot(setStyleProp(root, selected, "background", ""))}>—</button>
+                {TOKEN_COLORS.map((c) => (
+                  <button key={c} type="button" aria-label={`bg-${c}`} className="lswatch"
+                    style={{ background: defaultTheme.colors[c] }} onClick={() => setRoot(setStyleProp(root, selected, "background", c))} />
+                ))}
+              </div>
+            </div>
+            {selectedBlock.kind === "stack" || selectedBlock.kind === "columns" ? (
+              <label className="lstyle__row">Gap
+                <select aria-label="style-gap" value={"gap" in selectedBlock ? selectedBlock.gap ?? "" : ""}
+                  onChange={(e) => setRoot(updateAtPath(root, selected, (b) => ({ ...b, gap: e.target.value || undefined }) as Block))}>
+                  <option value="">default</option>
+                  {SPACE_SCALES.map((s) => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </label>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
 
       <div className="field">
         <span className="field__label">Preview ({type})</span>
