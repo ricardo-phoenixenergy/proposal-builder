@@ -11,7 +11,7 @@ import {
   PAGE_FORMATS,
   variantRangeWarnings,
 } from "@proposal/shared";
-import { resolveSection } from "../registry/componentRegistry";
+import { availableVariants, resolveSection } from "../registry/componentRegistry";
 import { useProposalStore } from "../state/proposalStore";
 import { requestFieldGeneration, requestSectionGeneration } from "../client/generate";
 import { themes } from "../theme/themes";
@@ -67,7 +67,7 @@ export function Inspector() {
   const slot = selectedIndex >= 0 ? template.slots[selectedIndex] : undefined;
   const choiceSlot = slot?.kind === "choice" ? slot : undefined;
   const typeSchema = selected ? getSectionType(selected.type) : undefined;
-  const variants = typeSchema?.variants ?? [];
+  const variants = selected ? availableVariants(selected.type, document.pageFormat) : [];
   const rangeWarnings = selected ? variantRangeWarnings(selected) : [];
   const isUnstyled = selected ? resolveSection(selected).unstyled : false;
   const hasAiFields = (typeSchema?.fields ?? []).some((f) => fieldKind(f) === "ai");
@@ -382,7 +382,7 @@ export function Inspector() {
           {!structureLocked && variants.length > 0 ? (
             <div className="field">
               <span className="field__label">Variant</span>
-              <select value={selected.variant ?? typeSchema.defaultVariant ?? ""} onChange={(e) => setVariant(selected.id, e.target.value)}>
+              <select aria-label="Variant" value={selected.variant ?? typeSchema.defaultVariant ?? ""} onChange={(e) => setVariant(selected.id, e.target.value)}>
                 {variants.map((v) => (
                   <option key={v} value={v}>
                     {v}
