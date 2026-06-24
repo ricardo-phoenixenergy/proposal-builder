@@ -20,13 +20,11 @@ export async function POST(request: Request): Promise<Response> {
     | null;
   // Back-compat: accept either a bare document or { document, folderId }.
   const document =
-    (body && "document" in (body as object)
+    (body && "document" in body
       ? (body as { document?: ProposalDocument }).document
       : (body as ProposalDocument)) ?? null;
   const folderId =
-    body && "folderId" in (body as object)
-      ? ((body as { folderId?: string | null }).folderId ?? null)
-      : null;
+    body && "folderId" in body ? ((body as { folderId?: string | null }).folderId ?? null) : null;
   if (!document || typeof document !== "object" || !Array.isArray(document.sections)) {
     return NextResponse.json({ error: "Expected a ProposalDocument" }, { status: 400 });
   }

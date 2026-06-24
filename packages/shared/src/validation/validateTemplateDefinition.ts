@@ -67,7 +67,7 @@ export function validateTemplateDefinition(
               .filter((f) => f.type === "text" || f.type === "paragraph")
               .map((f) => f.key),
           );
-          for (const k of Object.keys(data as Record<string, unknown>)) {
+          for (const k of Object.keys(data)) {
             if (!textKeys.has(k))
               push(`/slots/${i}/data/${k}`, `"${k}" is not a text field on ${String(type)}`);
           }

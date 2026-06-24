@@ -98,7 +98,7 @@ export function Inspector() {
   const rewriteField = async (key: string) => {
     if (!selected) return;
     setBusy(true);
-    const current = typeof selected.data[key] === "string" ? (selected.data[key] as string) : "";
+    const current = typeof selected.data[key] === "string" ? selected.data[key] : "";
     const result = await requestFieldGeneration({
       type: selected.type,
       fieldKey: key,
@@ -322,7 +322,7 @@ export function Inspector() {
                 type="button"
                 className="btn btn--primary"
                 disabled={busy}
-                onClick={rewriteSection}
+                onClick={() => void rewriteSection()}
               >
                 {busy ? "Working…" : "Rewrite section with AI"}
               </button>
@@ -397,7 +397,7 @@ export function Inspector() {
                   ? (raw as string[]).join("\n")
                   : ""
                 : typeof raw === "string"
-                  ? (raw as string)
+                  ? raw
                   : "";
               const onChange = (v: string) =>
                 setField(field.key, isList ? v.split("\n").filter((x) => x.length > 0) : v);
@@ -438,7 +438,7 @@ export function Inspector() {
                         type="button"
                         className="btn btn--ghost"
                         disabled={busy}
-                        onClick={() => rewriteField(field.key)}
+                        onClick={() => void rewriteField(field.key)}
                       >
                         Rewrite field
                       </button>

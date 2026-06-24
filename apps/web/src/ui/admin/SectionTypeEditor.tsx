@@ -223,7 +223,7 @@ export function SectionTypeEditor({
                 aria-label={`Field ${lim.placeholder}`}
                 type="number"
                 value={f[lim.key]}
-                onChange={(e) => patch(i, { [lim.key]: e.target.value } as Partial<DraftField>)}
+                onChange={(e) => patch(i, { [lim.key]: e.target.value })}
                 placeholder={lim.placeholder}
               />
             ))}

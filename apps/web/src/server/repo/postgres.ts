@@ -1,11 +1,5 @@
 import { and, desc, eq, sql } from "drizzle-orm";
-import {
-  isSelectableModel,
-  type GenerationModelId,
-  type ProposalDocument,
-  type Template,
-  type ThemeTokens,
-} from "@proposal/shared";
+import { isSelectableModel, type ThemeTokens } from "@proposal/shared";
 import { getDb } from "../db/client";
 import {
   appSettings,
@@ -453,7 +447,7 @@ export function createPostgresRepo(): Repository {
 
     async getAiModel() {
       const [row] = await db.select().from(appSettings).where(eq(appSettings.key, AI_MODEL_KEY));
-      return row && isSelectableModel(row.value) ? (row.value as GenerationModelId) : null;
+      return row && isSelectableModel(row.value) ? row.value : null;
     },
 
     async setAiModel(model) {

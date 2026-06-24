@@ -57,7 +57,7 @@ export async function PATCH(request: Request, { params }: Ctx): Promise<Response
       const owns = (await getRepo().listFolders(owned.ownerId)).some((f) => f.id === fid);
       if (!owns) return NextResponse.json({ error: "Unknown folder" }, { status: 400 });
     }
-    patch.folderId = fid as string | null;
+    patch.folderId = fid;
   }
   if (patch.title === undefined && patch.folderId === undefined) {
     return NextResponse.json({ error: "Nothing to update" }, { status: 400 });

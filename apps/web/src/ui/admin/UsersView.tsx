@@ -73,7 +73,7 @@ export function UsersView({ currentUserId }: { currentUserId: string }) {
         <h2>Users</h2>
       </div>
 
-      <form className="userform" onSubmit={onCreate}>
+      <form className="userform" onSubmit={(e) => void onCreate(e)}>
         <input
           aria-label="Email"
           type="email"

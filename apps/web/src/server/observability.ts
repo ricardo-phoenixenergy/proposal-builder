@@ -7,6 +7,5 @@ export function logAiCall(event: {
   latencyMs: number;
   ok: boolean;
 }): void {
-  // eslint-disable-next-line no-console
   console.info(JSON.stringify({ kind: "ai_call", ...event }));
 }

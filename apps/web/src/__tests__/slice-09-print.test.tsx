@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, render, waitFor, within } from "@testing-library/react";
 import { sampleProposal } from "@proposal/shared";
 import { PrintDocument } from "../print/PrintDocument";
 import { defaultTheme } from "../theme/defaultTheme";

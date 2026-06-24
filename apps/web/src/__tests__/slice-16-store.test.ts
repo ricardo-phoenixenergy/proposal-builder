@@ -3,8 +3,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { useProposalStore } from "../state/proposalStore";
 
 beforeEach(() => {
-  const s = useProposalStore.getState();
-  s.applyTemplate; // ensure store is created
+  void useProposalStore.getState(); // ensure store is created
   useProposalStore.setState({
     document: {
       id: "p1",

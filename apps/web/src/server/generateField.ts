@@ -72,7 +72,7 @@ export async function generateField(
     ) {
       return { ok: false, error: "Model output missing a value" };
     }
-    value = (parsed as { value: unknown }).value;
+    value = parsed.value;
   } catch {
     return { ok: false, error: "Model output was not valid JSON" };
   }

@@ -33,7 +33,7 @@ export function Dashboard({
   const [folders, setFolders] = useState(initialFolders);
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<Sort>("recent");
-  const [selectedFolderId, setSelectedFolderId] = useState<"all" | null | string>("all");
+  const [selectedFolderId, setSelectedFolderId] = useState<string | null>("all");
   const [showNew, setShowNew] = useState(false);
 
   const refresh = async () => {

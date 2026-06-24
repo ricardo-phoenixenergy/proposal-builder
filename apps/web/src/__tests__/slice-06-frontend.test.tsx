@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ProposalDocument, Section } from "@proposal/shared";
 import { Inspector } from "../ui/Inspector";
 import { useProposalStore } from "../state/proposalStore";

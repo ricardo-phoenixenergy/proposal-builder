@@ -45,7 +45,7 @@ export function SettingsPanel({ initialModel }: { initialModel: GenerationModelI
           type="button"
           className="btn btn--primary"
           disabled={status === "saving"}
-          onClick={save}
+          onClick={() => void save()}
         >
           {status === "saving" ? "Saving…" : "Save"}
         </button>

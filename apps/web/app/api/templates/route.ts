@@ -34,7 +34,7 @@ export async function POST(request: Request): Promise<Response> {
     return NextResponse.json({ error: `A template "${id}" already exists` }, { status: 409 });
   }
 
-  const row = await getRepo().upsertTemplate({ id, template: def as Template, deprecated: false });
+  const row = await getRepo().upsertTemplate({ id, template: def, deprecated: false });
   invalidateActiveTemplates();
   return NextResponse.json({ template: row.template }, { status: 201 });
 }

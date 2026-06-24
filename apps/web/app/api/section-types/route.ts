@@ -36,7 +36,7 @@ export async function POST(request: Request): Promise<Response> {
 
   const row = await getRepo().upsertSectionType({
     type,
-    definition: def as SectionTypeSchema,
+    definition: def,
     deprecated: false,
   });
   invalidateActiveRegistry();

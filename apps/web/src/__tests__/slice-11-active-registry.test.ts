@@ -43,7 +43,7 @@ describe("server active-registry hydration", () => {
   });
 
   it("caches until invalidated", async () => {
-    const first = await getMergedSectionTypes();
+    const _first = await getMergedSectionTypes();
     await getRepo().upsertSectionType({ type: "case_study", definition: def, deprecated: false });
     expect((await getMergedSectionTypes()).some((t) => t.type === "case_study")).toBe(false); // cached
     invalidateActiveRegistry();

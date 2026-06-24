@@ -4,7 +4,7 @@ import type { Folder } from "../../client/folders";
 import { createFolder, renameFolder, deleteFolder } from "../../client/folders";
 import { useProposalStore } from "../../state/proposalStore";
 
-type Selected = "all" | null | string;
+type Selected = string | null;
 
 export function FolderSidebar({
   folders,
@@ -69,7 +69,7 @@ export function FolderSidebar({
             className="dash__folderedit"
             aria-label="Rename folder"
             title={`Rename ${f.name}`}
-            onClick={() => rename(f)}
+            onClick={() => void rename(f)}
           >
             ✎
           </button>
@@ -78,7 +78,7 @@ export function FolderSidebar({
             className="dash__folderdel"
             aria-label="Delete folder"
             title={`Delete ${f.name}`}
-            onClick={() => remove(f)}
+            onClick={() => void remove(f)}
           >
             🗑
           </button>
@@ -87,7 +87,7 @@ export function FolderSidebar({
       <button type="button" className={cls(null)} onClick={() => onSelect(null)}>
         Unfiled <span className="dash__count">{counts.unfiled}</span>
       </button>
-      <button type="button" className="btn dash__addfolder" onClick={add}>
+      <button type="button" className="btn dash__addfolder" onClick={() => void add()}>
         + New folder
       </button>
     </nav>

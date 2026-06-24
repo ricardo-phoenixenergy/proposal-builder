@@ -1,5 +1,5 @@
 import { isSelectableModel, type GenerationModelId } from "@proposal/shared";
-import type { ProposalDocument, ThemeTokens } from "@proposal/shared";
+import type { ThemeTokens } from "@proposal/shared";
 import type {
   Folder,
   ProposalSummary,

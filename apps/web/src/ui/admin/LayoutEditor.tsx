@@ -47,7 +47,7 @@ function setStyleProp(root: Block, path: number[], prop: keyof BlockStyle, value
     const style: BlockStyle = { ...(("style" in b ? b.style : undefined) ?? {}) };
     if (value === "") delete style[prop];
     else (style as Record<string, string>)[prop] = value;
-    return { ...b, style } as Block;
+    return { ...b, style };
   });
 }
 
@@ -56,7 +56,7 @@ function patchBackground(root: Block, path: number[], patch: Partial<BlockBackgr
   return updateAtPath(root, path, (b) => {
     if (b.kind !== "stack" && b.kind !== "columns") return b;
     const bg: BlockBackground = { ...(b.background ?? {}), ...patch };
-    return { ...b, background: bg } as Block;
+    return { ...b, background: bg };
   });
 }
 
@@ -67,11 +67,11 @@ function blankBlock(kind: string): Block {
     return {
       kind: "columns",
       columns: [[{ kind: "stack", children: [] }], [{ kind: "stack", children: [] }]],
-    } as Block;
-  if (kind === "chart") return { kind: "chart", field: "", chart: "bar" } as Block;
+    };
+  if (kind === "chart") return { kind: "chart", field: "", chart: "bar" };
   if (STATIC_KINDS.includes(kind)) return { kind, text: "" } as Block;
-  if (kind === "logo" || kind === "divider") return { kind } as Block;
-  if (kind === "keyValue") return { kind: "keyValue", fields: [] } as Block;
+  if (kind === "logo" || kind === "divider") return { kind };
+  if (kind === "keyValue") return { kind: "keyValue", fields: [] };
   return { kind, field: "" } as Block; // heading/paragraph/list/table/matrix
 }
 
@@ -566,7 +566,7 @@ export function LayoutEditor({
                             if ((b.kind !== "stack" && b.kind !== "columns") || !b.background)
                               return b;
                             const { image: _drop, ...restBg } = b.background;
-                            return { ...b, background: restBg } as Block;
+                            return { ...b, background: restBg };
                           }),
                         );
                       }
@@ -673,10 +673,10 @@ export function LayoutEditor({
                     setRoot(
                       updateAtPath(root, selected, (b) => {
                         if (b.kind !== "stack" && b.kind !== "columns") return b;
-                        const { background, ...rest } = b as Block & {
+                        const { background: _background, ...rest } = b as Block & {
                           background?: BlockBackground;
                         };
-                        return rest as Block;
+                        return rest;
                       }),
                     )
                   }
