@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   getSectionType,
   isStructureLocked,
@@ -25,6 +25,14 @@ export function Outline() {
   const removeSection = useProposalStore((s) => s.removeSection);
   const moveSection = useProposalStore((s) => s.moveSection);
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
+  const navRef = useRef<HTMLElement>(null);
+
+  // Focus the active outline-item whenever selectedId changes (roving focus).
+  useEffect(() => {
+    if (!navRef.current) return;
+    const active = navRef.current.querySelector<HTMLElement>(".outline-item[aria-pressed='true']");
+    active?.focus();
+  }, [selectedId]);
 
   const types = listSectionTypes();
 
@@ -47,8 +55,24 @@ export function Outline() {
       </select>
     ) : null;
 
+  function handleKeyDown(e: React.KeyboardEvent<HTMLElement>) {
+    if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+    const t = e.target as HTMLElement;
+    if (t.tagName === "SELECT" || t.tagName === "INPUT" || t.tagName === "TEXTAREA") return;
+    e.preventDefault();
+    const cur = sections.findIndex((s) => s.id === selectedId);
+    let next: number;
+    if (e.key === "ArrowDown") {
+      next = cur < 0 ? 0 : Math.min(cur + 1, sections.length - 1);
+    } else {
+      next = cur < 0 ? sections.length - 1 : Math.max(cur - 1, 0);
+    }
+    const target = sections[next];
+    if (target) selectSection(target.id);
+  }
+
   return (
-    <nav aria-label="Outline" className="pane pane--rail">
+    <nav ref={navRef} aria-label="Outline" className="pane pane--rail" onKeyDown={handleKeyDown}>
       <div className="pane__heading">
         Outline
         {locked ? (
@@ -68,6 +92,7 @@ export function Outline() {
                 type="button"
                 className="outline-item"
                 aria-pressed={section.id === selectedId}
+                tabIndex={section.id === selectedId ? 0 : -1}
                 onClick={() => selectSection(section.id)}
               >
                 <span className="outline-item__title">{label}</span>
