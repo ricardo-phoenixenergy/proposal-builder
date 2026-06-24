@@ -15,6 +15,7 @@ describe("0008 index migration", () => {
     const sql = readFileSync(join(dir, file!), "utf8").toLowerCase();
     for (const idx of [
       "proposals_owner_id_idx",
+      "proposals_folder_id_idx",
       "folders_owner_id_idx",
       "themes_owner_id_idx",
       "proposal_versions_proposal_id_idx",
