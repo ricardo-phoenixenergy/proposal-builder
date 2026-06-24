@@ -22,6 +22,7 @@ import { ColumnMapping } from "./ColumnMapping";
 import { MatrixEditor } from "./MatrixEditor";
 import { AssetUpload } from "./AssetUpload";
 import { ImageField } from "./ImageField";
+import { BriefPane } from "./inspector/BriefPane";
 
 type Tab = "tokens" | "code";
 
@@ -40,7 +41,6 @@ export function Inspector() {
   const setSectionType = useProposalStore((s) => s.setSectionType);
   const applyTemplateAction = useProposalStore((s) => s.applyTemplate);
   const templates = useProposalStore((s) => s.templates);
-  const setBrief = useProposalStore((s) => s.setBrief);
   const notify = useProposalStore((s) => s.notify);
 
   const setPageBreakBefore = useProposalStore((s) => s.setPageBreakBefore);
@@ -257,19 +257,7 @@ export function Inspector() {
         ) : null}
       </div>
 
-      {/* Proposal brief: global generation context */}
-      <div className="group">
-        <div className="group__title">Proposal brief</div>
-        <div className="field">
-          <textarea
-            aria-label="brief"
-            rows={3}
-            value={brief}
-            onChange={(e) => setBrief(e.target.value)}
-            placeholder="What's this proposal about? (sent as context on every AI call)"
-          />
-        </div>
-      </div>
+      <BriefPane />
 
       {selected && typeSchema ? (
         <div className="group">
