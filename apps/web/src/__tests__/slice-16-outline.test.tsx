@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { useProposalStore } from "../state/proposalStore";
 import { Outline } from "../ui/Outline";
 
@@ -20,24 +20,24 @@ beforeEach(() => {
     templates: useProposalStore.getState().templates,
   });
 });
-afterEach(() => {
-  cleanup();
-  vi.restoreAllMocks();
-});
+afterEach(cleanup);
 
 describe("Outline add/delete", () => {
-  it("deletes a section after confirm", () => {
-    vi.spyOn(window, "confirm").mockReturnValue(true);
+  it("deletes a section after confirming via modal", () => {
     render(<Outline />);
     const delButtons = screen.getAllByRole("button", { name: /delete section/i });
     fireEvent.click(delButtons[0]!);
+    // dialog should appear
+    const dialog = screen.getByRole("dialog");
+    fireEvent.click(within(dialog).getByRole("button", { name: /delete/i }));
     expect(useProposalStore.getState().document.sections.map((s) => s.id)).toEqual(["b"]);
   });
 
-  it("does not delete when confirm is cancelled", () => {
-    vi.spyOn(window, "confirm").mockReturnValue(false);
+  it("does not delete when the modal is cancelled", () => {
     render(<Outline />);
     fireEvent.click(screen.getAllByRole("button", { name: /delete section/i })[0]!);
+    const dialog = screen.getByRole("dialog");
+    fireEvent.click(within(dialog).getByRole("button", { name: /cancel/i }));
     expect(useProposalStore.getState().document.sections).toHaveLength(2);
   });
 

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   getSectionType,
   isStructureLocked,
@@ -6,6 +7,7 @@ import {
 } from "@proposal/shared";
 import { resolveSection } from "../registry/componentRegistry";
 import { useProposalStore } from "../state/proposalStore";
+import { ConfirmDialog } from "./ConfirmDialog";
 
 /**
  * Left pane: the section list with per-section status. On unlocked (Free Editor)
@@ -22,6 +24,7 @@ export function Outline() {
   const insertSection = useProposalStore((s) => s.insertSection);
   const removeSection = useProposalStore((s) => s.removeSection);
   const moveSection = useProposalStore((s) => s.moveSection);
+  const [pendingDelete, setPendingDelete] = useState<string | null>(null);
 
   const types = listSectionTypes();
 
@@ -109,10 +112,7 @@ export function Outline() {
                     className="outline-item__delete"
                     aria-label="Delete section"
                     title="Delete section"
-                    onClick={() => {
-                      if (window.confirm("Delete this section? This cannot be undone."))
-                        removeSection(section.id);
-                    }}
+                    onClick={() => setPendingDelete(section.id)}
                   >
                     ✕
                   </button>
@@ -123,6 +123,15 @@ export function Outline() {
           );
         })}
       </div>
+      {pendingDelete ? (
+        <ConfirmDialog
+          title="Delete section"
+          message="Delete this section? This cannot be undone."
+          confirmLabel="Delete"
+          onConfirm={() => removeSection(pendingDelete)}
+          onClose={() => setPendingDelete(null)}
+        />
+      ) : null}
     </nav>
   );
 }

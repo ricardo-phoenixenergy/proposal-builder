@@ -1,8 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import type { Folder } from "../../client/folders";
 import { createFolder, renameFolder, deleteFolder } from "../../client/folders";
 import { useProposalStore } from "../../state/proposalStore";
+import { ConfirmDialog } from "../ConfirmDialog";
+import { PromptDialog } from "../PromptDialog";
 
 type Selected = string | null;
 
@@ -20,37 +23,9 @@ export function FolderSidebar({
   onChange: () => void | Promise<void>;
 }) {
   const notify = useProposalStore((s) => s.notify);
-
-  const add = async () => {
-    const name = window.prompt("New folder name");
-    if (name === null || name.trim() === "") return;
-    try {
-      await createFolder(name.trim());
-      await onChange();
-    } catch {
-      notify("error", "Couldn't create the folder.");
-    }
-  };
-  const rename = async (f: Folder) => {
-    const name = window.prompt("Rename folder", f.name);
-    if (name === null || name.trim() === "") return;
-    try {
-      await renameFolder(f.id, name.trim());
-      await onChange();
-    } catch {
-      notify("error", "Couldn't rename the folder.");
-    }
-  };
-  const remove = async (f: Folder) => {
-    if (!window.confirm(`Delete folder "${f.name}"? Its proposals move to Unfiled.`)) return;
-    try {
-      await deleteFolder(f.id);
-      if (selected === f.id) onSelect("all");
-      await onChange();
-    } catch {
-      notify("error", "Couldn't delete the folder.");
-    }
-  };
+  const [pendingCreate, setPendingCreate] = useState(false);
+  const [pendingRename, setPendingRename] = useState<Folder | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<Folder | null>(null);
 
   const cls = (s: Selected) => `dash__folder${selected === s ? " dash__folder--active" : ""}`;
 
@@ -69,7 +44,7 @@ export function FolderSidebar({
             className="dash__folderedit"
             aria-label="Rename folder"
             title={`Rename ${f.name}`}
-            onClick={() => void rename(f)}
+            onClick={() => setPendingRename(f)}
           >
             ✎
           </button>
@@ -78,7 +53,7 @@ export function FolderSidebar({
             className="dash__folderdel"
             aria-label="Delete folder"
             title={`Delete ${f.name}`}
-            onClick={() => void remove(f)}
+            onClick={() => setPendingDelete(f)}
           >
             🗑
           </button>
@@ -87,9 +62,65 @@ export function FolderSidebar({
       <button type="button" className={cls(null)} onClick={() => onSelect(null)}>
         Unfiled <span className="dash__count">{counts.unfiled}</span>
       </button>
-      <button type="button" className="btn dash__addfolder" onClick={() => void add()}>
+      <button type="button" className="btn dash__addfolder" onClick={() => setPendingCreate(true)}>
         + New folder
       </button>
+      {pendingCreate ? (
+        <PromptDialog
+          title="New folder"
+          label="Folder name"
+          confirmLabel="Create"
+          onConfirm={(name) => {
+            void (async () => {
+              try {
+                await createFolder(name);
+                await onChange();
+              } catch {
+                notify("error", "Couldn't create the folder.");
+              }
+            })();
+          }}
+          onClose={() => setPendingCreate(false)}
+        />
+      ) : null}
+      {pendingRename ? (
+        <PromptDialog
+          title="Rename folder"
+          label="Folder name"
+          defaultValue={pendingRename.name}
+          confirmLabel="Rename"
+          onConfirm={(name) => {
+            void (async () => {
+              try {
+                await renameFolder(pendingRename.id, name);
+                await onChange();
+              } catch {
+                notify("error", "Couldn't rename the folder.");
+              }
+            })();
+          }}
+          onClose={() => setPendingRename(null)}
+        />
+      ) : null}
+      {pendingDelete ? (
+        <ConfirmDialog
+          title="Delete folder"
+          message={`Delete folder "${pendingDelete.name}"? Its proposals move to Unfiled.`}
+          confirmLabel="Delete"
+          onConfirm={() => {
+            void (async () => {
+              try {
+                await deleteFolder(pendingDelete.id);
+                if (selected === pendingDelete.id) onSelect("all");
+                await onChange();
+              } catch {
+                notify("error", "Couldn't delete the folder.");
+              }
+            })();
+          }}
+          onClose={() => setPendingDelete(null)}
+        />
+      ) : null}
     </nav>
   );
 }

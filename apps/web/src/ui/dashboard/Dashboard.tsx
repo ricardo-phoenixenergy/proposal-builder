@@ -16,6 +16,8 @@ import { FolderSidebar } from "./FolderSidebar";
 import { ProposalGrid } from "./ProposalGrid";
 import { NewProposalDialog } from "./NewProposalDialog";
 import { SignOutButton } from "../SignOutButton";
+import { ConfirmDialog } from "../ConfirmDialog";
+import { PromptDialog } from "../PromptDialog";
 
 type Sort = "recent" | "title";
 
@@ -35,6 +37,8 @@ export function Dashboard({
   const [sort, setSort] = useState<Sort>("recent");
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>("all");
   const [showNew, setShowNew] = useState(false);
+  const [pendingRename, setPendingRename] = useState<{ id: string; current: string } | null>(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   const refresh = async () => {
     try {
@@ -99,15 +103,8 @@ export function Dashboard({
         notify("error", "Duplicate failed.");
       }
     },
-    onRename: async (id: string, current: string) => {
-      const title = window.prompt("Rename proposal", current);
-      if (title === null || title.trim() === "") return;
-      try {
-        await updateProposalMeta(id, { title: title.trim() });
-        await refresh();
-      } catch {
-        notify("error", "Rename failed.");
-      }
+    onRename: (id: string, current: string) => {
+      setPendingRename({ id, current });
     },
     onMove: async (id: string, folderId: string | null) => {
       try {
@@ -117,14 +114,8 @@ export function Dashboard({
         notify("error", "Move failed.");
       }
     },
-    onDelete: async (id: string) => {
-      if (!window.confirm("Delete this proposal? This can't be undone.")) return;
-      try {
-        await deleteProposal(id);
-        setProposals((prev) => prev.filter((p) => p.id !== id));
-      } catch {
-        notify("error", "Delete failed.");
-      }
+    onDelete: (id: string) => {
+      setPendingDeleteId(id);
     },
   };
 
@@ -180,6 +171,43 @@ export function Dashboard({
         </main>
       </div>
       {showNew ? <NewProposalDialog folders={folders} onClose={() => setShowNew(false)} /> : null}
+      {pendingRename ? (
+        <PromptDialog
+          title="Rename proposal"
+          label="Title"
+          defaultValue={pendingRename.current}
+          confirmLabel="Rename"
+          onConfirm={(title) => {
+            void (async () => {
+              try {
+                await updateProposalMeta(pendingRename.id, { title });
+                await refresh();
+              } catch {
+                notify("error", "Rename failed.");
+              }
+            })();
+          }}
+          onClose={() => setPendingRename(null)}
+        />
+      ) : null}
+      {pendingDeleteId ? (
+        <ConfirmDialog
+          title="Delete proposal"
+          message="Delete this proposal? This can't be undone."
+          confirmLabel="Delete"
+          onConfirm={() => {
+            void (async () => {
+              try {
+                await deleteProposal(pendingDeleteId);
+                setProposals((prev) => prev.filter((p) => p.id !== pendingDeleteId));
+              } catch {
+                notify("error", "Delete failed.");
+              }
+            })();
+          }}
+          onClose={() => setPendingDeleteId(null)}
+        />
+      ) : null}
     </div>
   );
 }
