@@ -69,6 +69,7 @@ export {
   fieldKind,
   type FieldKind,
 } from "./generation/generationSchema";
+export { estimateMaxOutputTokens } from "./generation/maxTokens";
 
 // Sample content
 export { sampleProposal } from "./samples/sample-proposal";
