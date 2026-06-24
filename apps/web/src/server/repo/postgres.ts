@@ -1,4 +1,4 @@
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
 import { isSelectableModel, type ThemeTokens } from "@proposal/shared";
 import { getDb } from "../db/client";
 import {
@@ -35,6 +35,7 @@ function toStored(row: ProposalRow): StoredProposal {
     folderId: row.folderId ?? null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
+    deletedAt: row.deletedAt?.toISOString() ?? null,
   };
 }
 
@@ -61,7 +62,10 @@ export function createPostgresRepo(): Repository {
 
   return {
     async listProposals(ownerId) {
-      const rows = await db.select().from(proposals).where(eq(proposals.ownerId, ownerId));
+      const rows = await db
+        .select()
+        .from(proposals)
+        .where(and(eq(proposals.ownerId, ownerId), isNull(proposals.deletedAt)));
       return rows.map(toProposalSummary);
     },
 
@@ -94,7 +98,9 @@ export function createPostgresRepo(): Repository {
       const [src] = await db
         .select()
         .from(proposals)
-        .where(and(eq(proposals.id, id), eq(proposals.ownerId, ownerId)));
+        .where(
+          and(eq(proposals.id, id), eq(proposals.ownerId, ownerId), isNull(proposals.deletedAt)),
+        );
       if (!src) return null;
       const newId = uid("prop");
       const [row] = await db
@@ -124,6 +130,34 @@ export function createPostgresRepo(): Repository {
     },
 
     async deleteProposal(id) {
+      // Soft-delete: move to trash. No-op (false) if unknown or already trashed.
+      const updated = await db
+        .update(proposals)
+        .set({ deletedAt: new Date() })
+        .where(and(eq(proposals.id, id), isNull(proposals.deletedAt)))
+        .returning({ id: proposals.id });
+      return updated.length > 0;
+    },
+
+    async listTrashedProposals(ownerId) {
+      const rows = await db
+        .select()
+        .from(proposals)
+        .where(and(eq(proposals.ownerId, ownerId), isNotNull(proposals.deletedAt)))
+        .orderBy(desc(proposals.deletedAt));
+      return rows.map(toProposalSummary);
+    },
+
+    async restoreProposal(id) {
+      const updated = await db
+        .update(proposals)
+        .set({ deletedAt: null })
+        .where(and(eq(proposals.id, id), isNotNull(proposals.deletedAt)))
+        .returning({ id: proposals.id });
+      return updated.length > 0;
+    },
+
+    async purgeProposal(id) {
       await db.delete(proposalVersions).where(eq(proposalVersions.proposalId, id));
       const deleted = await db.delete(proposals).where(eq(proposals.id, id)).returning();
       return deleted.length > 0;

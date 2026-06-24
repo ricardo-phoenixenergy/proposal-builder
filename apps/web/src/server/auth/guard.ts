@@ -27,7 +27,22 @@ export async function requireOwnedProposal(id: string): Promise<StoredProposal |
   const owner = await getOwner();
   if (!owner) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const stored = await getRepo().getProposal(id);
-  if (!stored || stored.ownerId !== owner)
+  // A trashed proposal is invisible to the normal edit/read surface (404, not 403):
+  // it's reachable only via the restore/purge routes.
+  if (!stored || stored.ownerId !== owner || stored.deletedAt !== null)
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  return stored;
+}
+
+/**
+ * Load a TRASHED proposal owned by the signed-in user (for restore/purge), or a
+ * Response: 401 unauthenticated, 404 when missing, not owned, or not in the trash.
+ */
+export async function requireTrashedProposal(id: string): Promise<StoredProposal | Response> {
+  const owner = await getOwner();
+  if (!owner) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const stored = await getRepo().getProposal(id);
+  if (!stored || stored.ownerId !== owner || stored.deletedAt === null)
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   return stored;
 }

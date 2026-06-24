@@ -3,11 +3,18 @@ import type { ProposalDocument } from "@proposal/shared";
 import { getRepo } from "../../../src/server/repo";
 import { getOwner } from "../../../src/server/auth/owner";
 
-/** GET /api/proposals — list summaries. POST — create from a document body (§10.2). */
-export async function GET(): Promise<Response> {
+/**
+ * GET /api/proposals — list active summaries; `?trash=1` lists the soft-deleted
+ * trash instead (4a). POST — create from a document body (§10.2).
+ */
+export async function GET(request?: Request): Promise<Response> {
   const owner = await getOwner();
   if (!owner) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const proposals = await getRepo().listProposals(owner);
+  const trash = request ? new URL(request.url).searchParams.get("trash") === "1" : false;
+  const repo = getRepo();
+  const proposals = trash
+    ? await repo.listTrashedProposals(owner)
+    : await repo.listProposals(owner);
   return NextResponse.json({ proposals });
 }
 
