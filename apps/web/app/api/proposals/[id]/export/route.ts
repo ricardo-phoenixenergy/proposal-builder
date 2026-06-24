@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { openTemplate, validateForExport } from "@proposal/shared";
+import { openTemplate, validateForExport, getPageFormat } from "@proposal/shared";
 import { getRepo } from "../../../../../src/server/repo";
 import { renderUrlToPdf } from "../../../../../src/server/pdf/renderProposalPdf";
 import { requireOwnedProposal } from "../../../../../src/server/auth/guard";
@@ -36,7 +36,8 @@ export async function POST(request: Request, { params }: Ctx): Promise<Response>
   // Chromium loads /print with no user session — authorise it with a short-lived signed token.
   const origin = new URL(request.url).origin;
   const token = mintRenderToken(id);
-  const pdf = await renderUrlToPdf(`${origin}/print/${id}?t=${encodeURIComponent(token)}`);
+  const fmt = getPageFormat(stored.document.pageFormat);
+  const pdf = await renderUrlToPdf(`${origin}/print/${id}?t=${encodeURIComponent(token)}`, fmt);
 
   return new Response(pdf as BodyInit, {
     status: 200,

@@ -46,7 +46,7 @@ describe("POST /api/proposals/[id]/export — the export gate + render (§9)", (
 
     expect(res.status).toBe(200);
     expect(res.headers.get("content-type")).toBe("application/pdf");
-    expect(renderUrlToPdf).toHaveBeenCalledWith(expect.stringContaining(`/print/${created.id}`));
+    expect(renderUrlToPdf).toHaveBeenCalledWith(expect.stringContaining(`/print/${created.id}`), expect.objectContaining({ widthMm: expect.any(Number) }));
 
     const versions = await getRepo().listVersions(created.id);
     expect(versions).toHaveLength(1); // export snapshot captured (§7.3)
