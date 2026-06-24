@@ -76,6 +76,7 @@ export function createMemoryRepo(): Repository {
         ...existing,
         document,
         folderId: patch.folderId !== undefined ? patch.folderId : existing.folderId,
+        updatedAt: now(),
       };
       proposals.set(id, updated);
       return toProposalSummary(updated);
