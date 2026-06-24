@@ -5,6 +5,9 @@ import { requireOwner } from "../../../../src/server/auth/guard";
 import { getActiveModel } from "../../../../src/server/aiModel";
 import { checkRateLimit } from "../../../../src/server/rateLimit";
 
+/** Max sections generated in parallel — bounds concurrent Anthropic calls (M-3). */
+const CONCURRENCY = 5;
+
 /**
  * POST /api/generate/proposal — stream a full draft (§10.1, §13.6). Generates
  * text-category sections one at a time and emits one SSE `section` event per
@@ -58,15 +61,32 @@ export async function POST(request: Request): Promise<Response> {
         controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`));
 
       const model = await getActiveModel();
-      for (let i = 0; i < textTypes.length; i++) {
+
+      const runTask = async (i: number): Promise<void> => {
         const type = textTypes[i]!;
-        const result = await generateSection(
-          { type, brief, model, sectionId: `gen_${i}` },
-          anthropicCreateMessage,
-        );
-        if (result.ok) send("section", { type, data: result.data, validation: result.validation });
-        else send("error", { type, error: result.error });
-      }
+        try {
+          const result = await generateSection(
+            { type, brief, model, sectionId: `gen_${i}` },
+            anthropicCreateMessage,
+          );
+          if (result.ok)
+            send("section", { type, data: result.data, validation: result.validation });
+          else send("error", { type, error: result.error });
+        } catch (e) {
+          send("error", { type, error: e instanceof Error ? e.message : "Generation failed" });
+        }
+      };
+
+      // M-3: sections are independent, so generate them concurrently instead of
+      // serially. A small worker pool caps in-flight Anthropic calls (protecting
+      // against rate-limit bursts on large templates); each section's SSE event
+      // is emitted the moment that section settles, so copy still streams in.
+      let next = 0;
+      const worker = async (): Promise<void> => {
+        while (next < textTypes.length) await runTask(next++);
+      };
+      await Promise.all(Array.from({ length: Math.min(CONCURRENCY, textTypes.length) }, worker));
+
       send("done", { count: textTypes.length });
       controller.close();
     },
