@@ -1,6 +1,7 @@
 import {
   DEFAULT_MODEL,
   buildFieldGenerationSchema,
+  estimateMaxOutputTokens,
   getSectionType,
   isSelectableModel,
   validateSection,
@@ -48,6 +49,7 @@ export async function generateField(
       system: systemPrompt(),
       user: fieldRewritePrompt(field, input.brief, input.instruction ?? "", input.currentValue ?? ""),
       schema,
+      maxOutputTokens: estimateMaxOutputTokens(typeSchema),
     });
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Generation failed" };

@@ -1,6 +1,7 @@
 import {
   DEFAULT_MODEL,
   buildTextFieldsGenerationSchema,
+  estimateMaxOutputTokens,
   getSectionType,
   isSelectableModel,
   validateSection,
@@ -18,6 +19,7 @@ export type CreateMessageFn = (args: {
   system: string;
   user: string;
   schema: Record<string, unknown>;
+  maxOutputTokens: number;
 }) => Promise<string>;
 
 export interface GenerateSectionInput {
@@ -69,6 +71,7 @@ export async function generateSection(
           ? sectionRewritePrompt(typeSchema, input.brief, input.instruction)
           : sectionUserPrompt(typeSchema, input.brief),
       schema: dataSchema,
+      maxOutputTokens: estimateMaxOutputTokens(typeSchema),
     });
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Generation failed" };

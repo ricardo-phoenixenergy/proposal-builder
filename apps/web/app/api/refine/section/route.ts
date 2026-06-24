@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { generateSection } from "../../../../src/server/generateSection";
 import { anthropicCreateMessage } from "../../../../src/server/anthropic";
 import { requireOwner } from "../../../../src/server/auth/guard";
+import { getActiveModel } from "../../../../src/server/aiModel";
 
 /**
  * POST /api/refine/section — revise existing copy per an instruction (§10.1).
@@ -21,13 +22,14 @@ export async function POST(request: Request): Promise<Response> {
     return NextResponse.json({ error: "Expected { type, instruction, data }" }, { status: 400 });
   }
 
-  const { type, instruction, data, model, sectionId } = body as {
+  const { type, instruction, data, sectionId } = body as {
     type: string;
     instruction: string;
     data?: unknown;
-    model?: string;
     sectionId?: string;
   };
+
+  const model = await getActiveModel();
 
   const brief = [
     "Revise the existing section copy according to the instruction.",
@@ -40,7 +42,7 @@ export async function POST(request: Request): Promise<Response> {
   ].join("\n");
 
   const result = await generateSection(
-    { type, brief, ...(model !== undefined ? { model } : {}), ...(sectionId !== undefined ? { sectionId } : {}) },
+    { type, brief, model, ...(sectionId !== undefined ? { sectionId } : {}) },
     anthropicCreateMessage,
   );
   if (!result.ok) return NextResponse.json({ error: result.error }, { status: 422 });
