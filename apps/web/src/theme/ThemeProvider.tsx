@@ -21,13 +21,7 @@ export function themeToCssVars(theme: ThemeTokens): CSSProperties {
   } as CSSProperties;
 }
 
-export function ThemeProvider({
-  theme,
-  children,
-}: {
-  theme: ThemeTokens;
-  children: ReactNode;
-}) {
+export function ThemeProvider({ theme, children }: { theme: ThemeTokens; children: ReactNode }) {
   return (
     <div data-theme={theme.id} style={themeToCssVars(theme)}>
       {children}

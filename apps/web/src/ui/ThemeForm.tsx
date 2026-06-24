@@ -34,11 +34,19 @@ export function ThemeForm() {
 
       <div className="field">
         <span className="field__label">heading font</span>
-        <input aria-label="font-heading" value={theme.fonts.heading} onChange={(e) => setFont("heading", e.target.value)} />
+        <input
+          aria-label="font-heading"
+          value={theme.fonts.heading}
+          onChange={(e) => setFont("heading", e.target.value)}
+        />
       </div>
       <div className="field">
         <span className="field__label">body font</span>
-        <input aria-label="font-body" value={theme.fonts.body} onChange={(e) => setFont("body", e.target.value)} />
+        <input
+          aria-label="font-body"
+          value={theme.fonts.body}
+          onChange={(e) => setFont("body", e.target.value)}
+        />
       </div>
 
       <div className="field field--row">

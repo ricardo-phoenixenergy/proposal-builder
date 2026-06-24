@@ -24,7 +24,8 @@ import { POST as exportPdf } from "../../app/api/proposals/[id]/export/route";
 import type { Template } from "@proposal/shared";
 
 const ctx = (id: string) => ({ params: Promise.resolve({ id }) });
-const req = (id: string) => new Request(`http://localhost/api/proposals/${id}/export`, { method: "POST" });
+const req = (id: string) =>
+  new Request(`http://localhost/api/proposals/${id}/export`, { method: "POST" });
 
 const authored = {
   id: "tmpl_fixed_x",

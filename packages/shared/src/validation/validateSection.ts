@@ -62,8 +62,7 @@ function appLayerErrors(
       value.options.forEach((option, i) => {
         const keys = Object.keys(option.values);
         const mismatched =
-          keys.length !== value.metrics.length ||
-          keys.some((k) => !metricSet.has(k));
+          keys.length !== value.metrics.length || keys.some((k) => !metricSet.has(k));
         if (mismatched) {
           errors.push({
             path: `${basePath}/data/${field.key}/options/${i}/values`,
@@ -91,7 +90,10 @@ function isMatrix(value: unknown): value is MatrixLike {
     v["metrics"].every((m) => typeof m === "string") &&
     Array.isArray(v["options"]) &&
     v["options"].every(
-      (o) => typeof o === "object" && o !== null && typeof (o as { values?: unknown }).values === "object",
+      (o) =>
+        typeof o === "object" &&
+        o !== null &&
+        typeof (o as { values?: unknown }).values === "object",
     )
   );
 }

@@ -29,7 +29,10 @@ export async function POST(request: Request): Promise<Response> {
     sectionId?: string;
   };
 
-  const limitError = checkGenerationInput({ brief, ...(instruction !== undefined ? { instruction } : {}) });
+  const limitError = checkGenerationInput({
+    brief,
+    ...(instruction !== undefined ? { instruction } : {}),
+  });
   if (limitError) return NextResponse.json({ error: limitError }, { status: 400 });
 
   const model = await getActiveModel();

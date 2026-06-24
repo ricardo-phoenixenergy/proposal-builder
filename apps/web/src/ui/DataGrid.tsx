@@ -87,7 +87,12 @@ export function DataGrid({ sectionId }: { sectionId: string }) {
                     </td>
                   ))}
                   <td>
-                    <button type="button" className="btn btn--ghost" aria-label={`remove-row-${i}`} onClick={() => removeRow(i)}>
+                    <button
+                      type="button"
+                      className="btn btn--ghost"
+                      aria-label={`remove-row-${i}`}
+                      onClick={() => removeRow(i)}
+                    >
                       ✕
                     </button>
                   </td>

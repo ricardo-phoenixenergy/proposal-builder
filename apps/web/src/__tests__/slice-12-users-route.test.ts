@@ -6,7 +6,11 @@ import { setSessionUserResolverForTests } from "../server/auth/sessionUser";
 import { GET, POST } from "../../app/api/users/route";
 
 const post = (body: unknown) =>
-  new Request("http://x/api/users", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+  new Request("http://x/api/users", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
 
 let admin = true;
 beforeEach(() => {

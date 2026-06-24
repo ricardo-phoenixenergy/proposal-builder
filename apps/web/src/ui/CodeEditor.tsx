@@ -27,7 +27,12 @@ const configureJsonSchema: BeforeMount = (monaco) => {
   });
 };
 
-const ConfiguredEditor: EditorLike = ({ defaultValue, value, language, onChange }: EditorLikeProps) => (
+const ConfiguredEditor: EditorLike = ({
+  defaultValue,
+  value,
+  language,
+  onChange,
+}: EditorLikeProps) => (
   <MonacoEditor
     height="100%"
     defaultLanguage={language ?? "json"}

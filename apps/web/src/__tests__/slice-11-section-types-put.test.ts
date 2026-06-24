@@ -9,13 +9,20 @@ import { invalidateActiveRegistry } from "../server/registry/activeRegistry";
 import { PUT } from "../../app/api/section-types/[type]/route";
 
 const def: SectionTypeSchema = {
-  type: "case_study", label: "Case study", category: "text",
+  type: "case_study",
+  label: "Case study",
+  category: "text",
   fields: [{ key: "body", type: "paragraph", label: "Body", required: true }],
-  variants: [], schemaVersion: 1,
+  variants: [],
+  schemaVersion: 1,
 };
 const ctx = (type: string) => ({ params: Promise.resolve({ type }) });
 const put = (body: unknown) =>
-  new Request("http://x", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+  new Request("http://x", {
+    method: "PUT",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
 
 beforeEach(() => {
   setRepoForTests(createMemoryRepo());

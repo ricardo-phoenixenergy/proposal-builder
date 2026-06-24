@@ -7,7 +7,11 @@ import type { ProposalDocument } from "@proposal/shared";
 afterEach(() => cleanup());
 
 const base: ProposalDocument = {
-  id: "p1", title: "T", client: { name: "C" }, themeId: "theme_phoenix_default", templateId: "open",
+  id: "p1",
+  title: "T",
+  client: { name: "C" },
+  themeId: "theme_phoenix_default",
+  templateId: "open",
   sections: [
     { id: "a", type: "text", data: { heading: "A", body: "Body A" } },
     { id: "b", type: "text", data: { heading: "B", body: "Body B" } },

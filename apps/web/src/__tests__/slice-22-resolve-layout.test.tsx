@@ -6,8 +6,12 @@ import type { Section, SectionLayout } from "@proposal/shared";
 import { defaultTheme } from "../theme/defaultTheme";
 
 const authored: SectionLayout = {
-  type: "text", variant: "standard", pageFormat: "widescreen_16_9", name: "Slide",
-  root: { kind: "stack", children: [{ kind: "heading", field: "heading" }] }, version: 1,
+  type: "text",
+  variant: "standard",
+  pageFormat: "widescreen_16_9",
+  name: "Slide",
+  root: { kind: "stack", children: [{ kind: "heading", field: "heading" }] },
+  version: 1,
 };
 
 afterEach(() => {
@@ -16,11 +20,20 @@ afterEach(() => {
 });
 
 describe("format-aware resolveSection", () => {
-  const section: Section = { id: "s1", type: "text", variant: "standard", data: { heading: "Hello" } };
+  const section: Section = {
+    id: "s1",
+    type: "text",
+    variant: "standard",
+    data: { heading: "Hello" },
+  };
 
   it("prefers an authored layout for the document format over the code component", () => {
     setActiveLayouts([authored]);
-    const { Component, unstyled, variant } = resolveSection(section, defaultRegistry, "widescreen_16_9");
+    const { Component, unstyled, variant } = resolveSection(
+      section,
+      defaultRegistry,
+      "widescreen_16_9",
+    );
     expect(unstyled).toBe(false);
     expect(variant).toBe("standard");
     const { container } = render(<Component data={section.data} theme={defaultTheme} />);

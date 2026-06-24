@@ -1,0 +1,204 @@
+=== commits ===
+0e920f7 feat(repo): proposal summary client+folderId, updateProposalMeta, duplicateProposal (memory)
+
+=== stat ===
+ .../src/__tests__/slice-14-proposals-repo.test.ts  | 40 ++++++++++++++++++++
+ apps/web/src/server/repo/memory.ts                 | 43 ++++++++++++++++++++--
+ apps/web/src/server/repo/types.ts                  |  7 +++-
+ 3 files changed, 85 insertions(+), 5 deletions(-)
+
+=== diff ===
+diff --git a/apps/web/src/__tests__/slice-14-proposals-repo.test.ts b/apps/web/src/__tests__/slice-14-proposals-repo.test.ts
+new file mode 100644
+index 0000000..36bed87
+--- /dev/null
++++ b/apps/web/src/__tests__/slice-14-proposals-repo.test.ts
+@@ -0,0 +1,40 @@
++// @vitest-environment node
++import { beforeEach, describe, expect, it } from "vitest";
++import { sampleProposal } from "@proposal/shared";
++import { createMemoryRepo } from "../server/repo/memory";
++import type { Repository } from "../server/repo/types";
++
++let repo: Repository;
++beforeEach(() => {
++  repo = createMemoryRepo();
++});
++
++describe("repo proposals — summary, folder, rename/move/duplicate", () => {
++  it("summary carries client + folderId", async () => {
++    const created = await repo.createProposal("owner_a", sampleProposal, "fld_1");
++    const [s] = await repo.listProposals("owner_a");
++    expect(s).toMatchObject({ id: created.id, title: sampleProposal.title, client: sampleProposal.client.name, folderId: "fld_1" });
++  });
++
++  it("createProposal defaults folderId to null", async () => {
++    const created = await repo.createProposal("owner_a", sampleProposal);
++    expect(created.folderId).toBeNull();
++  });
++
++  it("updateProposalMeta renames (title) and moves (folderId)", async () => {
++    const c = await repo.createProposal("owner_a", sampleProposal);
++    expect((await repo.updateProposalMeta(c.id, { title: "Renamed" }))?.title).toBe("Renamed");
++    expect((await repo.updateProposalMeta(c.id, { folderId: "fld_x" }))?.folderId).toBe("fld_x");
++    expect((await repo.getProposal(c.id))?.document.title).toBe("Renamed");
++    expect(await repo.updateProposalMeta("nope", { title: "x" })).toBeNull();
++  });
++
++  it("duplicateProposal clones as 'Copy of', keeps folder, new id, owner-scoped", async () => {
++    const c = await repo.createProposal("owner_a", sampleProposal, "fld_1");
++    const dup = await repo.duplicateProposal("owner_a", c.id);
++    expect(dup!.id).not.toBe(c.id);
++    expect(dup!.document.title).toBe(`Copy of ${sampleProposal.title}`);
++    expect(dup!.folderId).toBe("fld_1");
++    expect(await repo.duplicateProposal("owner_b", c.id)).toBeNull(); // not owner
++  });
++});
+diff --git a/apps/web/src/server/repo/memory.ts b/apps/web/src/server/repo/memory.ts
+index b7a889d..15342ae 100644
+--- a/apps/web/src/server/repo/memory.ts
++++ b/apps/web/src/server/repo/memory.ts
+@@ -15,50 +15,85 @@ import { DuplicateEmailError } from "./types";
+ const uid = (prefix: string) => `${prefix}_${crypto.randomUUID().slice(0, 8)}`;
+ const now = () => new Date().toISOString();
+ const clone = <T>(value: T): T => structuredClone(value);
+ const toSummary = (u: StoredUser): UserSummary => ({
+   id: u.id,
+   email: u.email,
+   isAdmin: u.isAdmin,
+   disabled: u.disabled,
+   createdAt: u.createdAt,
+ });
++const toProposalSummary = (p: StoredProposal): ProposalSummary => ({
++  id: p.id,
++  title: p.document.title,
++  client: p.document.client?.name ?? "",
++  folderId: p.folderId,
++  updatedAt: p.updatedAt,
++});
+ 
+ /** In-memory repository — used by tests and as the zero-config local-dev default. */
+ export function createMemoryRepo(): Repository {
+   const proposals = new Map<string, StoredProposal>();
+   const versions = new Map<string, ProposalVersion[]>();
+   const themes = new Map<string, StoredTheme>();
+   const templates = new Map<string, TemplateRow>(); // keyed by template id
+   const users = new Map<string, StoredUser>(); // keyed by lowercased email
+   const sectionTypeRows = new Map<string, SectionTypeRow>();
+ 
+   return {
+     async listProposals(ownerId) {
+-      return [...proposals.values()]
+-        .filter((p) => p.ownerId === ownerId)
+-        .map<ProposalSummary>((p) => ({ id: p.id, title: p.document.title, updatedAt: p.updatedAt }));
++      return [...proposals.values()].filter((p) => p.ownerId === ownerId).map(toProposalSummary);
+     },
+ 
+-    async createProposal(ownerId, document) {
++    async createProposal(ownerId, document, folderId = null) {
+       const id = uid("prop");
+       const stored: StoredProposal = {
+         id,
+         ownerId,
+         document: { ...clone(document), id },
++        folderId,
+         createdAt: now(),
+         updatedAt: now(),
+       };
+       proposals.set(id, stored);
+       return clone(stored);
+     },
+ 
++    async updateProposalMeta(id, patch) {
++      const existing = proposals.get(id);
++      if (!existing) return null;
++      const document = patch.title !== undefined ? { ...clone(existing.document), title: patch.title } : existing.document;
++      const updated: StoredProposal = {
++        ...existing,
++        document,
++        folderId: patch.folderId !== undefined ? patch.folderId : existing.folderId,
++      };
++      proposals.set(id, updated);
++      return toProposalSummary(updated);
++    },
++
++    async duplicateProposal(ownerId, id) {
++      const src = proposals.get(id);
++      if (!src || src.ownerId !== ownerId) return null;
++      const newId = uid("prop");
++      const stored: StoredProposal = {
++        id: newId,
++        ownerId,
++        document: { ...clone(src.document), id: newId, title: `Copy of ${src.document.title}` },
++        folderId: src.folderId,
++        createdAt: now(),
++        updatedAt: now(),
++      };
++      proposals.set(newId, stored);
++      return clone(stored);
++    },
++
+     async getProposal(id) {
+       const p = proposals.get(id);
+       return p ? clone(p) : null;
+     },
+ 
+     async saveProposal(id, document) {
+       const existing = proposals.get(id);
+       if (!existing) return null;
+       const updated: StoredProposal = {
+         ...existing,
+diff --git a/apps/web/src/server/repo/types.ts b/apps/web/src/server/repo/types.ts
+index 1cbd455..156d6a4 100644
+--- a/apps/web/src/server/repo/types.ts
++++ b/apps/web/src/server/repo/types.ts
+@@ -1,21 +1,24 @@
+ import type { ProposalDocument, Template, ThemeTokens } from "@proposal/shared";
+ 
+ export interface ProposalSummary {
+   id: string;
+   title: string;
++  client: string;
++  folderId: string | null;
+   updatedAt: string;
+ }
+ export interface StoredProposal {
+   id: string;
+   ownerId: string;
+   document: ProposalDocument;
++  folderId: string | null;
+   createdAt: string;
+   updatedAt: string;
+ }
+ export interface ProposalVersion {
+   id: string;
+   proposalId: string;
+   document: ProposalDocument;
+   createdAt: string;
+ }
+ export interface StoredTheme {
+@@ -62,21 +65,23 @@ export interface SectionTypeRow {
+   updatedAt: string;
+ }
+ 
+ /**
+  * Persistence boundary (§12). Two implementations: in-memory (tests + zero-config
+  * local dev) and Postgres/Drizzle (when DATABASE_URL is set). Route handlers
+  * depend on this interface, never on a concrete driver.
+  */
+ export interface Repository {
+   listProposals(ownerId: string): Promise<ProposalSummary[]>;
+-  createProposal(ownerId: string, document: ProposalDocument): Promise<StoredProposal>;
++  createProposal(ownerId: string, document: ProposalDocument, folderId?: string | null): Promise<StoredProposal>;
++  updateProposalMeta(id: string, patch: { title?: string; folderId?: string | null }): Promise<ProposalSummary | null>;
++  duplicateProposal(ownerId: string, id: string): Promise<StoredProposal | null>;
+   getProposal(id: string): Promise<StoredProposal | null>;
+   /** Autosave: replace the document, bump updatedAt. Returns null if unknown. */
+   saveProposal(id: string, document: ProposalDocument): Promise<StoredProposal | null>;
+   deleteProposal(id: string): Promise<boolean>;
+ 
+   listVersions(proposalId: string): Promise<ProposalVersion[]>;
+   /** Capture the proposal's current document as an immutable version (export snapshot). */
+   snapshotVersion(proposalId: string): Promise<ProposalVersion | null>;
+ 
+   listThemes(ownerId: string): Promise<StoredTheme[]>;

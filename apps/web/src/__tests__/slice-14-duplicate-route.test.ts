@@ -26,7 +26,7 @@ describe("POST /api/proposals/[id]/duplicate", () => {
     const { req, ctx } = call(c.id);
     const res = await POST(req, ctx);
     expect(res.status).toBe(201);
-    expect((await getRepo().listProposals("owner_a"))).toHaveLength(2);
+    expect(await getRepo().listProposals("owner_a")).toHaveLength(2);
   });
 
   it("404s another owner's proposal", async () => {

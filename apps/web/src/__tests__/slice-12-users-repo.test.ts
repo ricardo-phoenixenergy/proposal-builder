@@ -27,9 +27,9 @@ describe("repo user management", () => {
 
   it("rejects a duplicate email (case-insensitive)", async () => {
     await seed("Owner@X.test");
-    await expect(repo.createUser({ email: "owner@x.test", passwordHash: "h" })).rejects.toBeInstanceOf(
-      DuplicateEmailError,
-    );
+    await expect(
+      repo.createUser({ email: "owner@x.test", passwordHash: "h" }),
+    ).rejects.toBeInstanceOf(DuplicateEmailError);
   });
 
   it("toggles disabled and admin, returning a summary; null for unknown id", async () => {

@@ -47,7 +47,11 @@ function fieldLine(f: FieldSchema): string {
 }
 
 /** Section rewrite: redo ALL text fields from scratch using the section instruction + brief. */
-export function sectionRewritePrompt(typeSchema: SectionTypeSchema, brief: string, instruction: string): string {
+export function sectionRewritePrompt(
+  typeSchema: SectionTypeSchema,
+  brief: string,
+  instruction: string,
+): string {
   const fields = typeSchema.fields
     .filter((f) => f.type === "text" || f.type === "paragraph" || f.type === "list")
     .map(fieldLine)
@@ -67,14 +71,21 @@ export function sectionRewritePrompt(typeSchema: SectionTypeSchema, brief: strin
 }
 
 /** Per-field rewrite: redo a single field using its instruction + brief; current value is context. */
-export function fieldRewritePrompt(field: FieldSchema, brief: string, instruction: string, currentValue: string): string {
+export function fieldRewritePrompt(
+  field: FieldSchema,
+  brief: string,
+  instruction: string,
+  currentValue: string,
+): string {
   return [
     `Rewrite the "${field.label ?? field.key}" field of a client proposal section.`,
     "",
     "Brief:",
     brief,
     ...(instruction ? ["", "Instruction:", instruction] : []),
-    ...(currentValue ? ["", "Current value (for reference — rephrase/improve, don't merely echo):", currentValue] : []),
+    ...(currentValue
+      ? ["", "Current value (for reference — rephrase/improve, don't merely echo):", currentValue]
+      : []),
     "",
     `Return a JSON object { "value": … } with the new field content. ${fieldLine(field).slice(2)}.`,
   ].join("\n");

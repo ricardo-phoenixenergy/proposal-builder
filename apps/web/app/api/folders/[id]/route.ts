@@ -24,5 +24,7 @@ export async function DELETE(_request: Request, { params }: Ctx): Promise<Respon
   if (!owner) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await params;
   const ok = await getRepo().deleteFolder(owner, id);
-  return ok ? new Response(null, { status: 204 }) : NextResponse.json({ error: "Not found" }, { status: 404 });
+  return ok
+    ? new Response(null, { status: 204 })
+    : NextResponse.json({ error: "Not found" }, { status: 404 });
 }

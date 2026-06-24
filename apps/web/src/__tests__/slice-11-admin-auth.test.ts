@@ -16,7 +16,11 @@ describe("admin flag through authentication", () => {
   });
 
   it("carries isAdmin true when created as admin", async () => {
-    await getRepo().createUser({ email: "a@x.test", passwordHash: hashPassword("pw"), isAdmin: true });
+    await getRepo().createUser({
+      email: "a@x.test",
+      passwordHash: hashPassword("pw"),
+      isAdmin: true,
+    });
     expect((await authenticateUser("a@x.test", "pw"))?.isAdmin).toBe(true);
   });
 });

@@ -8,7 +8,12 @@ describe("paged model", () => {
   });
 
   it("accepts a section with pageBreakBefore", () => {
-    const result = validateSection({ id: "s", type: "executive_summary", data: { heading: "H", body: "B" }, pageBreakBefore: true });
+    const result = validateSection({
+      id: "s",
+      type: "executive_summary",
+      data: { heading: "H", body: "B" },
+      pageBreakBefore: true,
+    });
     expect(result.valid).toBe(true);
   });
 });

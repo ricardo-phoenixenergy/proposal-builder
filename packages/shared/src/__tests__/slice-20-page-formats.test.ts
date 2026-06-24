@@ -8,9 +8,17 @@ describe("page formats", () => {
 
   it("lists the five v1 formats with the right dimensions", () => {
     expect(PAGE_FORMATS.map((f) => f.id)).toEqual([
-      "a4_portrait", "a4_landscape", "letter_portrait", "widescreen_16_9", "standard_4_3",
+      "a4_portrait",
+      "a4_landscape",
+      "letter_portrait",
+      "widescreen_16_9",
+      "standard_4_3",
     ]);
-    expect(getPageFormat("widescreen_16_9")).toMatchObject({ widthMm: 338.67, heightMm: 190.5, marginMm: 0 });
+    expect(getPageFormat("widescreen_16_9")).toMatchObject({
+      widthMm: 338.67,
+      heightMm: 190.5,
+      marginMm: 0,
+    });
     expect(getPageFormat("a4_landscape")).toMatchObject({ widthMm: 297, heightMm: 210 });
   });
 
@@ -21,7 +29,11 @@ describe("page formats", () => {
   });
 
   it("pageCss emits an @page size + margin rule", () => {
-    expect(pageCss(getPageFormat("a4_landscape"))).toBe("@page { size: 297mm 210mm; margin: 18mm; }");
-    expect(pageCss(getPageFormat("widescreen_16_9"))).toBe("@page { size: 338.67mm 190.5mm; margin: 0mm; }");
+    expect(pageCss(getPageFormat("a4_landscape"))).toBe(
+      "@page { size: 297mm 210mm; margin: 18mm; }",
+    );
+    expect(pageCss(getPageFormat("widescreen_16_9"))).toBe(
+      "@page { size: 338.67mm 190.5mm; margin: 0mm; }",
+    );
   });
 });

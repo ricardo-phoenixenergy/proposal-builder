@@ -65,10 +65,18 @@ export function ChartView({
   let chart;
   if (kind === "pie") {
     const first = series[0];
-    const pieData = categories.map((c, i) => ({ name: c, value: first ? (first.data[i] ?? 0) : 0 }));
+    const pieData = categories.map((c, i) => ({
+      name: c,
+      value: first ? (first.data[i] ?? 0) : 0,
+    }));
     chart = (
       <PieChart width={width} height={height}>
-        <Pie data={pieData} dataKey="value" nameKey="name" outerRadius={Math.min(width, height) / 3}>
+        <Pie
+          data={pieData}
+          dataKey="value"
+          nameKey="name"
+          outerRadius={Math.min(width, height) / 3}
+        >
           {pieData.map((_, i) => (
             <Cell key={i} fill={colors[i % colors.length]} />
           ))}

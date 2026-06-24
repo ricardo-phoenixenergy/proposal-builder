@@ -18,12 +18,18 @@ describe("compileBlockStyle", () => {
 
   it("maps every token prop to a theme CSS variable or scale value", () => {
     expect(compileBlockStyle({ color: "primary" })).toMatchObject({ color: "var(--c-primary)" });
-    expect(compileBlockStyle({ background: "surface" })).toMatchObject({ background: "var(--c-surface)" });
-    expect(compileBlockStyle({ font: "heading" })).toMatchObject({ fontFamily: "var(--f-heading)" });
+    expect(compileBlockStyle({ background: "surface" })).toMatchObject({
+      background: "var(--c-surface)",
+    });
+    expect(compileBlockStyle({ font: "heading" })).toMatchObject({
+      fontFamily: "var(--f-heading)",
+    });
     expect(compileBlockStyle({ size: "lg" })).toMatchObject({ fontSize: "1.35rem" });
     expect(compileBlockStyle({ weight: "bold" })).toMatchObject({ fontWeight: "700" });
     expect(compileBlockStyle({ align: "center" })).toMatchObject({ textAlign: "center" });
-    expect(compileBlockStyle({ padding: "md" })).toMatchObject({ padding: "calc(16px * var(--space))" });
+    expect(compileBlockStyle({ padding: "md" })).toMatchObject({
+      padding: "calc(16px * var(--space))",
+    });
   });
 
   it("spaceToken maps the scale to a theme-aware calc length", () => {

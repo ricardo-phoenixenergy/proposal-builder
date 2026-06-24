@@ -8,7 +8,8 @@ function isDataset(value: unknown): value is Dataset {
     Array.isArray(v["columns"]) &&
     Array.isArray(v["rows"]) &&
     v["columns"].every(
-      (c) => typeof c === "object" && c !== null && typeof (c as { key?: unknown }).key === "string",
+      (c) =>
+        typeof c === "object" && c !== null && typeof (c as { key?: unknown }).key === "string",
     )
   );
 }
@@ -47,10 +48,7 @@ function DatasetTable({ dataset }: { dataset: Dataset }) {
  */
 export function GenericSection({ data }: SectionComponentProps) {
   return (
-    <div
-      data-fallback="true"
-      style={{ color: "var(--c-text)", fontFamily: "var(--f-body)" }}
-    >
+    <div data-fallback="true" style={{ color: "var(--c-text)", fontFamily: "var(--f-body)" }}>
       {Object.entries(data).map(([key, value]) => (
         <div key={key} data-field={key}>
           {typeof value === "string" ? (

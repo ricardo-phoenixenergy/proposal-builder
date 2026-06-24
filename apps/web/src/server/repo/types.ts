@@ -79,8 +79,15 @@ export interface SectionTypeRow {
  */
 export interface Repository {
   listProposals(ownerId: string): Promise<ProposalSummary[]>;
-  createProposal(ownerId: string, document: ProposalDocument, folderId?: string | null): Promise<StoredProposal>;
-  updateProposalMeta(id: string, patch: { title?: string; folderId?: string | null }): Promise<ProposalSummary | null>;
+  createProposal(
+    ownerId: string,
+    document: ProposalDocument,
+    folderId?: string | null,
+  ): Promise<StoredProposal>;
+  updateProposalMeta(
+    id: string,
+    patch: { title?: string; folderId?: string | null },
+  ): Promise<ProposalSummary | null>;
   duplicateProposal(ownerId: string, id: string): Promise<StoredProposal | null>;
   getProposal(id: string): Promise<StoredProposal | null>;
   /** Autosave: replace the document, bump updatedAt. Returns null if unknown. */
@@ -96,7 +103,11 @@ export interface Repository {
 
   /** Builder (§11). Authored template rows; null template = built-in overlay. */
   listTemplateRows(): Promise<TemplateRow[]>;
-  upsertTemplate(row: { id: string; template: Template | null; deprecated: boolean }): Promise<TemplateRow>;
+  upsertTemplate(row: {
+    id: string;
+    template: Template | null;
+    deprecated: boolean;
+  }): Promise<TemplateRow>;
   setTemplateDeprecated(id: string, deprecated: boolean): Promise<TemplateRow | null>;
   /** Distinct templateId referenced by any stored proposal (freeze check). */
   listInUseTemplateIds(): Promise<string[]>;
@@ -105,7 +116,11 @@ export interface Repository {
   getUserByEmail(email: string): Promise<StoredUser | null>;
   getUserById(id: string): Promise<StoredUser | null>;
   /** @throws DuplicateEmailError if the normalized email already exists. */
-  createUser(input: { email: string; passwordHash: string; isAdmin?: boolean }): Promise<StoredUser>;
+  createUser(input: {
+    email: string;
+    passwordHash: string;
+    isAdmin?: boolean;
+  }): Promise<StoredUser>;
 
   /** Builder user management (§11). Summaries never include passwordHash. */
   listUsers(): Promise<UserSummary[]>;
@@ -116,7 +131,11 @@ export interface Repository {
 
   /** Builder (§11). Authored section-type rows; null definition = built-in overlay. */
   listSectionTypeRows(): Promise<SectionTypeRow[]>;
-  upsertSectionType(row: { type: string; definition: SectionTypeRow["definition"]; deprecated: boolean }): Promise<SectionTypeRow>;
+  upsertSectionType(row: {
+    type: string;
+    definition: SectionTypeRow["definition"];
+    deprecated: boolean;
+  }): Promise<SectionTypeRow>;
   setSectionTypeDeprecated(type: string, deprecated: boolean): Promise<SectionTypeRow | null>;
   /** Distinct section-type keys referenced by any stored proposal (freeze check). */
   listInUseTypeKeys(): Promise<string[]>;
@@ -133,6 +152,8 @@ export interface Repository {
 
   /** Authored section layouts (§D). Global; identity = (type, variant, pageFormat). */
   listSectionLayouts(): Promise<import("@proposal/shared").SectionLayout[]>;
-  upsertSectionLayout(layout: import("@proposal/shared").SectionLayout): Promise<import("@proposal/shared").SectionLayout>;
+  upsertSectionLayout(
+    layout: import("@proposal/shared").SectionLayout,
+  ): Promise<import("@proposal/shared").SectionLayout>;
   deleteSectionLayout(type: string, variant: string, pageFormat: string): Promise<boolean>;
 }

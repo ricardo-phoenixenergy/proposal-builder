@@ -13,7 +13,10 @@ export interface AuthUser {
  * admin-created (no public signup); passwords are scrypt-hashed at rest. Returns
  * the owner principal on success, null on unknown email or wrong password.
  */
-export async function authenticateUser(email: unknown, password: unknown): Promise<AuthUser | null> {
+export async function authenticateUser(
+  email: unknown,
+  password: unknown,
+): Promise<AuthUser | null> {
   if (typeof email !== "string" || typeof password !== "string") return null;
 
   const user = await getRepo().getUserByEmail(email);

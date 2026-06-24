@@ -9,9 +9,7 @@ export function ExecutiveSummary({ data }: SectionComponentProps) {
   const body = typeof data["body"] === "string" ? data["body"] : "";
   return (
     <section data-component="executive-summary">
-      <h2 style={{ color: "var(--c-primary)", fontFamily: "var(--f-heading)" }}>
-        {heading}
-      </h2>
+      <h2 style={{ color: "var(--c-primary)", fontFamily: "var(--f-heading)" }}>{heading}</h2>
       <p style={{ color: "var(--c-text)", fontFamily: "var(--f-body)" }}>{body}</p>
     </section>
   );

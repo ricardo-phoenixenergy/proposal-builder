@@ -1,9 +1,29 @@
 import { create } from "zustand";
-import type { ProposalDocument, SectionLayout, SectionTypeSchema, Template, ThemeTokens } from "@proposal/shared";
-import { applyTemplate, builtInTemplates, sampleProposal, setActiveSectionTypes, setActiveLayouts } from "@proposal/shared";
+import type {
+  ProposalDocument,
+  SectionLayout,
+  SectionTypeSchema,
+  Template,
+  ThemeTokens,
+} from "@proposal/shared";
+import {
+  applyTemplate,
+  builtInTemplates,
+  sampleProposal,
+  setActiveSectionTypes,
+  setActiveLayouts,
+} from "@proposal/shared";
 import { defaultTheme } from "../theme/defaultTheme";
 import { themes } from "../theme/themes";
-import { setSectionVariant, setSectionData, setSectionType, appendSection, insertSection, removeSection, setSectionPageBreak } from "./mutations";
+import {
+  setSectionVariant,
+  setSectionData,
+  setSectionType,
+  appendSection,
+  insertSection,
+  removeSection,
+  setSectionPageBreak,
+} from "./mutations";
 import * as persistence from "../client/persistence";
 import { fetchSectionTypes } from "../client/sectionTypes";
 import { fetchLayouts } from "../client/layouts";
@@ -93,10 +113,15 @@ export const useProposalStore = create<ProposalState>((set, get) => ({
   saveStatus: "idle",
   notifications: [],
   notify: (kind, message) =>
-    set((state) => ({ notifications: [...state.notifications, { id: ++notificationSeq, kind, message }] })),
-  dismiss: (id) => set((state) => ({ notifications: state.notifications.filter((n) => n.id !== id) })),
+    set((state) => ({
+      notifications: [...state.notifications, { id: ++notificationSeq, kind, message }],
+    })),
+  dismiss: (id) =>
+    set((state) => ({ notifications: state.notifications.filter((n) => n.id !== id) })),
   setTheme: (theme) =>
-    set((state) => (state.document.theme ? { theme, document: { ...state.document, theme } } : { theme })),
+    set((state) =>
+      state.document.theme ? { theme, document: { ...state.document, theme } } : { theme },
+    ),
   forkTheme: () =>
     set((state) => {
       const forked = { ...state.theme, id: "custom", name: `Custom (from ${state.theme.name})` };
@@ -124,7 +149,11 @@ export const useProposalStore = create<ProposalState>((set, get) => ({
     const template = get().templates.find((t) => t.id === templateId);
     if (!template) return;
     const document = applyTemplate(template);
-    set({ document, theme: themeById(template.themeId), selectedId: document.sections[0]?.id ?? null });
+    set({
+      document,
+      theme: themeById(template.themeId),
+      selectedId: document.sections[0]?.id ?? null,
+    });
   },
   persistNew: async () => {
     set({ saveStatus: "saving" });

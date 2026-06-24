@@ -4,7 +4,9 @@ import { setActiveSectionTypes, resetSectionTypesForTests } from "../registry/se
 import type { SectionTypeSchema } from "../types/section";
 
 const t: SectionTypeSchema = {
-  type: "cover_s", label: "Cover", category: "text",
+  type: "cover_s",
+  label: "Cover",
+  category: "text",
   fields: [
     { key: "title", type: "text", label: "Title" },
     { key: "body", type: "paragraph", label: "Body" },
@@ -13,7 +15,8 @@ const t: SectionTypeSchema = {
     { key: "compare", type: "matrix", label: "Compare" },
     { key: "cover_image", type: "image", label: "Cover image" },
   ],
-  variants: [], schemaVersion: 1,
+  variants: [],
+  schemaVersion: 1,
 };
 
 afterEach(() => resetSectionTypesForTests());

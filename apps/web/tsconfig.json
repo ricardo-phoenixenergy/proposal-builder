@@ -1,15 +1,9 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "lib": [
-      "ES2022",
-      "DOM",
-      "DOM.Iterable"
-    ],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "jsx": "preserve",
-    "types": [
-      "node"
-    ],
+    "types": ["node"],
     "plugins": [
       {
         "name": "next"
@@ -32,11 +26,5 @@
     "app/**/*.tsx",
     ".next/types/**/*.ts"
   ],
-  "exclude": [
-    "node_modules",
-    ".next",
-    "src/**/*.test.ts",
-    "src/**/*.test.tsx",
-    "vitest.setup.ts"
-  ]
+  "exclude": ["node_modules", ".next", "src/**/*.test.ts", "src/**/*.test.tsx", "vitest.setup.ts"]
 }

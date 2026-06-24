@@ -4,7 +4,11 @@ import { setSectionPageBreak } from "../state/mutations";
 import { useProposalStore } from "../state/proposalStore";
 
 const doc = {
-  id: "p1", title: "T", client: { name: "C" }, themeId: "theme_default", templateId: "open",
+  id: "p1",
+  title: "T",
+  client: { name: "C" },
+  themeId: "theme_default",
+  templateId: "open",
   sections: [{ id: "a", type: "text", data: {} }],
 };
 
@@ -17,7 +21,12 @@ describe("setSectionPageBreak", () => {
 });
 
 describe("store setPageBreakBefore", () => {
-  beforeEach(() => useProposalStore.setState({ document: { ...doc, sections: [{ id: "a", type: "text", data: {} }] }, selectedId: "a" }));
+  beforeEach(() =>
+    useProposalStore.setState({
+      document: { ...doc, sections: [{ id: "a", type: "text", data: {} }] },
+      selectedId: "a",
+    }),
+  );
   it("sets the flag on the document", () => {
     useProposalStore.getState().setPageBreakBefore("a", true);
     expect(useProposalStore.getState().document.sections[0]!.pageBreakBefore).toBe(true);

@@ -18,9 +18,11 @@ export async function POST(request: Request): Promise<Response> {
   const admin = await requireAdmin();
   if (admin instanceof Response) return admin;
 
-  const body = (await request.json().catch(() => null)) as
-    | { email?: unknown; password?: unknown; isAdmin?: unknown }
-    | null;
+  const body = (await request.json().catch(() => null)) as {
+    email?: unknown;
+    password?: unknown;
+    isAdmin?: unknown;
+  } | null;
   const email = typeof body?.email === "string" ? body.email.trim() : "";
   const password = typeof body?.password === "string" ? body.password : "";
   const isAdmin = body?.isAdmin === true;
@@ -33,7 +35,11 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   try {
-    const user = await getRepo().createUser({ email, passwordHash: hashPassword(password), isAdmin });
+    const user = await getRepo().createUser({
+      email,
+      passwordHash: hashPassword(password),
+      isAdmin,
+    });
     const summary: UserSummary = {
       id: user.id,
       email: user.email,
@@ -44,7 +50,10 @@ export async function POST(request: Request): Promise<Response> {
     return NextResponse.json({ user: summary }, { status: 201 });
   } catch (e) {
     if (e instanceof DuplicateEmailError) {
-      return NextResponse.json({ error: "An account with that email already exists" }, { status: 409 });
+      return NextResponse.json(
+        { error: "An account with that email already exists" },
+        { status: 409 },
+      );
     }
     throw e;
   }

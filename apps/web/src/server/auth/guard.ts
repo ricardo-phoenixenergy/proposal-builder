@@ -27,6 +27,7 @@ export async function requireOwnedProposal(id: string): Promise<StoredProposal |
   const owner = await getOwner();
   if (!owner) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const stored = await getRepo().getProposal(id);
-  if (!stored || stored.ownerId !== owner) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!stored || stored.ownerId !== owner)
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
   return stored;
 }

@@ -26,7 +26,12 @@ export const prelimTemplate: Template = {
   slots: [
     { kind: "fixed", type: "text", lock: "editable-copy" },
     { kind: "fixed", type: "executive_summary", lock: "editable-copy" },
-    { kind: "choice", allowed: ["pricing_capex", "pricing_ppa"], default: "pricing_capex", lock: "choice" },
+    {
+      kind: "choice",
+      allowed: ["pricing_capex", "pricing_ppa"],
+      default: "pricing_capex",
+      lock: "choice",
+    },
     {
       kind: "fixed",
       type: "text",

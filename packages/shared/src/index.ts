@@ -70,7 +70,12 @@ export {
   type FieldKind,
 } from "./generation/generationSchema";
 export { estimateMaxOutputTokens } from "./generation/maxTokens";
-export { checkGenerationInput, MAX_BRIEF_CHARS, MAX_INSTRUCTION_CHARS, MAX_DATA_CHARS } from "./generation/inputLimits";
+export {
+  checkGenerationInput,
+  MAX_BRIEF_CHARS,
+  MAX_INSTRUCTION_CHARS,
+  MAX_DATA_CHARS,
+} from "./generation/inputLimits";
 
 // Sample content
 export { sampleProposal } from "./samples/sample-proposal";

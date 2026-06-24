@@ -1,8 +1,5 @@
 import type { Section, ThemeTokens } from "@proposal/shared";
-import {
-  resolveSection,
-  type ComponentRegistry,
-} from "../registry/componentRegistry";
+import { resolveSection, type ComponentRegistry } from "../registry/componentRegistry";
 
 /**
  * Resolves one section to its component and renders it, surfacing the

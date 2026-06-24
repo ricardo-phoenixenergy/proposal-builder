@@ -5,7 +5,12 @@ import { defaultTheme } from "../theme/defaultTheme";
 import type { SectionLayout } from "@proposal/shared";
 
 const layout = (root: SectionLayout["root"]): SectionLayout => ({
-  type: "cover", variant: "cover", pageFormat: "widescreen_16_9", name: "Cover", root, version: 1,
+  type: "cover",
+  variant: "cover",
+  pageFormat: "widescreen_16_9",
+  name: "Cover",
+  root,
+  version: 1,
 });
 
 afterEach(() => cleanup());
@@ -16,7 +21,11 @@ describe("LayoutRenderer backgrounds", () => {
       <LayoutRenderer
         layout={layout({
           kind: "stack",
-          background: { image: { assetUrl: "https://blob/cover.jpg" }, overlay: { color: "primary", opacity: 50 }, position: "cover" },
+          background: {
+            image: { assetUrl: "https://blob/cover.jpg" },
+            overlay: { color: "primary", opacity: 50 },
+            position: "cover",
+          },
           children: [{ kind: "text", text: "Hi" }],
         })}
         data={{}}
@@ -25,7 +34,7 @@ describe("LayoutRenderer backgrounds", () => {
       />,
     );
     const wrap = container.querySelector('[data-bg="true"]') as HTMLElement;
-    expect(wrap.style.backgroundImage).toContain('https://blob/cover.jpg');
+    expect(wrap.style.backgroundImage).toContain("https://blob/cover.jpg");
     expect(wrap.style.backgroundSize).toBe("cover");
     const overlay = container.querySelector('[data-bg-overlay="true"]') as HTMLElement;
     expect(overlay.style.background).toBe("var(--c-primary)");
@@ -35,12 +44,18 @@ describe("LayoutRenderer backgrounds", () => {
   it("binds a background image to a per-proposal image field", () => {
     const { container } = render(
       <LayoutRenderer
-        layout={layout({ kind: "stack", background: { image: { field: "cover_image" } }, children: [] })}
+        layout={layout({
+          kind: "stack",
+          background: { image: { field: "cover_image" } },
+          children: [],
+        })}
         data={{ cover_image: "https://blob/p1.png" }}
         theme={defaultTheme}
       />,
     );
-    expect((container.querySelector('[data-bg="true"]') as HTMLElement).style.backgroundImage).toContain('https://blob/p1.png');
+    expect(
+      (container.querySelector('[data-bg="true"]') as HTMLElement).style.backgroundImage,
+    ).toContain("https://blob/p1.png");
   });
 
   it('minHeight "page" resolves to the format content height in mm', () => {
@@ -53,12 +68,22 @@ describe("LayoutRenderer backgrounds", () => {
       />,
     );
     // a4_portrait: 297 - 2*18 = 261mm
-    expect((container.querySelector('[data-bg="true"]') as HTMLElement).style.minHeight).toBe("261mm");
+    expect((container.querySelector('[data-bg="true"]') as HTMLElement).style.minHeight).toBe(
+      "261mm",
+    );
   });
 
   it("degrades gracefully with no image (no background-image, no throw)", () => {
     const { container } = render(
-      <LayoutRenderer layout={layout({ kind: "stack", background: { overlay: { color: "text", opacity: 20 } }, children: [] })} data={{}} theme={defaultTheme} />,
+      <LayoutRenderer
+        layout={layout({
+          kind: "stack",
+          background: { overlay: { color: "text", opacity: 20 } },
+          children: [],
+        })}
+        data={{}}
+        theme={defaultTheme}
+      />,
     );
     const wrap = container.querySelector('[data-bg="true"]') as HTMLElement;
     expect(wrap.style.backgroundImage).toBe("");

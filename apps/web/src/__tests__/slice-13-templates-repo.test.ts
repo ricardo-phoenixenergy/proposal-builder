@@ -10,7 +10,10 @@ beforeEach(() => {
 });
 
 const tmpl: Template = {
-  id: "tmpl_sales", name: "Sales", themeId: "theme_phoenix_default", locked: false,
+  id: "tmpl_sales",
+  name: "Sales",
+  themeId: "theme_phoenix_default",
+  locked: false,
   slots: [{ kind: "fixed", type: "text", lock: "open" }],
 };
 
@@ -28,7 +31,11 @@ describe("repo template rows", () => {
     expect((await repo.setTemplateDeprecated("tmpl_sales", true))?.deprecated).toBe(true);
     expect(await repo.setTemplateDeprecated("ghost", false)).toBeNull();
 
-    const overlay = await repo.upsertTemplate({ id: "tmpl_open", template: null, deprecated: true });
+    const overlay = await repo.upsertTemplate({
+      id: "tmpl_open",
+      template: null,
+      deprecated: true,
+    });
     expect(overlay.template).toBeNull();
     expect(overlay.deprecated).toBe(true);
   });

@@ -15,7 +15,8 @@ async function upsert(request: Request): Promise<Response> {
   if (owner instanceof Response) return owner;
   const tokens = (await request.json().catch(() => null)) as ThemeTokens | null;
   const result = validateTheme(tokens);
-  if (!result.valid) return NextResponse.json({ error: "Invalid theme", errors: result.errors }, { status: 400 });
+  if (!result.valid)
+    return NextResponse.json({ error: "Invalid theme", errors: result.errors }, { status: 400 });
   const theme = await getRepo().upsertTheme(owner, tokens as ThemeTokens);
   return NextResponse.json({ theme });
 }

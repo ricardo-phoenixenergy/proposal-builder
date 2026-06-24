@@ -11,7 +11,9 @@ describe("PrintDocument — the PDF render surface", () => {
     const { container } = render(<PrintDocument document={sampleProposal} theme={defaultTheme} />);
 
     // all sample sections render
-    expect(container.querySelectorAll("[data-section-type]")).toHaveLength(sampleProposal.sections.length);
+    expect(container.querySelectorAll("[data-section-type]")).toHaveLength(
+      sampleProposal.sections.length,
+    );
     const preview = within(container.querySelector("[data-print-root]") as HTMLElement);
     expect(preview.getByText(/Two commercial routes are offered/i)).toBeInTheDocument();
 

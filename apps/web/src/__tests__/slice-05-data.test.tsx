@@ -52,7 +52,9 @@ describe("data_table — one dataset, table or chart (§6.2)", () => {
   });
 
   it("renders an SVG chart for the 'bar' variant — same data, no re-entry", () => {
-    const { container } = render(<SectionRenderer section={dataSection("bar")} theme={defaultTheme} />);
+    const { container } = render(
+      <SectionRenderer section={dataSection("bar")} theme={defaultTheme} />,
+    );
     expect(container.querySelector("svg")).toBeTruthy();
   });
 });

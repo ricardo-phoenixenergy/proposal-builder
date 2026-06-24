@@ -13,7 +13,10 @@ export async function PATCH(request: Request, { params }: Ctx): Promise<Response
   if (admin instanceof Response) return admin;
   const { id } = await params;
 
-  const body = (await request.json().catch(() => null)) as { disabled?: unknown; isAdmin?: unknown } | null;
+  const body = (await request.json().catch(() => null)) as {
+    disabled?: unknown;
+    isAdmin?: unknown;
+  } | null;
   const change: { disabled?: boolean; isAdmin?: boolean } = {};
   if (typeof body?.disabled === "boolean") change.disabled = body.disabled;
   if (typeof body?.isAdmin === "boolean") change.isAdmin = body.isAdmin;

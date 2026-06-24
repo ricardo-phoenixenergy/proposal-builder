@@ -7,9 +7,17 @@ import { GET, POST } from "../../app/api/folders/route";
 import { PATCH, DELETE } from "../../app/api/folders/[id]/route";
 
 const post = (body: unknown) =>
-  new Request("http://x/api/folders", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+  new Request("http://x/api/folders", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
 const idReq = (id: string, method: string, body?: unknown) => ({
-  req: new Request(`http://x/api/folders/${id}`, { method, headers: { "content-type": "application/json" }, ...(body ? { body: JSON.stringify(body) } : {}) }),
+  req: new Request(`http://x/api/folders/${id}`, {
+    method,
+    headers: { "content-type": "application/json" },
+    ...(body ? { body: JSON.stringify(body) } : {}),
+  }),
   ctx: { params: Promise.resolve({ id }) },
 });
 

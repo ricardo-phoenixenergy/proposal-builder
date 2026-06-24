@@ -46,7 +46,17 @@ describe("validateSectionTypeDefinition (schema for schemas)", () => {
       type: "metrics_table",
       label: "Metrics table",
       category: "data",
-      fields: [{ key: "dataset", type: "dataset", label: "Dataset", required: true, maxRows: 50, maxColumns: 8, maxSeries: 6 }],
+      fields: [
+        {
+          key: "dataset",
+          type: "dataset",
+          label: "Dataset",
+          required: true,
+          maxRows: 50,
+          maxColumns: 8,
+          maxSeries: 6,
+        },
+      ],
       variants: [],
       schemaVersion: 1,
     });
@@ -55,14 +65,26 @@ describe("validateSectionTypeDefinition (schema for schemas)", () => {
 
   it("accepts list and matrix field types", () => {
     expect(
-      validateSectionTypeDefinition({ ...valid, fields: [{ key: "points", type: "list", label: "Points", maxRows: 6 }] }).valid,
+      validateSectionTypeDefinition({
+        ...valid,
+        fields: [{ key: "points", type: "list", label: "Points", maxRows: 6 }],
+      }).valid,
     ).toBe(true);
     expect(
       validateSectionTypeDefinition({
         type: "compare",
         label: "Compare",
         category: "data",
-        fields: [{ key: "matrix", type: "matrix", label: "Matrix", required: true, maxRows: 8, maxColumns: 4 }],
+        fields: [
+          {
+            key: "matrix",
+            type: "matrix",
+            label: "Matrix",
+            required: true,
+            maxRows: 8,
+            maxColumns: 4,
+          },
+        ],
         variants: [],
         schemaVersion: 1,
       }).valid,
@@ -83,7 +105,12 @@ describe("validateSectionTypeDefinition (schema for schemas)", () => {
   });
 
   it("rejects a non-positive or non-integer limit", () => {
-    expect(validateSectionTypeDefinition({ ...valid, fields: [{ key: "h", type: "text", label: "H", maxChars: 0 }] }).valid).toBe(false);
+    expect(
+      validateSectionTypeDefinition({
+        ...valid,
+        fields: [{ key: "h", type: "text", label: "H", maxChars: 0 }],
+      }).valid,
+    ).toBe(false);
     expect(
       validateSectionTypeDefinition({
         type: "t",

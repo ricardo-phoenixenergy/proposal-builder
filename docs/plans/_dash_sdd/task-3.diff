@@ -1,0 +1,537 @@
+=== commits ===
+66bdc90 feat(repo): postgres parity for folders + proposal meta; migration 0005
+
+=== stat ===
+ apps/web/drizzle/0005_bored_captain_marvel.sql |   8 +
+ apps/web/drizzle/meta/0005_snapshot.json       | 315 +++++++++++++++++++++++++
+ apps/web/drizzle/meta/_journal.json            |   7 +
+ apps/web/src/server/db/schema.ts               |   8 +
+ apps/web/src/server/repo/postgres.ts           |  65 ++++-
+ 5 files changed, 398 insertions(+), 5 deletions(-)
+
+=== diff ===
+diff --git a/apps/web/drizzle/0005_bored_captain_marvel.sql b/apps/web/drizzle/0005_bored_captain_marvel.sql
+new file mode 100644
+index 0000000..dd05b02
+--- /dev/null
++++ b/apps/web/drizzle/0005_bored_captain_marvel.sql
+@@ -0,0 +1,8 @@
++CREATE TABLE "folders" (
++	"id" text PRIMARY KEY NOT NULL,
++	"owner_id" text NOT NULL,
++	"name" text NOT NULL,
++	"created_at" timestamp with time zone DEFAULT now() NOT NULL
++);
++--> statement-breakpoint
++ALTER TABLE "proposals" ADD COLUMN "folder_id" text;
+\ No newline at end of file
+diff --git a/apps/web/drizzle/meta/0005_snapshot.json b/apps/web/drizzle/meta/0005_snapshot.json
+new file mode 100644
+index 0000000..2d18c54
+--- /dev/null
++++ b/apps/web/drizzle/meta/0005_snapshot.json
+@@ -0,0 +1,315 @@
++{
++  "id": "62d8ea19-121b-4909-a874-1208e46d16b4",
++  "prevId": "7dd2ee5b-bcef-4227-b8fa-341f9bad9af7",
++  "version": "7",
++  "dialect": "postgresql",
++  "tables": {
++    "public.folders": {
++      "name": "folders",
++      "schema": "",
++      "columns": {
++        "id": {
++          "name": "id",
++          "type": "text",
++          "primaryKey": true,
++          "notNull": true
++        },
++        "owner_id": {
++          "name": "owner_id",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true
++        },
++        "name": {
++          "name": "name",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true
++        },
++        "created_at": {
++          "name": "created_at",
++          "type": "timestamp with time zone",
++          "primaryKey": false,
++          "notNull": true,
++          "default": "now()"
++        }
++      },
++      "indexes": {},
++      "foreignKeys": {},
++      "compositePrimaryKeys": {},
++      "uniqueConstraints": {},
++      "policies": {},
++      "checkConstraints": {},
++      "isRLSEnabled": false
++    },
++    "public.proposal_versions": {
++      "name": "proposal_versions",
++      "schema": "",
++      "columns": {
++        "id": {
++          "name": "id",
++          "type": "text",
++          "primaryKey": true,
++          "notNull": true
++        },
++        "proposal_id": {
++          "name": "proposal_id",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true
++        },
++        "document": {
++          "name": "document",
++          "type": "jsonb",
++          "primaryKey": false,
++          "notNull": true
++        },
++        "created_at": {
++          "name": "created_at",
++          "type": "timestamp with time zone",
++          "primaryKey": false,
++          "notNull": true,
++          "default": "now()"
++        }
++      },
++      "indexes": {},
++      "foreignKeys": {},
++      "compositePrimaryKeys": {},
++      "uniqueConstraints": {},
++      "policies": {},
++      "checkConstraints": {},
++      "isRLSEnabled": false
++    },
++    "public.proposals": {
++      "name": "proposals",
++      "schema": "",
++      "columns": {
++        "id": {
++          "name": "id",
++          "type": "text",
++          "primaryKey": true,
++          "notNull": true
++        },
++        "owner_id": {
++          "name": "owner_id",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true
++        },
++        "folder_id": {
++          "name": "folder_id",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false
++        },
++        "document": {
++          "name": "document",
++          "type": "jsonb",
++          "primaryKey": false,
++          "notNull": true
++        },
++        "created_at": {
++          "name": "created_at",
++          "type": "timestamp with time zone",
++          "primaryKey": false,
++          "notNull": true,
++          "default": "now()"
++        },
++        "updated_at": {
++          "name": "updated_at",
++          "type": "timestamp with time zone",
++          "primaryKey": false,
++          "notNull": true,
++          "default": "now()"
++        }
++      },
++      "indexes": {},
++      "foreignKeys": {},
++      "compositePrimaryKeys": {},
++      "uniqueConstraints": {},
++      "policies": {},
++      "checkConstraints": {},
++      "isRLSEnabled": false
++    },
++    "public.section_types": {
++      "name": "section_types",
++      "schema": "",
++      "columns": {
++        "type": {
++          "name": "type",
++          "type": "text",
++          "primaryKey": true,
++          "notNull": true
++        },
++        "definition": {
++          "name": "definition",
++          "type": "jsonb",
++          "primaryKey": false,
++          "notNull": false
++        },
++        "deprecated": {
++          "name": "deprecated",
++          "type": "boolean",
++          "primaryKey": false,
++          "notNull": true,
++          "default": false
++        },
++        "updated_at": {
++          "name": "updated_at",
++          "type": "timestamp with time zone",
++          "primaryKey": false,
++          "notNull": true,
++          "default": "now()"
++        }
++      },
++      "indexes": {},
++      "foreignKeys": {},
++      "compositePrimaryKeys": {},
++      "uniqueConstraints": {},
++      "policies": {},
++      "checkConstraints": {},
++      "isRLSEnabled": false
++    },
++    "public.templates": {
++      "name": "templates",
++      "schema": "",
++      "columns": {
++        "id": {
++          "name": "id",
++          "type": "text",
++          "primaryKey": true,
++          "notNull": true
++        },
++        "template": {
++          "name": "template",
++          "type": "jsonb",
++          "primaryKey": false,
++          "notNull": false
++        },
++        "deprecated": {
++          "name": "deprecated",
++          "type": "boolean",
++          "primaryKey": false,
++          "notNull": true,
++          "default": false
++        },
++        "updated_at": {
++          "name": "updated_at",
++          "type": "timestamp with time zone",
++          "primaryKey": false,
++          "notNull": true,
++          "default": "now()"
++        }
++      },
++      "indexes": {},
++      "foreignKeys": {},
++      "compositePrimaryKeys": {},
++      "uniqueConstraints": {},
++      "policies": {},
++      "checkConstraints": {},
++      "isRLSEnabled": false
++    },
++    "public.themes": {
++      "name": "themes",
++      "schema": "",
++      "columns": {
++        "id": {
++          "name": "id",
++          "type": "text",
++          "primaryKey": true,
++          "notNull": true
++        },
++        "owner_id": {
++          "name": "owner_id",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true
++        },
++        "tokens": {
++          "name": "tokens",
++          "type": "jsonb",
++          "primaryKey": false,
++          "notNull": true
++        }
++      },
++      "indexes": {},
++      "foreignKeys": {},
++      "compositePrimaryKeys": {},
++      "uniqueConstraints": {},
++      "policies": {},
++      "checkConstraints": {},
++      "isRLSEnabled": false
++    },
++    "public.users": {
++      "name": "users",
++      "schema": "",
++      "columns": {
++        "id": {
++          "name": "id",
++          "type": "text",
++          "primaryKey": true,
++          "notNull": true
++        },
++        "email": {
++          "name": "email",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true
++        },
++        "password_hash": {
++          "name": "password_hash",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true
++        },
++        "is_admin": {
++          "name": "is_admin",
++          "type": "boolean",
++          "primaryKey": false,
++          "notNull": true,
++          "default": false
++        },
++        "disabled": {
++          "name": "disabled",
++          "type": "boolean",
++          "primaryKey": false,
++          "notNull": true,
++          "default": false
++        },
++        "created_at": {
++          "name": "created_at",
++          "type": "timestamp with time zone",
++          "primaryKey": false,
++          "notNull": true,
++          "default": "now()"
++        }
++      },
++      "indexes": {},
++      "foreignKeys": {},
++      "compositePrimaryKeys": {},
++      "uniqueConstraints": {
++        "users_email_unique": {
++          "name": "users_email_unique",
++          "nullsNotDistinct": false,
++          "columns": [
++            "email"
++          ]
++        }
++      },
++      "policies": {},
++      "checkConstraints": {},
++      "isRLSEnabled": false
++    }
++  },
++  "enums": {},
++  "schemas": {},
++  "sequences": {},
++  "roles": {},
++  "policies": {},
++  "views": {},
++  "_meta": {
++    "columns": {},
++    "schemas": {},
++    "tables": {}
++  }
++}
+\ No newline at end of file
+diff --git a/apps/web/drizzle/meta/_journal.json b/apps/web/drizzle/meta/_journal.json
+index ccee9be..dda8dc9 100644
+--- a/apps/web/drizzle/meta/_journal.json
++++ b/apps/web/drizzle/meta/_journal.json
+@@ -29,13 +29,20 @@
+       "when": 1781803267902,
+       "tag": "0003_fixed_morgan_stark",
+       "breakpoints": true
+     },
+     {
+       "idx": 4,
+       "version": "7",
+       "when": 1781811472504,
+       "tag": "0004_loud_frightful_four",
+       "breakpoints": true
++    },
++    {
++      "idx": 5,
++      "version": "7",
++      "when": 1782038655677,
++      "tag": "0005_bored_captain_marvel",
++      "breakpoints": true
+     }
+   ]
+ }
+\ No newline at end of file
+diff --git a/apps/web/src/server/db/schema.ts b/apps/web/src/server/db/schema.ts
+index 9143f38..dad4005 100644
+--- a/apps/web/src/server/db/schema.ts
++++ b/apps/web/src/server/db/schema.ts
+@@ -1,17 +1,25 @@
+ import { boolean, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+ import type { ProposalDocument, Template, ThemeTokens } from "@proposal/shared";
+ 
+ /** §12 data model. Content/structure/presentation kept intact as JSONB. */
++export const folders = pgTable("folders", {
++  id: text("id").primaryKey(),
++  ownerId: text("owner_id").notNull(),
++  name: text("name").notNull(),
++  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
++});
++
+ export const proposals = pgTable("proposals", {
+   id: text("id").primaryKey(),
+   ownerId: text("owner_id").notNull(),
++  folderId: text("folder_id"),
+   document: jsonb("document").$type<ProposalDocument>().notNull(),
+   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+ });
+ 
+ export const proposalVersions = pgTable("proposal_versions", {
+   id: text("id").primaryKey(),
+   proposalId: text("proposal_id").notNull(),
+   document: jsonb("document").$type<ProposalDocument>().notNull(),
+   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+diff --git a/apps/web/src/server/repo/postgres.ts b/apps/web/src/server/repo/postgres.ts
+index a972352..bc20bdd 100644
+--- a/apps/web/src/server/repo/postgres.ts
++++ b/apps/web/src/server/repo/postgres.ts
+@@ -1,54 +1,83 @@
+ import { and, desc, eq, sql } from "drizzle-orm";
+ import type { ProposalDocument, Template, ThemeTokens } from "@proposal/shared";
+ import { getDb } from "../db/client";
+-import { proposalVersions, proposals, sectionTypeRows, templates, themes, users } from "../db/schema";
+-import type { Repository, SectionTypeRow, StoredProposal, UserSummary } from "./types";
++import { proposalVersions, proposals, folders, sectionTypeRows, templates, themes, users } from "../db/schema";
++import type { Folder, ProposalSummary, Repository, SectionTypeRow, StoredProposal, UserSummary } from "./types";
+ import { DuplicateEmailError } from "./types";
+ 
+ const uid = (prefix: string) => `${prefix}_${crypto.randomUUID().slice(0, 8)}`;
+ 
+ type ProposalRow = typeof proposals.$inferSelect;
+ function toStored(row: ProposalRow): StoredProposal {
+   return {
+     id: row.id,
+     ownerId: row.ownerId,
+     document: row.document,
++    folderId: row.folderId ?? null,
+     createdAt: row.createdAt.toISOString(),
+     updatedAt: row.updatedAt.toISOString(),
+   };
+ }
+ 
++const toProposalSummary = (r: ProposalRow): ProposalSummary => ({
++  id: r.id,
++  title: r.document.title,
++  client: r.document.client?.name ?? "",
++  folderId: r.folderId ?? null,
++  updatedAt: r.updatedAt.toISOString(),
++});
++
+ type UserRow = typeof users.$inferSelect;
+ const toUserSummary = (r: UserRow): UserSummary => ({
+   id: r.id,
+   email: r.email,
+   isAdmin: r.isAdmin,
+   disabled: r.disabled,
+   createdAt: r.createdAt.toISOString(),
+ });
+ 
+ /** Postgres/Drizzle repository (Neon). Active when DATABASE_URL is set. */
+ export function createPostgresRepo(): Repository {
+   const db = getDb();
+ 
+   return {
+     async listProposals(ownerId) {
+       const rows = await db.select().from(proposals).where(eq(proposals.ownerId, ownerId));
+-      return rows.map((r) => ({ id: r.id, title: r.document.title, updatedAt: r.updatedAt.toISOString() }));
++      return rows.map(toProposalSummary);
+     },
+ 
+-    async createProposal(ownerId, document) {
++    async createProposal(ownerId, document, folderId = null) {
+       const id = uid("prop");
+       const [row] = await db
+         .insert(proposals)
+-        .values({ id, ownerId, document: { ...document, id } })
++        .values({ id, ownerId, document: { ...document, id }, folderId })
++        .returning();
++      return toStored(row!);
++    },
++
++    async updateProposalMeta(id, patch) {
++      const [existing] = await db.select().from(proposals).where(eq(proposals.id, id));
++      if (!existing) return null;
++      const document = patch.title !== undefined ? { ...existing.document, title: patch.title } : existing.document;
++      const folderId = patch.folderId !== undefined ? patch.folderId : existing.folderId;
++      const [row] = await db.update(proposals).set({ document, folderId }).where(eq(proposals.id, id)).returning();
++      return toProposalSummary(row!);
++    },
++
++    async duplicateProposal(ownerId, id) {
++      const [src] = await db.select().from(proposals).where(and(eq(proposals.id, id), eq(proposals.ownerId, ownerId)));
++      if (!src) return null;
++      const newId = uid("prop");
++      const [row] = await db
++        .insert(proposals)
++        .values({ id: newId, ownerId, document: { ...src.document, id: newId, title: `Copy of ${src.document.title}` }, folderId: src.folderId })
+         .returning();
+       return toStored(row!);
+     },
+ 
+     async getProposal(id) {
+       const [row] = await db.select().from(proposals).where(eq(proposals.id, id));
+       return row ? toStored(row) : null;
+     },
+ 
+     async saveProposal(id, document) {
+@@ -235,12 +264,38 @@ export function createPostgresRepo(): Repository {
+         .returning();
+       return { type: row!.type, definition: row!.definition ?? null, deprecated: row!.deprecated, updatedAt: row!.updatedAt.toISOString() };
+     },
+ 
+     async listInUseTypeKeys() {
+       const rows = await db.execute<{ type: string }>(
+         sql`SELECT DISTINCT s->>'type' AS type FROM proposals, jsonb_array_elements(document->'sections') AS s`,
+       );
+       return ((rows as unknown as { rows?: { type: string }[] }).rows ?? (rows as unknown as { type: string }[])).map((r: { type: string }) => r.type).filter(Boolean);
+     },
++
++    async listFolders(ownerId) {
++      const rows = await db.select().from(folders).where(eq(folders.ownerId, ownerId)).orderBy(folders.name);
++      return rows.map<Folder>((r) => ({ id: r.id, ownerId: r.ownerId, name: r.name, createdAt: r.createdAt.toISOString() }));
++    },
++
++    async createFolder(ownerId, name) {
++      const [row] = await db.insert(folders).values({ id: uid("fld"), ownerId, name: name.trim() }).returning();
++      return { id: row!.id, ownerId: row!.ownerId, name: row!.name, createdAt: row!.createdAt.toISOString() };
++    },
++
++    async renameFolder(ownerId, id, name) {
++      const [row] = await db
++        .update(folders)
++        .set({ name: name.trim() })
++        .where(and(eq(folders.id, id), eq(folders.ownerId, ownerId)))
++        .returning();
++      return row ? { id: row.id, ownerId: row.ownerId, name: row.name, createdAt: row.createdAt.toISOString() } : null;
++    },
++
++    async deleteFolder(ownerId, id) {
++      const deleted = await db.delete(folders).where(and(eq(folders.id, id), eq(folders.ownerId, ownerId))).returning();
++      if (deleted.length === 0) return false;
++      await db.update(proposals).set({ folderId: null }).where(and(eq(proposals.folderId, id), eq(proposals.ownerId, ownerId)));
++      return true;
++    },
+   };
+ }

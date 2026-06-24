@@ -3,7 +3,11 @@ import { redirect } from "next/navigation";
 import { signIn } from "../../auth";
 
 /** Sign-in (§13.10). Server action calls Auth.js; invalid credentials bounce back with ?error=1. */
-export default async function SignInPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
+export default async function SignInPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
   const { error } = await searchParams;
 
   async function authenticate(formData: FormData) {

@@ -13,7 +13,15 @@ export async function POST(_request: Request, { params }: Ctx): Promise<Response
   const dup = await getRepo().duplicateProposal(owner, id);
   if (!dup) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json(
-    { proposal: { id: dup.id, title: dup.document.title, client: dup.document.client?.name ?? "", folderId: dup.folderId, updatedAt: dup.updatedAt } },
+    {
+      proposal: {
+        id: dup.id,
+        title: dup.document.title,
+        client: dup.document.client?.name ?? "",
+        folderId: dup.folderId,
+        updatedAt: dup.updatedAt,
+      },
+    },
     { status: 201 },
   );
 }

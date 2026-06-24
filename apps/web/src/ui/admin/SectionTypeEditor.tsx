@@ -1,7 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { validateSectionTypeDefinition, type FieldSchema, type SectionTypeSchema } from "@proposal/shared";
+import {
+  validateSectionTypeDefinition,
+  type FieldSchema,
+  type SectionTypeSchema,
+} from "@proposal/shared";
 import { createSectionType, updateSectionType } from "../../client/sectionTypes";
 import { useProposalStore } from "../../state/proposalStore";
 
@@ -61,7 +65,12 @@ function toDef(typeKey: string, label: string, fields: DraftField[]): SectionTyp
     schemaVersion: 1,
     variants: [],
     fields: fields.map<FieldSchema>((f) => {
-      const base: FieldSchema = { key: f.key.trim(), label: f.label.trim(), type: f.type, required: f.required };
+      const base: FieldSchema = {
+        key: f.key.trim(),
+        label: f.label.trim(),
+        type: f.type,
+        required: f.required,
+      };
       for (const { key } of limitsFor(f.type)) {
         const v = num(f[key]);
         if (v !== undefined) base[key] = v;
@@ -107,7 +116,17 @@ export function SectionTypeEditor({
   const addField = () =>
     setFields((f) => [
       ...f,
-      { key: "", label: "", type: "text", required: false, maxChars: "", maxWords: "", maxRows: "", maxColumns: "", maxSeries: "" },
+      {
+        key: "",
+        label: "",
+        type: "text",
+        required: false,
+        maxChars: "",
+        maxWords: "",
+        maxRows: "",
+        maxColumns: "",
+        maxSeries: "",
+      },
     ]);
   const patch = (i: number, p: Partial<DraftField>) =>
     setFields((f) => f.map((x, j) => (j === i ? { ...x, ...p } : x)));
@@ -144,27 +163,54 @@ export function SectionTypeEditor({
     <div className="steditor">
       <h2>{editing ? "Edit type" : "New section type"}</h2>
       <p className="meter">
-        Types render unstyled (generic fallback) until a developer registers a component. Editing a built-in saves an
-        override; the original stays as a fallback.
+        Types render unstyled (generic fallback) until a developer registers a component. Editing a
+        built-in saves an override; the original stays as a fallback.
       </p>
 
       <label className="field">
         <span className="field__label">Type key</span>
-        <input aria-label="Type key" value={typeKey} disabled={editing} onChange={(e) => setTypeKey(e.target.value)} placeholder="case_study" />
+        <input
+          aria-label="Type key"
+          value={typeKey}
+          disabled={editing}
+          onChange={(e) => setTypeKey(e.target.value)}
+          placeholder="case_study"
+        />
       </label>
       <label className="field">
         <span className="field__label">Label</span>
-        <input aria-label="Label" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Case study" />
+        <input
+          aria-label="Label"
+          value={label}
+          onChange={(e) => setLabel(e.target.value)}
+          placeholder="Case study"
+        />
       </label>
-      <p className="meter">Category: <strong>{def.category}</strong> (a dataset or matrix field makes a type “data”).</p>
+      <p className="meter">
+        Category: <strong>{def.category}</strong> (a dataset or matrix field makes a type “data”).
+      </p>
 
       <div className="field">
         <span className="field__label">Fields</span>
         {fields.map((f, i) => (
           <div key={i} className="steditor__field">
-            <input aria-label="Field key" value={f.key} onChange={(e) => patch(i, { key: e.target.value })} placeholder="key" />
-            <input aria-label="Field label" value={f.label} onChange={(e) => patch(i, { label: e.target.value })} placeholder="Label" />
-            <select aria-label="Field type" value={f.type} onChange={(e) => patch(i, { type: e.target.value as DraftFieldType })}>
+            <input
+              aria-label="Field key"
+              value={f.key}
+              onChange={(e) => patch(i, { key: e.target.value })}
+              placeholder="key"
+            />
+            <input
+              aria-label="Field label"
+              value={f.label}
+              onChange={(e) => patch(i, { label: e.target.value })}
+              placeholder="Label"
+            />
+            <select
+              aria-label="Field type"
+              value={f.type}
+              onChange={(e) => patch(i, { type: e.target.value as DraftFieldType })}
+            >
               {FIELD_TYPES.map((t) => (
                 <option key={t} value={t}>
                   {t}
@@ -182,7 +228,12 @@ export function SectionTypeEditor({
               />
             ))}
             <label className="steditor__req">
-              <input type="checkbox" checked={f.required} onChange={(e) => patch(i, { required: e.target.checked })} /> required
+              <input
+                type="checkbox"
+                checked={f.required}
+                onChange={(e) => patch(i, { required: e.target.checked })}
+              />{" "}
+              required
             </label>
             <button type="button" className="btn btn--ghost" onClick={() => remove(i)}>
               Remove
@@ -205,7 +256,12 @@ export function SectionTypeEditor({
       ) : null}
 
       <div className="steditor__actions">
-        <button type="button" className="btn btn--primary" disabled={!result.valid || busy} onClick={() => void save()}>
+        <button
+          type="button"
+          className="btn btn--primary"
+          disabled={!result.valid || busy}
+          onClick={() => void save()}
+        >
           {busy ? "Saving…" : "Save"}
         </button>
         <button type="button" className="btn btn--ghost" onClick={onCancel}>

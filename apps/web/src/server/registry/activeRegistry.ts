@@ -1,5 +1,9 @@
 // apps/web/src/server/registry/activeRegistry.ts
-import { builtInSectionTypes, setActiveSectionTypes, type SectionTypeSchema } from "@proposal/shared";
+import {
+  builtInSectionTypes,
+  setActiveSectionTypes,
+  type SectionTypeSchema,
+} from "@proposal/shared";
 import { getRepo } from "../repo";
 import type { SectionTypeRow } from "../repo/types";
 

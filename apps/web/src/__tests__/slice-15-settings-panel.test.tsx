@@ -14,7 +14,10 @@ afterEach(() => {
 
 describe("SettingsPanel", () => {
   it("renders the current model and saves a new one", async () => {
-    fetchMock.mockResolvedValueOnce({ ok: true, json: async () => ({ aiModel: "claude-sonnet-4-6" }) });
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ aiModel: "claude-sonnet-4-6" }),
+    });
     render(<SettingsPanel initialModel="claude-opus-4-8" />);
 
     const select = screen.getByLabelText("AI model") as HTMLSelectElement;

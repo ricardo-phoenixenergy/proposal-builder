@@ -25,7 +25,9 @@ function post(url: string, body: unknown): Request {
 
 describe("POST /api/generate/section", () => {
   it("400s on a malformed body", async () => {
-    const res = await generateSection(post("http://x/api/generate/section", { type: "executive_summary" }));
+    const res = await generateSection(
+      post("http://x/api/generate/section", { type: "executive_summary" }),
+    );
     expect(res.status).toBe(400);
   });
 
@@ -41,7 +43,10 @@ describe("POST /api/generate/section", () => {
       post("http://x/api/generate/section", { type: "executive_summary", brief: "Solar for Acme" }),
     );
     expect(res.status).toBe(200);
-    const body = (await res.json()) as { data: { heading: string }; validation: { valid: boolean } };
+    const body = (await res.json()) as {
+      data: { heading: string };
+      validation: { valid: boolean };
+    };
     expect(body.data.heading).toBe("Generated heading");
     expect(body.validation.valid).toBe(true);
   });

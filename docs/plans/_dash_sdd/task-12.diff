@@ -1,0 +1,214 @@
+=== commits ===
+dda943d feat(dashboard): styles + editor load-failure redirect; full verify
+
+=== stat ===
+ apps/web/app/globals.css                           | 29 ++++++++++++++++++++++
+ apps/web/src/App.tsx                               | 10 ++++++--
+ apps/web/src/__tests__/slice-03-static.test.tsx    |  2 ++
+ apps/web/src/__tests__/slice-07-frontend.test.tsx  |  2 ++
+ .../__tests__/slice-14-editor-redirect.test.tsx    | 24 ++++++++++++++++++
+ .../src/__tests__/slice-14-editor-route.test.tsx   |  2 ++
+ 6 files changed, 67 insertions(+), 2 deletions(-)
+
+=== diff ===
+diff --git a/apps/web/app/globals.css b/apps/web/app/globals.css
+index 2180eeb..68c3114 100644
+--- a/apps/web/app/globals.css
++++ b/apps/web/app/globals.css
+@@ -621,10 +621,39 @@ ul.notice li + li {
+   border: 1px solid var(--ui-line-strong);
+   border-radius: 6px;
+   background: var(--ui-panel);
+   color: var(--ui-ink);
+ }
+ .userform__admin {
+   display: inline-flex;
+   align-items: center;
+   gap: 6px;
+ }
++
++/* ---- Dashboard (proposals list + folders) -------------------------------- */
++.dash { min-height: 100vh; display: flex; flex-direction: column; }
++.dash__toolbar { display: flex; gap: 10px; align-items: center; padding: 12px 18px; border-bottom: 1px solid var(--ui-line-strong); }
++.dash__toolbar input { flex: 1; padding: 8px 10px; border: 1px solid var(--ui-line-strong); border-radius: 8px; background: var(--ui-panel); color: var(--ui-ink); }
++.dash__body { display: flex; flex: 1; min-height: 0; }
++.dash__sidebar { width: 220px; border-right: 1px solid var(--ui-line-strong); padding: 14px; display: flex; flex-direction: column; gap: 4px; }
++.dash__folder { display: flex; justify-content: space-between; width: 100%; text-align: left; padding: 8px 10px; border: 0; background: transparent; border-radius: 8px; color: var(--ui-ink); cursor: pointer; }
++.dash__folder--active { background: var(--ui-panel); font-weight: 600; }
++.dash__count { opacity: 0.6; }
++.dash__folderrow { display: flex; align-items: center; }
++.dash__addfolder { margin-top: 10px; }
++.dash__main { flex: 1; padding: 18px; overflow: auto; }
++.dash__empty { text-align: center; color: var(--ui-ink); opacity: 0.8; padding: 60px 0; display: flex; flex-direction: column; gap: 14px; align-items: center; }
++.pgrid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
++.pcard { position: relative; border: 1px solid var(--ui-line-strong); border-radius: 12px; padding: 14px; background: var(--ui-panel); display: flex; flex-direction: column; gap: 10px; }
++.pcard__body { display: flex; flex-direction: column; gap: 4px; }
++.pcard__title { font-weight: 600; }
++.pcard__client, .pcard__meta { font-size: 0.85em; opacity: 0.75; }
++.pcard__actions { display: flex; gap: 6px; align-items: center; }
++.pcard__menu { position: absolute; top: 46px; right: 12px; z-index: 5; background: var(--ui-panel); border: 1px solid var(--ui-line-strong); border-radius: 10px; padding: 6px; display: flex; flex-direction: column; min-width: 160px; box-shadow: 0 8px 24px rgba(0,0,0,0.18); }
++.pcard__menu button { text-align: left; padding: 7px 10px; border: 0; background: transparent; color: var(--ui-ink); border-radius: 6px; cursor: pointer; }
++.pcard__submenu { border-top: 1px solid var(--ui-line-strong); border-bottom: 1px solid var(--ui-line-strong); margin: 4px 0; padding: 4px 0; }
++.pcard__submenu-label { display: block; font-size: 0.75em; opacity: 0.6; padding: 4px 10px; }
++.pcard__danger { color: #c0392b; }
++.modal { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 50; }
++.modal__card { background: var(--ui-panel); color: var(--ui-ink); border-radius: 14px; padding: 22px; width: 420px; max-width: calc(100vw - 32px); display: flex; flex-direction: column; gap: 12px; }
++.modal__actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px; }
++.app--loading { display: flex; align-items: center; justify-content: center; min-height: 100vh; opacity: 0.7; }
+diff --git a/apps/web/src/App.tsx b/apps/web/src/App.tsx
+index be1220a..b584252 100644
+--- a/apps/web/src/App.tsx
++++ b/apps/web/src/App.tsx
+@@ -1,11 +1,14 @@
++"use client";
++
+ import { useEffect } from "react";
++import { useRouter } from "next/navigation";
+ import { useProposalStore } from "./state/proposalStore";
+ import { DocumentRenderer } from "./render/DocumentRenderer";
+ import { Outline } from "./ui/Outline";
+ import { Inspector } from "./ui/Inspector";
+ import { ExportGate } from "./ui/ExportGate";
+ import { SaveControl } from "./ui/SaveControl";
+ import { Autosave } from "./ui/Autosave";
+ import { Toast } from "./ui/Toast";
+ import { SignOutButton } from "./ui/SignOutButton";
+ 
+@@ -18,29 +21,32 @@ import { SignOutButton } from "./ui/SignOutButton";
+  * loading state until `proposalId` matches. A ← Dashboard link is always shown
+  * when `id` is set so the user can return to the dashboard.
+  */
+ export function App({ id }: { id?: string } = {}) {
+   const document = useProposalStore((s) => s.document);
+   const theme = useProposalStore((s) => s.theme);
+   const proposalId = useProposalStore((s) => s.proposalId);
+   const loadProposal = useProposalStore((s) => s.load);
+   const loadSectionTypes = useProposalStore((s) => s.loadSectionTypes);
+   const loadTemplates = useProposalStore((s) => s.loadTemplates);
++  const router = useRouter();
+ 
+   useEffect(() => {
+     void loadSectionTypes();
+     void loadTemplates();
+   }, [loadSectionTypes, loadTemplates]);
+ 
+   useEffect(() => {
+-    if (id && id !== proposalId) void loadProposal(id);
+-  }, [id, proposalId, loadProposal]);
++    if (id && id !== proposalId) {
++      void loadProposal(id).catch(() => router.replace("/"));
++    }
++  }, [id, proposalId, loadProposal, router]);
+ 
+   const loading = Boolean(id) && proposalId !== id;
+   if (loading) {
+     return <div className="app app--loading">Loading proposal…</div>;
+   }
+ 
+   return (
+     <div className="app">
+       <header className="topbar">
+         <div className="topbar__brand">
+diff --git a/apps/web/src/__tests__/slice-03-static.test.tsx b/apps/web/src/__tests__/slice-03-static.test.tsx
+index b31fa8e..45a064a 100644
+--- a/apps/web/src/__tests__/slice-03-static.test.tsx
++++ b/apps/web/src/__tests__/slice-03-static.test.tsx
+@@ -1,20 +1,22 @@
+ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+ import { act, cleanup, render, screen, within } from "@testing-library/react";
+ import { sampleProposal } from "@proposal/shared";
+ import { setSectionVariant } from "../state/mutations";
+ import { useProposalStore } from "../state/proposalStore";
+ import { DocumentRenderer } from "../render/DocumentRenderer";
+ import { App } from "../App";
+ import { defaultTheme } from "../theme/defaultTheme";
+ import { midnightTheme } from "../theme/themes";
+ 
++vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: vi.fn(), push: vi.fn() }) }));
++
+ // App now calls loadSectionTypes and loadTemplates on mount. Stub fetch so tests
+ // remain hermetic — jsdom has no real fetch.
+ beforeEach(() => {
+   vi.stubGlobal("fetch", vi.fn((url: string) => {
+     const body = String(url).includes("/api/templates") ? { templates: [] } : { sectionTypes: [] };
+     return Promise.resolve(new Response(JSON.stringify(body), { status: 200, headers: { "content-type": "application/json" } }));
+   }));
+   useProposalStore.setState({
+     document: sampleProposal,
+     theme: defaultTheme,
+diff --git a/apps/web/src/__tests__/slice-07-frontend.test.tsx b/apps/web/src/__tests__/slice-07-frontend.test.tsx
+index 7596b02..cbb9e49 100644
+--- a/apps/web/src/__tests__/slice-07-frontend.test.tsx
++++ b/apps/web/src/__tests__/slice-07-frontend.test.tsx
+@@ -1,16 +1,18 @@
+ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+ import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+ import { App } from "../App";
+ import { Inspector } from "../ui/Inspector";
+ import { useProposalStore } from "../state/proposalStore";
+ 
++vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: vi.fn(), push: vi.fn() }) }));
++
+ // App now calls loadSectionTypes and loadTemplates on mount. Stub fetch so tests
+ // remain hermetic — jsdom has no real fetch.
+ beforeEach(() => {
+   vi.stubGlobal("fetch", vi.fn((url: string) => {
+     const body = String(url).includes("/api/templates") ? { templates: [] } : { sectionTypes: [] };
+     return Promise.resolve(new Response(JSON.stringify(body), { status: 200, headers: { "content-type": "application/json" } }));
+   }));
+   // Start each test on the locked Prelim template.
+   useProposalStore.getState().applyTemplate("tmpl_prelim");
+ });
+diff --git a/apps/web/src/__tests__/slice-14-editor-redirect.test.tsx b/apps/web/src/__tests__/slice-14-editor-redirect.test.tsx
+new file mode 100644
+index 0000000..2b78f19
+--- /dev/null
++++ b/apps/web/src/__tests__/slice-14-editor-redirect.test.tsx
+@@ -0,0 +1,24 @@
++import { afterEach, describe, expect, it, vi } from "vitest";
++import { cleanup, render, waitFor } from "@testing-library/react";
++import { App } from "../App";
++import { useProposalStore } from "../state/proposalStore";
++
++const { replace } = vi.hoisted(() => ({ replace: vi.fn() }));
++vi.mock("next/navigation", () => ({ useRouter: () => ({ replace, push: vi.fn() }) }));
++
++afterEach(() => {
++  cleanup();
++  vi.unstubAllGlobals();
++});
++
++describe("editor load failure", () => {
++  it("redirects to / when the proposal can't be loaded", async () => {
++    vi.stubGlobal("fetch", vi.fn((url: string) => {
++      if (String(url).includes("/api/proposals/")) return Promise.resolve(new Response(JSON.stringify({ error: "Not found" }), { status: 404 }));
++      return Promise.resolve(new Response(JSON.stringify({ sectionTypes: [], templates: [] }), { status: 200, headers: { "content-type": "application/json" } }));
++    }));
++    useProposalStore.setState({ proposalId: null });
++    render(<App id="prop_missing" />);
++    await waitFor(() => expect(replace).toHaveBeenCalledWith("/"));
++  });
++});
+diff --git a/apps/web/src/__tests__/slice-14-editor-route.test.tsx b/apps/web/src/__tests__/slice-14-editor-route.test.tsx
+index ed2a9a8..7fe21d5 100644
+--- a/apps/web/src/__tests__/slice-14-editor-route.test.tsx
++++ b/apps/web/src/__tests__/slice-14-editor-route.test.tsx
+@@ -1,16 +1,18 @@
+ import { afterEach, describe, expect, it, vi } from "vitest";
+ import { cleanup, render, screen, waitFor } from "@testing-library/react";
+ import { sampleProposal } from "@proposal/shared";
+ import { App } from "../App";
+ import { useProposalStore } from "../state/proposalStore";
+ 
++vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: vi.fn(), push: vi.fn() }) }));
++
+ afterEach(() => {
+   cleanup();
+   vi.unstubAllGlobals();
+ });
+ 
+ function stubFetch() {
+   vi.stubGlobal("fetch", vi.fn((url: string) => {
+     const u = String(url);
+     if (u.includes("/api/proposals/")) return Promise.resolve(new Response(JSON.stringify({ proposal: { document: { ...sampleProposal, title: "Loaded One" } } }), { status: 200, headers: { "content-type": "application/json" } }));
+     const body = u.includes("/api/templates") ? { templates: [] } : { sectionTypes: [] };

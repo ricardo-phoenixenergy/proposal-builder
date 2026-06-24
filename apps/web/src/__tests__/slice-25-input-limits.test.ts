@@ -4,7 +4,10 @@ import { setOwnerResolverForTests } from "../server/auth/owner";
 import { POST as genSection } from "../../app/api/generate/section/route";
 
 const req = (body: unknown) =>
-  new Request("http://localhost/api/generate/section", { method: "POST", body: JSON.stringify(body) });
+  new Request("http://localhost/api/generate/section", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
 
 beforeEach(() => setOwnerResolverForTests(async () => "owner_local"));
 afterEach(() => setOwnerResolverForTests(null));

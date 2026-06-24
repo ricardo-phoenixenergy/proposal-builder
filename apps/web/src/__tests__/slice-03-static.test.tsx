@@ -13,10 +13,20 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: vi.fn(), push: 
 // App now calls loadSectionTypes and loadTemplates on mount. Stub fetch so tests
 // remain hermetic — jsdom has no real fetch.
 beforeEach(() => {
-  vi.stubGlobal("fetch", vi.fn((url: string) => {
-    const body = String(url).includes("/api/templates") ? { templates: [] } : { sectionTypes: [] };
-    return Promise.resolve(new Response(JSON.stringify(body), { status: 200, headers: { "content-type": "application/json" } }));
-  }));
+  vi.stubGlobal(
+    "fetch",
+    vi.fn((url: string) => {
+      const body = String(url).includes("/api/templates")
+        ? { templates: [] }
+        : { sectionTypes: [] };
+      return Promise.resolve(
+        new Response(JSON.stringify(body), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        }),
+      );
+    }),
+  );
   useProposalStore.setState({
     document: sampleProposal,
     theme: defaultTheme,
@@ -114,7 +124,9 @@ describe("App — static preview, theming and variant swapping end-to-end (§13.
 
     act(() => useProposalStore.getState().setVariant("sec_summary", "banner"));
 
-    expect(document.querySelector('[data-component="executive-summary-banner"]')).toBeInTheDocument();
+    expect(
+      document.querySelector('[data-component="executive-summary-banner"]'),
+    ).toBeInTheDocument();
     // same copy, different layout
     expect(preview.getByText(/A 480 kWp rooftop array/i)).toBeInTheDocument();
   });

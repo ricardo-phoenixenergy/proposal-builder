@@ -6,7 +6,11 @@ import { setSessionUserResolverForTests } from "../server/auth/sessionUser";
 import { PATCH } from "../../app/api/users/[id]/route";
 
 const patch = (id: string, body: unknown) => ({
-  req: new Request(`http://x/api/users/${id}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }),
+  req: new Request(`http://x/api/users/${id}`, {
+    method: "PATCH",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  }),
   ctx: { params: Promise.resolve({ id }) },
 });
 
@@ -35,7 +39,9 @@ describe("PATCH /api/users/[id]", () => {
     await getRepo().createUser({ email: "admin@x.test", passwordHash: "h", isAdmin: true });
     const u = await getRepo().createUser({ email: "u@x.test", passwordHash: "h" });
     const up = patch(u.id, { isAdmin: true });
-    expect(((await (await PATCH(up.req, up.ctx)).json()) as { user: { isAdmin: boolean } }).user.isAdmin).toBe(true);
+    expect(
+      ((await (await PATCH(up.req, up.ctx)).json()) as { user: { isAdmin: boolean } }).user.isAdmin,
+    ).toBe(true);
   });
 
   it("400s an empty change body", async () => {

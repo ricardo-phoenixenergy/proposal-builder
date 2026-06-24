@@ -43,7 +43,8 @@ export function createMemoryRepo(): Repository {
   const folders = new Map<string, Folder>(); // keyed by folder id
   let aiModel: GenerationModelId | null = null;
   const sectionLayoutRows = new Map<string, import("@proposal/shared").SectionLayout>();
-  const layoutKey = (type: string, variant: string, pageFormat: string) => `${type}:${variant}:${pageFormat}`;
+  const layoutKey = (type: string, variant: string, pageFormat: string) =>
+    `${type}:${variant}:${pageFormat}`;
 
   return {
     async listProposals(ownerId) {
@@ -67,7 +68,10 @@ export function createMemoryRepo(): Repository {
     async updateProposalMeta(id, patch) {
       const existing = proposals.get(id);
       if (!existing) return null;
-      const document = patch.title !== undefined ? { ...clone(existing.document), title: patch.title } : existing.document;
+      const document =
+        patch.title !== undefined
+          ? { ...clone(existing.document), title: patch.title }
+          : existing.document;
       const updated: StoredProposal = {
         ...existing,
         document,
@@ -147,7 +151,12 @@ export function createMemoryRepo(): Repository {
     },
 
     async upsertTemplate({ id, template, deprecated }) {
-      const row: TemplateRow = { id, template: template ? clone(template) : null, deprecated, updatedAt: now() };
+      const row: TemplateRow = {
+        id,
+        template: template ? clone(template) : null,
+        deprecated,
+        updatedAt: now(),
+      };
       templates.set(id, row);
       return clone(row);
     },
@@ -244,7 +253,12 @@ export function createMemoryRepo(): Repository {
     },
 
     async upsertSectionType({ type, definition, deprecated }) {
-      const row: SectionTypeRow = { type, definition: definition ? clone(definition) : null, deprecated, updatedAt: now() };
+      const row: SectionTypeRow = {
+        type,
+        definition: definition ? clone(definition) : null,
+        deprecated,
+        updatedAt: now(),
+      };
       sectionTypeRows.set(type, row);
       return clone(row);
     },
@@ -296,7 +310,8 @@ export function createMemoryRepo(): Repository {
       if (!f || f.ownerId !== ownerId) return false;
       folders.delete(id);
       for (const [pid, p] of proposals) {
-        if (p.folderId === id && p.ownerId === ownerId) proposals.set(pid, { ...p, folderId: null });
+        if (p.folderId === id && p.ownerId === ownerId)
+          proposals.set(pid, { ...p, folderId: null });
       }
       return true;
     },
@@ -313,7 +328,10 @@ export function createMemoryRepo(): Repository {
       return [...sectionLayoutRows.values()].map(clone);
     },
     async upsertSectionLayout(layout) {
-      sectionLayoutRows.set(layoutKey(layout.type, layout.variant, layout.pageFormat), clone(layout));
+      sectionLayoutRows.set(
+        layoutKey(layout.type, layout.variant, layout.pageFormat),
+        clone(layout),
+      );
       return clone(layout);
     },
     async deleteSectionLayout(type, variant, pageFormat) {

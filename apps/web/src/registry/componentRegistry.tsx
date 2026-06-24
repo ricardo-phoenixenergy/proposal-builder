@@ -68,7 +68,12 @@ export function resolveSection(
     const layout = getLayout(section.type, variant, pageFormat);
     if (layout) {
       const Layout = (props: SectionComponentProps) => (
-        <LayoutRenderer layout={layout} data={props.data} theme={props.theme} {...(pageFormat !== undefined ? { pageFormat } : {})} />
+        <LayoutRenderer
+          layout={layout}
+          data={props.data}
+          theme={props.theme}
+          {...(pageFormat !== undefined ? { pageFormat } : {})}
+        />
       );
       Layout.displayName = `Layout(${section.type}:${variant})`;
       return { Component: Layout, unstyled: false, variant };
@@ -98,7 +103,9 @@ export function availableVariants(
   registry: ComponentRegistry = defaultRegistry,
 ): string[] {
   const prefix = `${type}:`;
-  const code = [...registry.keys()].filter((k) => k.startsWith(prefix)).map((k) => k.slice(prefix.length));
+  const code = [...registry.keys()]
+    .filter((k) => k.startsWith(prefix))
+    .map((k) => k.slice(prefix.length));
   const authored = listLayoutVariants(type, pageFormat);
   return [...new Set([...code, ...authored])];
 }

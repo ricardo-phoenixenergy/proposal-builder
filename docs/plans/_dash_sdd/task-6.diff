@@ -1,0 +1,119 @@
+=== commits ===
+03ee77c feat(api): folders CRUD routes
+
+=== stat ===
+ apps/web/app/api/folders/[id]/route.ts             | 28 +++++++++++++++
+ apps/web/app/api/folders/route.ts                  | 21 +++++++++++
+ .../src/__tests__/slice-14-folders-routes.test.ts  | 42 ++++++++++++++++++++++
+ 3 files changed, 91 insertions(+)
+
+=== diff ===
+diff --git a/apps/web/app/api/folders/[id]/route.ts b/apps/web/app/api/folders/[id]/route.ts
+new file mode 100644
+index 0000000..2ae57ad
+--- /dev/null
++++ b/apps/web/app/api/folders/[id]/route.ts
+@@ -0,0 +1,28 @@
++// apps/web/app/api/folders/[id]/route.ts
++import { NextResponse } from "next/server";
++import { getOwner } from "../../../../src/server/auth/owner";
++import { getRepo } from "../../../../src/server/repo";
++
++type Ctx = { params: Promise<{ id: string }> };
++
++/** PATCH — rename a folder. Body { name }. */
++export async function PATCH(request: Request, { params }: Ctx): Promise<Response> {
++  const owner = await getOwner();
++  if (!owner) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
++  const { id } = await params;
++  const body = (await request.json().catch(() => null)) as { name?: unknown } | null;
++  const name = typeof body?.name === "string" ? body.name.trim() : "";
++  if (name === "") return NextResponse.json({ error: "Folder name is required" }, { status: 400 });
++  const folder = await getRepo().renameFolder(owner, id, name);
++  if (!folder) return NextResponse.json({ error: "Not found" }, { status: 404 });
++  return NextResponse.json({ folder });
++}
++
++/** DELETE — remove a folder; its proposals become Unfiled. */
++export async function DELETE(_request: Request, { params }: Ctx): Promise<Response> {
++  const owner = await getOwner();
++  if (!owner) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
++  const { id } = await params;
++  const ok = await getRepo().deleteFolder(owner, id);
++  return ok ? new Response(null, { status: 204 }) : NextResponse.json({ error: "Not found" }, { status: 404 });
++}
+diff --git a/apps/web/app/api/folders/route.ts b/apps/web/app/api/folders/route.ts
+new file mode 100644
+index 0000000..7f39c1f
+--- /dev/null
++++ b/apps/web/app/api/folders/route.ts
+@@ -0,0 +1,21 @@
++// apps/web/app/api/folders/route.ts
++import { NextResponse } from "next/server";
++import { getOwner } from "../../../src/server/auth/owner";
++import { getRepo } from "../../../src/server/repo";
++
++/** GET — list the owner's folders. */
++export async function GET(): Promise<Response> {
++  const owner = await getOwner();
++  if (!owner) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
++  return NextResponse.json({ folders: await getRepo().listFolders(owner) });
++}
++
++/** POST — create a folder. Body { name }. */
++export async function POST(request: Request): Promise<Response> {
++  const owner = await getOwner();
++  if (!owner) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
++  const body = (await request.json().catch(() => null)) as { name?: unknown } | null;
++  const name = typeof body?.name === "string" ? body.name.trim() : "";
++  if (name === "") return NextResponse.json({ error: "Folder name is required" }, { status: 400 });
++  return NextResponse.json({ folder: await getRepo().createFolder(owner, name) }, { status: 201 });
++}
+diff --git a/apps/web/src/__tests__/slice-14-folders-routes.test.ts b/apps/web/src/__tests__/slice-14-folders-routes.test.ts
+new file mode 100644
+index 0000000..ef921ac
+--- /dev/null
++++ b/apps/web/src/__tests__/slice-14-folders-routes.test.ts
+@@ -0,0 +1,42 @@
++// @vitest-environment node
++import { afterEach, beforeEach, describe, expect, it } from "vitest";
++import { createMemoryRepo } from "../server/repo/memory";
++import { setRepoForTests, getRepo } from "../server/repo";
++import { setOwnerResolverForTests } from "../server/auth/owner";
++import { GET, POST } from "../../app/api/folders/route";
++import { PATCH, DELETE } from "../../app/api/folders/[id]/route";
++
++const post = (body: unknown) =>
++  new Request("http://x/api/folders", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
++const idReq = (id: string, method: string, body?: unknown) => ({
++  req: new Request(`http://x/api/folders/${id}`, { method, headers: { "content-type": "application/json" }, body: body ? JSON.stringify(body) : undefined }),
++  ctx: { params: Promise.resolve({ id }) },
++});
++
++beforeEach(() => {
++  setRepoForTests(createMemoryRepo());
++  setOwnerResolverForTests(async () => "owner_a");
++});
++afterEach(() => {
++  setRepoForTests(null);
++  setOwnerResolverForTests(null);
++});
++
++describe("/api/folders", () => {
++  it("creates, lists, 400s empty name", async () => {
++    expect((await POST(post({ name: "Sales" }))).status).toBe(201);
++    expect((await POST(post({ name: "  " }))).status).toBe(400);
++    const body = (await (await GET()).json()) as { folders: { name: string }[] };
++    expect(body.folders.map((f) => f.name)).toEqual(["Sales"]);
++  });
++
++  it("renames (200) and deletes (204); 404 unknown", async () => {
++    const f = await getRepo().createFolder("owner_a", "Sales");
++    const r = idReq(f.id, "PATCH", { name: "Renamed" });
++    expect((await PATCH(r.req, r.ctx)).status).toBe(200);
++    const d = idReq(f.id, "DELETE");
++    expect((await DELETE(d.req, d.ctx)).status).toBe(204);
++    const gone = idReq(f.id, "DELETE");
++    expect((await DELETE(gone.req, gone.ctx)).status).toBe(404);
++  });
++});

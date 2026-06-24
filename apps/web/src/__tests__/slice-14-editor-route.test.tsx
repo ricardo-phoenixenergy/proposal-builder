@@ -12,12 +12,26 @@ afterEach(() => {
 });
 
 function stubFetch() {
-  vi.stubGlobal("fetch", vi.fn((url: string) => {
-    const u = String(url);
-    if (u.includes("/api/proposals/")) return Promise.resolve(new Response(JSON.stringify({ proposal: { document: { ...sampleProposal, title: "Loaded One" } } }), { status: 200, headers: { "content-type": "application/json" } }));
-    const body = u.includes("/api/templates") ? { templates: [] } : { sectionTypes: [] };
-    return Promise.resolve(new Response(JSON.stringify(body), { status: 200, headers: { "content-type": "application/json" } }));
-  }));
+  vi.stubGlobal(
+    "fetch",
+    vi.fn((url: string) => {
+      const u = String(url);
+      if (u.includes("/api/proposals/"))
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({ proposal: { document: { ...sampleProposal, title: "Loaded One" } } }),
+            { status: 200, headers: { "content-type": "application/json" } },
+          ),
+        );
+      const body = u.includes("/api/templates") ? { templates: [] } : { sectionTypes: [] };
+      return Promise.resolve(
+        new Response(JSON.stringify(body), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        }),
+      );
+    }),
+  );
 }
 
 describe("editor /p/[id]", () => {

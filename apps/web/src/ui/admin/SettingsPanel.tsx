@@ -28,7 +28,11 @@ export function SettingsPanel({ initialModel }: { initialModel: GenerationModelI
       <p className="meter">The model used for every generation call across all proposals.</p>
       <label className="field">
         <span className="field__label">AI model</span>
-        <select aria-label="AI model" value={model} onChange={(e) => setModel(e.target.value as GenerationModelId)}>
+        <select
+          aria-label="AI model"
+          value={model}
+          onChange={(e) => setModel(e.target.value as GenerationModelId)}
+        >
           {SELECTABLE_MODELS.map((m) => (
             <option key={m.id} value={m.id}>
               {m.label}
@@ -37,11 +41,20 @@ export function SettingsPanel({ initialModel }: { initialModel: GenerationModelI
         </select>
       </label>
       <div className="field">
-        <button type="button" className="btn btn--primary" disabled={status === "saving"} onClick={save}>
+        <button
+          type="button"
+          className="btn btn--primary"
+          disabled={status === "saving"}
+          onClick={save}
+        >
           {status === "saving" ? "Saving…" : "Save"}
         </button>
         {status === "saved" ? <small className="meter">Saved.</small> : null}
-        {status === "error" ? <small className="meter" style={{ color: "var(--ui-danger)" }}>Couldn&apos;t save.</small> : null}
+        {status === "error" ? (
+          <small className="meter" style={{ color: "var(--ui-danger)" }}>
+            Couldn&apos;t save.
+          </small>
+        ) : null}
       </div>
     </section>
   );

@@ -12,7 +12,13 @@ function getClient(): Anthropic {
   return client;
 }
 
-export const anthropicCreateMessage: CreateMessageFn = async ({ model, system, user, schema, maxOutputTokens }) => {
+export const anthropicCreateMessage: CreateMessageFn = async ({
+  model,
+  system,
+  user,
+  schema,
+  maxOutputTokens,
+}) => {
   const startedAt = Date.now();
   try {
     const response = await getClient().messages.create({

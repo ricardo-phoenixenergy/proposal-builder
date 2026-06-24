@@ -55,7 +55,13 @@ export interface BlockBackground {
 }
 
 export type ContainerBlock =
-  | { kind: "stack"; gap?: SpaceScale; style?: BlockStyle; background?: BlockBackground; children: Block[] }
+  | {
+      kind: "stack";
+      gap?: SpaceScale;
+      style?: BlockStyle;
+      background?: BlockBackground;
+      children: Block[];
+    }
   | {
       kind: "columns";
       gap?: SpaceScale;
@@ -68,7 +74,17 @@ export type ContainerBlock =
 export type Block = LeafBlock | ContainerBlock;
 
 export const LEAF_KINDS = [
-  "heading", "paragraph", "list", "keyValue", "table", "chart", "matrix", "logo", "divider", "callout", "text",
+  "heading",
+  "paragraph",
+  "list",
+  "keyValue",
+  "table",
+  "chart",
+  "matrix",
+  "logo",
+  "divider",
+  "callout",
+  "text",
 ] as const;
 export const CONTAINER_KINDS = ["stack", "columns"] as const;
 

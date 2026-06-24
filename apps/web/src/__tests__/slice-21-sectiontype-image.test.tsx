@@ -27,9 +27,17 @@ describe("SectionTypeEditor — image field", () => {
     await waitFor(() => expect(save).toBeEnabled());
     fireEvent.click(save);
 
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/section-types", expect.objectContaining({ method: "POST" })));
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/section-types",
+        expect.objectContaining({ method: "POST" }),
+      ),
+    );
     const call = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
-    const sent = JSON.parse(call[1].body as string) as { category: string; fields: { type: string }[] };
+    const sent = JSON.parse(call[1].body as string) as {
+      category: string;
+      fields: { type: string }[];
+    };
     expect(sent.category).toBe("text");
     expect(sent.fields[0]!.type).toBe("image");
   });

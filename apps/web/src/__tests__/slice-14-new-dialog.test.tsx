@@ -7,12 +7,42 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
 
 beforeEach(() => {
   push.mockReset();
-  vi.stubGlobal("fetch", vi.fn((url: string, init?: RequestInit) => {
-    const u = String(url);
-    if (u.includes("/api/templates")) return Promise.resolve(new Response(JSON.stringify({ templates: [{ id: "tmpl_open", name: "Open", themeId: "theme_phoenix_default", locked: false, slots: [{ kind: "fixed", type: "text", lock: "open" }] }] }), { status: 200, headers: { "content-type": "application/json" } }));
-    if (u === "/api/proposals" && init?.method === "POST") return Promise.resolve(new Response(JSON.stringify({ proposal: { id: "prop_new", document: {} } }), { status: 201, headers: { "content-type": "application/json" } }));
-    return Promise.resolve(new Response(JSON.stringify({}), { status: 200, headers: { "content-type": "application/json" } }));
-  }));
+  vi.stubGlobal(
+    "fetch",
+    vi.fn((url: string, init?: RequestInit) => {
+      const u = String(url);
+      if (u.includes("/api/templates"))
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              templates: [
+                {
+                  id: "tmpl_open",
+                  name: "Open",
+                  themeId: "theme_phoenix_default",
+                  locked: false,
+                  slots: [{ kind: "fixed", type: "text", lock: "open" }],
+                },
+              ],
+            }),
+            { status: 200, headers: { "content-type": "application/json" } },
+          ),
+        );
+      if (u === "/api/proposals" && init?.method === "POST")
+        return Promise.resolve(
+          new Response(JSON.stringify({ proposal: { id: "prop_new", document: {} } }), {
+            status: 201,
+            headers: { "content-type": "application/json" },
+          }),
+        );
+      return Promise.resolve(
+        new Response(JSON.stringify({}), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        }),
+      );
+    }),
+  );
 });
 afterEach(() => {
   cleanup();

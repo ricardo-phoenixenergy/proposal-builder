@@ -38,7 +38,8 @@ export async function generateField(
   if (!field) return { ok: false, error: `Unknown field: ${input.fieldKey}` };
 
   const schema = buildFieldGenerationSchema(field);
-  if (schema === null) return { ok: false, error: "This field isn't AI-composable — edit it directly." };
+  if (schema === null)
+    return { ok: false, error: "This field isn't AI-composable — edit it directly." };
 
   const model = isSelectableModel(input.model) ? input.model : DEFAULT_MODEL;
 
@@ -47,7 +48,12 @@ export async function generateField(
     text = await createMessage({
       model,
       system: systemPrompt(),
-      user: fieldRewritePrompt(field, input.brief, input.instruction ?? "", input.currentValue ?? ""),
+      user: fieldRewritePrompt(
+        field,
+        input.brief,
+        input.instruction ?? "",
+        input.currentValue ?? "",
+      ),
       schema,
       maxOutputTokens: estimateMaxOutputTokens(typeSchema),
     });
@@ -58,7 +64,12 @@ export async function generateField(
   let value: unknown;
   try {
     const parsed: unknown = JSON.parse(text);
-    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed) || !("value" in parsed)) {
+    if (
+      typeof parsed !== "object" ||
+      parsed === null ||
+      Array.isArray(parsed) ||
+      !("value" in parsed)
+    ) {
       return { ok: false, error: "Model output missing a value" };
     }
     value = (parsed as { value: unknown }).value;
@@ -67,7 +78,11 @@ export async function generateField(
   }
 
   // Validate just this field by isolating errors whose path references the field key.
-  const full = validateSection({ id: input.sectionId ?? "draft", type: input.type, data: { [input.fieldKey]: value } });
+  const full = validateSection({
+    id: input.sectionId ?? "draft",
+    type: input.type,
+    data: { [input.fieldKey]: value },
+  });
   const errors = full.errors.filter((e) => e.path.split("/").includes(input.fieldKey));
   return { ok: true, value, validation: { valid: errors.length === 0, errors } };
 }

@@ -9,11 +9,18 @@ import { invalidateActiveRegistry } from "../server/registry/activeRegistry";
 import { GET, POST } from "../../app/api/templates/route";
 
 const def: Template = {
-  id: "tmpl_sales", name: "Sales", themeId: "theme_phoenix_default", locked: false,
+  id: "tmpl_sales",
+  name: "Sales",
+  themeId: "theme_phoenix_default",
+  locked: false,
   slots: [{ kind: "fixed", type: "text", lock: "open" }],
 };
 const post = (body: unknown) =>
-  new Request("http://x/api/templates", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+  new Request("http://x/api/templates", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
 
 let admin = true;
 beforeEach(() => {
@@ -33,7 +40,9 @@ afterEach(() => {
 describe("GET /api/templates", () => {
   it("lists built-ins for any authed user", async () => {
     const body = (await (await GET()).json()) as { templates: Template[] };
-    expect(body.templates.map((t) => t.id)).toEqual(expect.arrayContaining(builtInTemplates.map((t) => t.id)));
+    expect(body.templates.map((t) => t.id)).toEqual(
+      expect.arrayContaining(builtInTemplates.map((t) => t.id)),
+    );
   });
 });
 

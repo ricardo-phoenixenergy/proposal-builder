@@ -1,0 +1,340 @@
+=== commits ===
+11ae212 feat(dashboard): server home page + grid/cards with search/sort/actions
+
+=== stat ===
+ apps/web/app/page.tsx                              |  22 ++--
+ apps/web/src/__tests__/slice-14-dashboard.test.tsx |  43 +++++++
+ apps/web/src/ui/dashboard/Dashboard.tsx            | 132 +++++++++++++++++++++
+ apps/web/src/ui/dashboard/ProposalCard.tsx         |  67 +++++++++++
+ apps/web/src/ui/dashboard/ProposalGrid.tsx         |  32 +++++
+ 5 files changed, 289 insertions(+), 7 deletions(-)
+
+=== diff ===
+diff --git a/apps/web/app/page.tsx b/apps/web/app/page.tsx
+index 8ffb9db..456bdac 100644
+--- a/apps/web/app/page.tsx
++++ b/apps/web/app/page.tsx
+@@ -1,10 +1,18 @@
+-"use client";
++import { redirect } from "next/navigation";
++import { getSessionUser } from "../src/server/auth/sessionUser";
++import { getRepo } from "../src/server/repo";
++import { Dashboard } from "../src/ui/dashboard/Dashboard";
+ 
+-// The editor is fully interactive (Zustand state, live preview, variant/theme
+-// swapping), so the page is a thin client shell around <App/>. RSC is reserved
+-// for the print route, which Puppeteer renders server-side (slice 9).
+-import { App } from "../src/App";
++export const runtime = "nodejs";
+ 
+-export default function Page() {
+-  return <App />;
++/** Home — the signed-in user's proposal dashboard. */
++export default async function HomePage() {
++  const user = await getSessionUser();
++  if (!user) redirect("/signin");
++
++  const [proposals, folders] = await Promise.all([
++    getRepo().listProposals(user.id),
++    getRepo().listFolders(user.id),
++  ]);
++  return <Dashboard initialProposals={proposals} initialFolders={folders} isAdmin={user.isAdmin} />;
+ }
+diff --git a/apps/web/src/__tests__/slice-14-dashboard.test.tsx b/apps/web/src/__tests__/slice-14-dashboard.test.tsx
+new file mode 100644
+index 0000000..8956b37
+--- /dev/null
++++ b/apps/web/src/__tests__/slice-14-dashboard.test.tsx
+@@ -0,0 +1,43 @@
++import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
++import { cleanup, render, screen, fireEvent, waitFor, within } from "@testing-library/react";
++import { Dashboard } from "../ui/dashboard/Dashboard";
++import type { ProposalSummary } from "../client/persistence";
++
++const { push } = vi.hoisted(() => ({ push: vi.fn() }));
++vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
++
++const props: ProposalSummary[] = [
++  { id: "p1", title: "Acme Q3", client: "Acme Inc", folderId: null, updatedAt: "2026-06-10T00:00:00.000Z" },
++  { id: "p2", title: "Tidal PPA", client: "Tidal Energy", folderId: null, updatedAt: "2026-06-18T00:00:00.000Z" },
++];
++
++beforeEach(() => {
++  vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(new Response(JSON.stringify({}), { status: 200, headers: { "content-type": "application/json" } }))));
++});
++afterEach(() => {
++  cleanup();
++  vi.unstubAllGlobals();
++});
++
++describe("Dashboard", () => {
++  it("renders proposal cards and filters by search", async () => {
++    render(<Dashboard initialProposals={props} initialFolders={[]} isAdmin={false} />);
++    expect(screen.getByText("Acme Q3")).toBeInTheDocument();
++    expect(screen.getByText("Tidal PPA")).toBeInTheDocument();
++
++    fireEvent.change(screen.getByLabelText(/search/i), { target: { value: "tidal" } });
++    expect(screen.queryByText("Acme Q3")).not.toBeInTheDocument();
++    expect(screen.getByText("Tidal PPA")).toBeInTheDocument();
++  });
++
++  it("Open links to /p/[id]", () => {
++    render(<Dashboard initialProposals={props} initialFolders={[]} isAdmin={false} />);
++    const card = screen.getByText("Acme Q3").closest("[data-proposal]") as HTMLElement;
++    expect(within(card).getByRole("link", { name: /open/i })).toHaveAttribute("href", "/p/p1");
++  });
++
++  it("shows an empty state when there are no proposals", () => {
++    render(<Dashboard initialProposals={[]} initialFolders={[]} isAdmin={false} />);
++    expect(screen.getByText(/no proposals yet/i)).toBeInTheDocument();
++  });
++});
+diff --git a/apps/web/src/ui/dashboard/Dashboard.tsx b/apps/web/src/ui/dashboard/Dashboard.tsx
+new file mode 100644
+index 0000000..9a7bf51
+--- /dev/null
++++ b/apps/web/src/ui/dashboard/Dashboard.tsx
+@@ -0,0 +1,132 @@
++"use client";
++
++import { useMemo, useState } from "react";
++import { useRouter } from "next/navigation";
++import {
++  listProposals,
++  updateProposalMeta,
++  duplicateProposal,
++  deleteProposal,
++  downloadProposalPdf,
++  type ProposalSummary,
++} from "../../client/persistence";
++import type { Folder } from "../../client/folders";
++import { useProposalStore } from "../../state/proposalStore";
++import { ProposalGrid } from "./ProposalGrid";
++
++type Sort = "recent" | "title";
++
++export function Dashboard({
++  initialProposals,
++  initialFolders,
++  isAdmin,
++}: {
++  initialProposals: ProposalSummary[];
++  initialFolders: Folder[];
++  isAdmin: boolean;
++}) {
++  const notify = useProposalStore((s) => s.notify);
++  const router = useRouter();
++  const [proposals, setProposals] = useState(initialProposals);
++  const [folders] = useState(initialFolders);
++  const [search, setSearch] = useState("");
++  const [sort, setSort] = useState<Sort>("recent");
++  const selectedFolderId: string | null | "all" = "all"; // sidebar wires this in Task 10
++
++  const refresh = async () => {
++    try {
++      setProposals(await listProposals());
++    } catch {
++      notify("error", "Couldn't refresh proposals.");
++    }
++  };
++
++  const visible = useMemo(() => {
++    const q = search.trim().toLowerCase();
++    let list = proposals;
++    if (selectedFolderId !== "all") {
++      list = list.filter((p) => (selectedFolderId === null ? p.folderId === null : p.folderId === selectedFolderId));
++    }
++    if (q) list = list.filter((p) => p.title.toLowerCase().includes(q) || p.client.toLowerCase().includes(q));
++    return [...list].sort((a, b) =>
++      sort === "title" ? a.title.localeCompare(b.title) : b.updatedAt.localeCompare(a.updatedAt),
++    );
++  }, [proposals, search, sort, selectedFolderId]);
++
++  const handlers = {
++    onDownload: async (id: string) => {
++      try {
++        await downloadProposalPdf(id);
++      } catch {
++        notify("error", "Export failed.");
++      }
++    },
++    onDuplicate: async (id: string) => {
++      try {
++        await duplicateProposal(id);
++        await refresh();
++        notify("success", "Duplicated.");
++      } catch {
++        notify("error", "Duplicate failed.");
++      }
++    },
++    onRename: async (id: string, current: string) => {
++      const title = window.prompt("Rename proposal", current);
++      if (title === null || title.trim() === "") return;
++      try {
++        await updateProposalMeta(id, { title: title.trim() });
++        await refresh();
++      } catch {
++        notify("error", "Rename failed.");
++      }
++    },
++    onMove: async (id: string, folderId: string | null) => {
++      try {
++        await updateProposalMeta(id, { folderId });
++        await refresh();
++      } catch {
++        notify("error", "Move failed.");
++      }
++    },
++    onDelete: async (id: string) => {
++      if (!window.confirm("Delete this proposal? This can't be undone.")) return;
++      try {
++        await deleteProposal(id);
++        setProposals((prev) => prev.filter((p) => p.id !== id));
++      } catch {
++        notify("error", "Delete failed.");
++      }
++    },
++  };
++
++  return (
++    <div className="dash">
++      <header className="topbar">
++        <span className="topbar__title">Proposal Generator</span>
++        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
++          {isAdmin ? <a className="btn btn--ghost" href="/admin">Admin</a> : null}
++          <a className="btn btn--ghost" href="/api/auth/signout">Sign out</a>
++        </div>
++      </header>
++
++      <div className="dash__toolbar">
++        <input aria-label="Search title or client" placeholder="Search title or client…" value={search} onChange={(e) => setSearch(e.target.value)} />
++        <select aria-label="Sort" value={sort} onChange={(e) => setSort(e.target.value as Sort)}>
++          <option value="recent">Recent</option>
++          <option value="title">Title A–Z</option>
++        </select>
++        <button type="button" className="btn btn--primary" onClick={() => router.push("/p/new")}>+ New</button>
++      </div>
++
++      <main className="dash__main">
++        {proposals.length === 0 ? (
++          <div className="dash__empty">
++            <p>No proposals yet.</p>
++          </div>
++        ) : (
++          <ProposalGrid proposals={visible} folders={folders} handlers={handlers} />
++        )}
++      </main>
++    </div>
++  );
++}
+diff --git a/apps/web/src/ui/dashboard/ProposalCard.tsx b/apps/web/src/ui/dashboard/ProposalCard.tsx
+new file mode 100644
+index 0000000..6b495fb
+--- /dev/null
++++ b/apps/web/src/ui/dashboard/ProposalCard.tsx
+@@ -0,0 +1,67 @@
++"use client";
++
++import { useState } from "react";
++import type { ProposalSummary } from "../../client/persistence";
++import type { Folder } from "../../client/folders";
++
++function ago(iso: string): string {
++  const d = Date.parse(iso);
++  if (Number.isNaN(d)) return "";
++  const days = Math.floor((Date.now() - d) / 86_400_000);
++  if (days <= 0) return "today";
++  if (days === 1) return "1 day ago";
++  if (days < 7) return `${days} days ago`;
++  const weeks = Math.floor(days / 7);
++  return weeks === 1 ? "1 week ago" : `${weeks} weeks ago`;
++}
++
++export function ProposalCard({
++  proposal,
++  folders,
++  onDownload,
++  onDuplicate,
++  onRename,
++  onMove,
++  onDelete,
++}: {
++  proposal: ProposalSummary;
++  folders: Folder[];
++  onDownload: (id: string) => void;
++  onDuplicate: (id: string) => void;
++  onRename: (id: string, current: string) => void;
++  onMove: (id: string, folderId: string | null) => void;
++  onDelete: (id: string) => void;
++}) {
++  const [menu, setMenu] = useState(false);
++  const folderName = proposal.folderId ? folders.find((f) => f.id === proposal.folderId)?.name ?? "—" : "Unfiled";
++
++  return (
++    <li data-proposal={proposal.id} className="pcard">
++      <div className="pcard__body">
++        <span className="pcard__title">{proposal.title}</span>
++        <span className="pcard__client">{proposal.client || "—"}</span>
++        <span className="pcard__meta">edited {ago(proposal.updatedAt)}</span>
++        <span className="tag">{folderName}</span>
++      </div>
++      <div className="pcard__actions">
++        <a className="btn btn--primary" href={`/p/${proposal.id}`}>Open</a>
++        <button type="button" className="btn" aria-label="Download" onClick={() => onDownload(proposal.id)}>⬇</button>
++        <button type="button" className="btn" aria-label="More actions" onClick={() => setMenu((m) => !m)}>⋯</button>
++      </div>
++      {menu ? (
++        <div className="pcard__menu" role="menu">
++          <button type="button" role="menuitem" onClick={() => { setMenu(false); onDuplicate(proposal.id); }}>Duplicate</button>
++          <button type="button" role="menuitem" onClick={() => { setMenu(false); onRename(proposal.id, proposal.title); }}>Rename</button>
++          <div className="pcard__submenu">
++            <span className="pcard__submenu-label">Move to</span>
++            <button type="button" role="menuitem" onClick={() => { setMenu(false); onMove(proposal.id, null); }}>Unfiled</button>
++            {folders.map((f) => (
++              <button key={f.id} type="button" role="menuitem" onClick={() => { setMenu(false); onMove(proposal.id, f.id); }}>{f.name}</button>
++            ))}
++          </div>
++          <button type="button" role="menuitem" className="pcard__danger" onClick={() => { setMenu(false); onDelete(proposal.id); }}>Delete</button>
++        </div>
++      ) : null}
++    </li>
++  );
++}
+diff --git a/apps/web/src/ui/dashboard/ProposalGrid.tsx b/apps/web/src/ui/dashboard/ProposalGrid.tsx
+new file mode 100644
+index 0000000..c273830
+--- /dev/null
++++ b/apps/web/src/ui/dashboard/ProposalGrid.tsx
+@@ -0,0 +1,32 @@
++"use client";
++
++import type { ProposalSummary } from "../../client/persistence";
++import type { Folder } from "../../client/folders";
++import { ProposalCard } from "./ProposalCard";
++
++export function ProposalGrid({
++  proposals,
++  folders,
++  handlers,
++}: {
++  proposals: ProposalSummary[];
++  folders: Folder[];
++  handlers: {
++    onDownload: (id: string) => void;
++    onDuplicate: (id: string) => void;
++    onRename: (id: string, current: string) => void;
++    onMove: (id: string, folderId: string | null) => void;
++    onDelete: (id: string) => void;
++  };
++}) {
++  if (proposals.length === 0) {
++    return <p className="dash__empty">No matches.</p>;
++  }
++  return (
++    <ul className="pgrid">
++      {proposals.map((p) => (
++        <ProposalCard key={p.id} proposal={p} folders={folders} {...handlers} />
++      ))}
++    </ul>
++  );
++}

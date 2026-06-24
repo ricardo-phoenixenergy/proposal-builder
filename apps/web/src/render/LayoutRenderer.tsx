@@ -1,5 +1,11 @@
 import type { Key, ReactNode } from "react";
-import type { Block, BlockBackground, ImageRef, SectionLayout, ThemeTokens } from "@proposal/shared";
+import type {
+  Block,
+  BlockBackground,
+  ImageRef,
+  SectionLayout,
+  ThemeTokens,
+} from "@proposal/shared";
 import { compileBlockStyle, spaceToken, getSectionType, getPageFormat } from "@proposal/shared";
 import { DataTable } from "../components/sections/DataTable";
 import { ComparisonMatrix } from "../components/sections/ComparisonMatrix";
@@ -51,7 +57,12 @@ function withBackground(
       {bg.overlay ? (
         <div
           data-bg-overlay="true"
-          style={{ position: "absolute", inset: 0, background: `var(--c-${bg.overlay.color})`, opacity: bg.overlay.opacity / 100 }}
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: `var(--c-${bg.overlay.color})`,
+            opacity: bg.overlay.opacity / 100,
+          }}
         />
       ) : null}
       <div style={{ position: "relative" }}>{inner}</div>
@@ -66,7 +77,14 @@ function withBackground(
  * token CSS only. Unknown kinds/props are skipped (never thrown), so a layout
  * authored against an older schema degrades gracefully.
  */
-function renderBlock(block: Block, data: Data, theme: ThemeTokens, layoutType: string, pageFormat: string | undefined, k: Key): ReactNode {
+function renderBlock(
+  block: Block,
+  data: Data,
+  theme: ThemeTokens,
+  layoutType: string,
+  pageFormat: string | undefined,
+  k: Key,
+): ReactNode {
   const style = compileBlockStyle(block.style);
   switch (block.kind) {
     case "heading":
@@ -122,12 +140,18 @@ function renderBlock(block: Block, data: Data, theme: ThemeTokens, layoutType: s
         </div>
       );
     case "logo":
-      return theme.logoUrl ? <img key={k} data-block="logo" src={theme.logoUrl} alt="" style={style} /> : null;
+      return theme.logoUrl ? (
+        <img key={k} data-block="logo" src={theme.logoUrl} alt="" style={style} />
+      ) : null;
     case "divider":
       return <hr key={k} data-block="divider" style={{ borderColor: "var(--c-line)", ...style }} />;
     case "callout":
       return (
-        <div key={k} data-block="callout" style={{ background: "var(--c-surface)", padding: spaceToken("md"), ...style }}>
+        <div
+          key={k}
+          data-block="callout"
+          style={{ background: "var(--c-surface)", padding: spaceToken("md"), ...style }}
+        >
           {block.text}
         </div>
       );
@@ -141,18 +165,34 @@ function renderBlock(block: Block, data: Data, theme: ThemeTokens, layoutType: s
       const inner = (
         <div
           data-block="stack"
-          style={{ display: "flex", flexDirection: "column", gap: block.gap ? spaceToken(block.gap) : undefined, ...style }}
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: block.gap ? spaceToken(block.gap) : undefined,
+            ...style,
+          }}
         >
-          {block.children.map((child, i) => renderBlock(child, data, theme, layoutType, pageFormat, i))}
+          {block.children.map((child, i) =>
+            renderBlock(child, data, theme, layoutType, pageFormat, i),
+          )}
         </div>
       );
-      return block.background ? withBackground(block.background, data, pageFormat, inner, k) : <div key={k}>{inner}</div>;
+      return block.background ? (
+        withBackground(block.background, data, pageFormat, inner, k)
+      ) : (
+        <div key={k}>{inner}</div>
+      );
     }
     case "columns": {
       const inner = (
         <div
           data-block="columns"
-          style={{ display: "flex", flexDirection: "row", gap: block.gap ? spaceToken(block.gap) : undefined, ...style }}
+          style={{
+            display: "flex",
+            flexDirection: "row",
+            gap: block.gap ? spaceToken(block.gap) : undefined,
+            ...style,
+          }}
         >
           {block.columns.map((col, i) => (
             <div key={i} data-column={i} style={{ flex: block.widths?.[i] ?? 1 }}>
@@ -161,7 +201,11 @@ function renderBlock(block: Block, data: Data, theme: ThemeTokens, layoutType: s
           ))}
         </div>
       );
-      return block.background ? withBackground(block.background, data, pageFormat, inner, k) : <div key={k}>{inner}</div>;
+      return block.background ? (
+        withBackground(block.background, data, pageFormat, inner, k)
+      ) : (
+        <div key={k}>{inner}</div>
+      );
     }
     default:
       return null; // unknown kind — skip, never throw

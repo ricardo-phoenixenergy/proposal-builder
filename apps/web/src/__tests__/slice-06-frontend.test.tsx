@@ -33,10 +33,16 @@ beforeEach(() => {
 describe("Inspector — Rewrite section merges only the selected section", () => {
   it("applies generated data to the selected section, leaving siblings untouched", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      new Response(JSON.stringify({ data: { heading: "New", body: "New body" }, validation: { valid: true, errors: [] } }), {
-        status: 200,
-        headers: { "content-type": "application/json" },
-      }),
+      new Response(
+        JSON.stringify({
+          data: { heading: "New", body: "New body" },
+          validation: { valid: true, errors: [] },
+        }),
+        {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        },
+      ),
     );
 
     render(<Inspector />);
@@ -44,7 +50,10 @@ describe("Inspector — Rewrite section merges only the selected section", () =>
 
     await waitFor(() => {
       const sections = useProposalStore.getState().document.sections;
-      expect(sections.find((s) => s.id === "cover")!.data).toMatchObject({ heading: "New", body: "New body" });
+      expect(sections.find((s) => s.id === "cover")!.data).toMatchObject({
+        heading: "New",
+        body: "New body",
+      });
     });
     // sibling untouched
     const sum = useProposalStore.getState().document.sections.find((s) => s.id === "sum")!;

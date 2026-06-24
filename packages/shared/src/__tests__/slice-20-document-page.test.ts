@@ -4,7 +4,10 @@ import { sampleProposal } from "../samples/sample-proposal";
 
 describe("document page settings", () => {
   it("accepts pageFormat + pageMode", () => {
-    expect(validateDocument({ ...sampleProposal, pageFormat: "widescreen_16_9", pageMode: "slides" }).valid).toBe(true);
+    expect(
+      validateDocument({ ...sampleProposal, pageFormat: "widescreen_16_9", pageMode: "slides" })
+        .valid,
+    ).toBe(true);
   });
 
   it("still accepts a document without them", () => {

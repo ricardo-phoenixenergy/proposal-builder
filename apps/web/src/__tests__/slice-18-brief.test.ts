@@ -4,7 +4,14 @@ import { useProposalStore } from "../state/proposalStore";
 
 beforeEach(() => {
   useProposalStore.setState({
-    document: { id: "p1", title: "T", client: { name: "C" }, themeId: "theme_default", templateId: "open", sections: [] },
+    document: {
+      id: "p1",
+      title: "T",
+      client: { name: "C" },
+      themeId: "theme_default",
+      templateId: "open",
+      sections: [],
+    },
   });
 });
 

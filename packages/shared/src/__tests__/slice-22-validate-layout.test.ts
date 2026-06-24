@@ -20,7 +20,12 @@ const coverType: SectionTypeSchema = {
 };
 
 const layout = (root: SectionLayout["root"]): SectionLayout => ({
-  type: "cover", variant: "cover", pageFormat: "widescreen_16_9", name: "Cover", root, version: 1,
+  type: "cover",
+  variant: "cover",
+  pageFormat: "widescreen_16_9",
+  name: "Cover",
+  root,
+  version: 1,
 });
 
 describe("validateLayout", () => {
@@ -30,7 +35,11 @@ describe("validateLayout", () => {
         kind: "stack",
         gap: "md",
         children: [
-          { kind: "heading", field: "title", style: { color: "primary", size: "xl", align: "center" } },
+          {
+            kind: "heading",
+            field: "title",
+            style: { color: "primary", size: "xl", align: "center" },
+          },
           { kind: "paragraph", field: "subtitle" },
           { kind: "list", field: "bullets" },
           { kind: "keyValue", fields: ["title"] },
@@ -49,25 +58,37 @@ describe("validateLayout", () => {
   });
 
   it("rejects an unknown block kind", () => {
-    const res = validateLayout(layout({ kind: "stack", children: [{ kind: "marquee" } as never] }), coverType);
+    const res = validateLayout(
+      layout({ kind: "stack", children: [{ kind: "marquee" } as never] }),
+      coverType,
+    );
     expect(res.valid).toBe(false);
     expect(res.errors.some((e) => e.path === "/root/children/0/kind")).toBe(true);
   });
 
   it("rejects a heading bound to a dataset field (kind mismatch)", () => {
-    const res = validateLayout(layout({ kind: "stack", children: [{ kind: "heading", field: "metrics" }] }), coverType);
+    const res = validateLayout(
+      layout({ kind: "stack", children: [{ kind: "heading", field: "metrics" }] }),
+      coverType,
+    );
     expect(res.valid).toBe(false);
     expect(res.errors.some((e) => e.path === "/root/children/0/field")).toBe(true);
   });
 
   it("rejects a binding to a nonexistent field", () => {
-    const res = validateLayout(layout({ kind: "stack", children: [{ kind: "heading", field: "nope" }] }), coverType);
+    const res = validateLayout(
+      layout({ kind: "stack", children: [{ kind: "heading", field: "nope" }] }),
+      coverType,
+    );
     expect(res.valid).toBe(false);
   });
 
   it("rejects an off-vocabulary style token", () => {
     const res = validateLayout(
-      layout({ kind: "stack", children: [{ kind: "heading", field: "title", style: { color: "brandRed" as never } }] }),
+      layout({
+        kind: "stack",
+        children: [{ kind: "heading", field: "title", style: { color: "brandRed" as never } }],
+      }),
       coverType,
     );
     expect(res.valid).toBe(false);
@@ -75,14 +96,20 @@ describe("validateLayout", () => {
   });
 
   it("requires static text on callout/text", () => {
-    const res = validateLayout(layout({ kind: "stack", children: [{ kind: "callout", text: "" }] }), coverType);
+    const res = validateLayout(
+      layout({ kind: "stack", children: [{ kind: "callout", text: "" }] }),
+      coverType,
+    );
     expect(res.valid).toBe(false);
   });
 
   it("enforces 2–4 columns and matching widths", () => {
     const oneCol = validateLayout(layout({ kind: "columns", columns: [[]] }), coverType);
     expect(oneCol.valid).toBe(false);
-    const badWidths = validateLayout(layout({ kind: "columns", widths: [1], columns: [[], []] }), coverType);
+    const badWidths = validateLayout(
+      layout({ kind: "columns", widths: [1], columns: [[], []] }),
+      coverType,
+    );
     expect(badWidths.valid).toBe(false);
   });
 
@@ -98,7 +125,12 @@ describe("validateLayout", () => {
     const ok = validateLayout(
       layout({
         kind: "stack",
-        background: { image: { field: "cover_image" }, overlay: { color: "primary", opacity: 50 }, position: "cover", minHeight: "page" },
+        background: {
+          image: { field: "cover_image" },
+          overlay: { color: "primary", opacity: 50 },
+          position: "cover",
+          minHeight: "page",
+        },
         children: [{ kind: "heading", field: "title" }],
       }),
       coverType,
@@ -112,7 +144,11 @@ describe("validateLayout", () => {
     expect(badField.valid).toBe(false); // title is text, not image
 
     const badOpacity = validateLayout(
-      layout({ kind: "stack", background: { overlay: { color: "primary", opacity: 150 } }, children: [] }),
+      layout({
+        kind: "stack",
+        background: { overlay: { color: "primary", opacity: 150 } },
+        children: [],
+      }),
       coverType,
     );
     expect(badOpacity.valid).toBe(false);

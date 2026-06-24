@@ -1,0 +1,118 @@
+=== commits ===
+a8dec73 feat(editor): /p/[id] route, App loads by id, Dashboard back link
+
+=== stat ===
+ apps/web/app/p/[id]/page.tsx                       |  9 +++++++
+ apps/web/src/App.tsx                               | 19 +++++++++++++-
+ .../src/__tests__/slice-14-editor-route.test.tsx   | 29 ++++++++++++++++++++++
+ 3 files changed, 56 insertions(+), 1 deletion(-)
+
+=== diff ===
+diff --git a/apps/web/app/p/[id]/page.tsx b/apps/web/app/p/[id]/page.tsx
+new file mode 100644
+index 0000000..2e26176
+--- /dev/null
++++ b/apps/web/app/p/[id]/page.tsx
+@@ -0,0 +1,9 @@
++import { App } from "../../../src/App";
++
++type Ctx = { params: Promise<{ id: string }> };
++
++/** Editor for a single proposal. The client shell loads it by id (App). */
++export default async function ProposalEditorPage({ params }: Ctx) {
++  const { id } = await params;
++  return <App id={id} />;
++}
+diff --git a/apps/web/src/App.tsx b/apps/web/src/App.tsx
+index b69ee13..be1220a 100644
+--- a/apps/web/src/App.tsx
++++ b/apps/web/src/App.tsx
+@@ -6,35 +6,52 @@ import { Inspector } from "./ui/Inspector";
+ import { ExportGate } from "./ui/ExportGate";
+ import { SaveControl } from "./ui/SaveControl";
+ import { Autosave } from "./ui/Autosave";
+ import { Toast } from "./ui/Toast";
+ import { SignOutButton } from "./ui/SignOutButton";
+ 
+ /**
+  * The three-pane editor shell (§11): outline · live preview · inspector. The
+  * chrome uses a fixed palette (globals.css, --ui-*); only the document inside the
+  * sheet re-themes. Fully client-side and store-driven — no backend.
++ *
++ * When `id` is provided the shell loads that proposal on mount and shows a
++ * loading state until `proposalId` matches. A ← Dashboard link is always shown
++ * when `id` is set so the user can return to the dashboard.
+  */
+-export function App() {
++export function App({ id }: { id?: string } = {}) {
+   const document = useProposalStore((s) => s.document);
+   const theme = useProposalStore((s) => s.theme);
++  const proposalId = useProposalStore((s) => s.proposalId);
++  const loadProposal = useProposalStore((s) => s.load);
+   const loadSectionTypes = useProposalStore((s) => s.loadSectionTypes);
+   const loadTemplates = useProposalStore((s) => s.loadTemplates);
++
+   useEffect(() => {
+     void loadSectionTypes();
+     void loadTemplates();
+   }, [loadSectionTypes, loadTemplates]);
+ 
++  useEffect(() => {
++    if (id && id !== proposalId) void loadProposal(id);
++  }, [id, proposalId, loadProposal]);
++
++  const loading = Boolean(id) && proposalId !== id;
++  if (loading) {
++    return <div className="app app--loading">Loading proposal…</div>;
++  }
++
+   return (
+     <div className="app">
+       <header className="topbar">
+         <div className="topbar__brand">
++          <a className="btn btn--ghost" href="/">← Dashboard</a>
+           <span className="topbar__title">{document.title}</span>
+           <span className="topbar__sub">{document.client.name}</span>
+         </div>
+         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+           <SaveControl />
+           <ExportGate />
+           <SignOutButton />
+         </div>
+       </header>
+       <Autosave />
+diff --git a/apps/web/src/__tests__/slice-14-editor-route.test.tsx b/apps/web/src/__tests__/slice-14-editor-route.test.tsx
+new file mode 100644
+index 0000000..ed2a9a8
+--- /dev/null
++++ b/apps/web/src/__tests__/slice-14-editor-route.test.tsx
+@@ -0,0 +1,29 @@
++import { afterEach, describe, expect, it, vi } from "vitest";
++import { cleanup, render, screen, waitFor } from "@testing-library/react";
++import { sampleProposal } from "@proposal/shared";
++import { App } from "../App";
++import { useProposalStore } from "../state/proposalStore";
++
++afterEach(() => {
++  cleanup();
++  vi.unstubAllGlobals();
++});
++
++function stubFetch() {
++  vi.stubGlobal("fetch", vi.fn((url: string) => {
++    const u = String(url);
++    if (u.includes("/api/proposals/")) return Promise.resolve(new Response(JSON.stringify({ proposal: { document: { ...sampleProposal, title: "Loaded One" } } }), { status: 200, headers: { "content-type": "application/json" } }));
++    const body = u.includes("/api/templates") ? { templates: [] } : { sectionTypes: [] };
++    return Promise.resolve(new Response(JSON.stringify(body), { status: 200, headers: { "content-type": "application/json" } }));
++  }));
++}
++
++describe("editor /p/[id]", () => {
++  it("loads the proposal by id and shows a Dashboard back link", async () => {
++    stubFetch();
++    useProposalStore.setState({ proposalId: null });
++    render(<App id="prop_123" />);
++    await waitFor(() => expect(screen.getByText("Loaded One")).toBeInTheDocument());
++    expect(screen.getByRole("link", { name: /dashboard/i })).toBeInTheDocument();
++  });
++});

@@ -23,7 +23,9 @@ const fakeCreate = (json: string): CreateMessageFn => vi.fn(async () => json);
 
 describe("generateSection", () => {
   it("returns validated data for a well-formed text section", async () => {
-    const create = fakeCreate(JSON.stringify({ heading: "Summary", body: "Concise and within limits." }));
+    const create = fakeCreate(
+      JSON.stringify({ heading: "Summary", body: "Concise and within limits." }),
+    );
     const result = await generateSection({ type: "executive_summary", brief: "x" }, create);
     expect(result.ok).toBe(true);
     expect(result.data).toEqual({ heading: "Summary", body: "Concise and within limits." });
@@ -40,7 +42,10 @@ describe("generateSection", () => {
   });
 
   it("errors on non-JSON model output", async () => {
-    const result = await generateSection({ type: "executive_summary", brief: "x" }, fakeCreate("not json"));
+    const result = await generateSection(
+      { type: "executive_summary", brief: "x" },
+      fakeCreate("not json"),
+    );
     expect(result.ok).toBe(false);
   });
 
@@ -50,14 +55,20 @@ describe("generateSection", () => {
   });
 
   it("refuses AI draft for data-category sections (use grid/import)", async () => {
-    const result = await generateSection({ type: "commercial_comparison", brief: "x" }, fakeCreate("{}"));
+    const result = await generateSection(
+      { type: "commercial_comparison", brief: "x" },
+      fakeCreate("{}"),
+    );
     expect(result.ok).toBe(false);
     expect(result.error?.toLowerCase()).toMatch(/grid|import|data/);
   });
 
   it("passes a model from the allowlist through and falls back to default otherwise", async () => {
     const create = vi.fn(async () => JSON.stringify({ heading: "H", body: "B" }));
-    await generateSection({ type: "executive_summary", brief: "x", model: "claude-sonnet-4-6" }, create);
+    await generateSection(
+      { type: "executive_summary", brief: "x", model: "claude-sonnet-4-6" },
+      create,
+    );
     expect(create).toHaveBeenCalledWith(expect.objectContaining({ model: "claude-sonnet-4-6" }));
 
     const create2 = vi.fn(async () => JSON.stringify({ heading: "H", body: "B" }));

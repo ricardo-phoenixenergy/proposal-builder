@@ -3,7 +3,10 @@ import { NextResponse } from "next/server";
 import { validateTemplateDefinition, type Template } from "@proposal/shared";
 import { requireOwner, requireAdmin } from "../../../src/server/auth/guard";
 import { getRepo } from "../../../src/server/repo";
-import { getMergedTemplates, invalidateActiveTemplates } from "../../../src/server/registry/activeTemplates";
+import {
+  getMergedTemplates,
+  invalidateActiveTemplates,
+} from "../../../src/server/registry/activeTemplates";
 import { getMergedSectionTypes } from "../../../src/server/registry/activeRegistry";
 import { themes } from "../../../src/theme/themes";
 

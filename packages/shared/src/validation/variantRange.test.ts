@@ -22,13 +22,22 @@ describe("variantRangeWarnings — soft, variant-aware content ranges (§13.10)"
   });
 
   it("warns on an over-long banner heading", () => {
-    const warnings = variantRangeWarnings(banner("ok", "An extremely long heading that will never fit a banner band"));
+    const warnings = variantRangeWarnings(
+      banner("ok", "An extremely long heading that will never fit a banner band"),
+    );
     expect(warnings.some((w) => w.fieldKey === "heading")).toBe(true);
   });
 
   it("emits nothing for a variant with no recommended range (standard)", () => {
     const long = Array.from({ length: 80 }, (_, i) => `word${i}`).join(" ");
-    expect(variantRangeWarnings({ id: "s2", type: "executive_summary", variant: "standard", data: { heading: "H", body: long } })).toEqual([]);
+    expect(
+      variantRangeWarnings({
+        id: "s2",
+        type: "executive_summary",
+        variant: "standard",
+        data: { heading: "H", body: long },
+      }),
+    ).toEqual([]);
   });
 
   it("emits nothing for an unknown section type", () => {

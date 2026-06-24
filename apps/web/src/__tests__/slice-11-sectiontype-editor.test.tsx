@@ -38,7 +38,12 @@ describe("SectionTypeEditor", () => {
     await waitFor(() => expect(save).toBeEnabled());
     fireEvent.click(save);
 
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/section-types", expect.objectContaining({ method: "POST" })));
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/section-types",
+        expect.objectContaining({ method: "POST" }),
+      ),
+    );
     await waitFor(() => expect(onDone).toHaveBeenCalled());
   });
 
@@ -58,9 +63,17 @@ describe("SectionTypeEditor", () => {
     await waitFor(() => expect(save).toBeEnabled());
     fireEvent.click(save);
 
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/section-types", expect.objectContaining({ method: "POST" })));
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/section-types",
+        expect.objectContaining({ method: "POST" }),
+      ),
+    );
     const call = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
-    const sent = JSON.parse(call[1].body as string) as { category: string; fields: { type: string }[] };
+    const sent = JSON.parse(call[1].body as string) as {
+      category: string;
+      fields: { type: string }[];
+    };
     expect(sent.category).toBe("data");
     expect(sent.fields[0]!.type).toBe("dataset");
   });
@@ -70,7 +83,9 @@ describe("SectionTypeEditor", () => {
     vi.stubGlobal("fetch", fetchMock);
     const onDone = vi.fn();
 
-    render(<SectionTypeEditor initial={caseStudy} mode="edit" onDone={onDone} onCancel={vi.fn()} />);
+    render(
+      <SectionTypeEditor initial={caseStudy} mode="edit" onDone={onDone} onCancel={vi.fn()} />,
+    );
 
     // type-key input must be disabled in edit mode
     expect(screen.getByLabelText(/type key/i)).toBeDisabled();

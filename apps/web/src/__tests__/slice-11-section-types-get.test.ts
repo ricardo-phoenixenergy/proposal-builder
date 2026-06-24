@@ -9,9 +9,12 @@ import { invalidateActiveRegistry } from "../server/registry/activeRegistry";
 import { GET } from "../../app/api/section-types/route";
 
 const def: SectionTypeSchema = {
-  type: "case_study", label: "Case study", category: "text",
+  type: "case_study",
+  label: "Case study",
+  category: "text",
   fields: [{ key: "body", type: "paragraph", label: "Body", required: true }],
-  variants: [], schemaVersion: 1,
+  variants: [],
+  schemaVersion: 1,
 };
 
 beforeEach(() => {

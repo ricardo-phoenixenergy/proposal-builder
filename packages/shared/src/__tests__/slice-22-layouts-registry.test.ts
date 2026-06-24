@@ -1,11 +1,20 @@
 import { afterEach, describe, expect, it } from "vitest";
 import {
-  setActiveLayouts, getLayout, listLayoutVariants, layoutsRevision, resetLayoutsForTests,
+  setActiveLayouts,
+  getLayout,
+  listLayoutVariants,
+  layoutsRevision,
+  resetLayoutsForTests,
 } from "../registry/layouts";
 import type { SectionLayout } from "../types/layout";
 
 const mk = (variant: string, pageFormat: string): SectionLayout => ({
-  type: "cover", variant, pageFormat, name: variant, root: { kind: "stack", children: [] }, version: 1,
+  type: "cover",
+  variant,
+  pageFormat,
+  name: variant,
+  root: { kind: "stack", children: [] },
+  version: 1,
 });
 
 afterEach(() => resetLayoutsForTests());

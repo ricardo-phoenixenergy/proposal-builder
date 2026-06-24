@@ -1,7 +1,11 @@
 import type { Dataset, DatasetColumn } from "../types/data";
 
 function slug(label: string, index: number): string {
-  const base = label.trim().toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+  const base = label
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
   return base || `col_${index + 1}`;
 }
 

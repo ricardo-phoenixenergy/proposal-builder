@@ -9,12 +9,19 @@ import { invalidateActiveRegistry } from "../server/registry/activeRegistry";
 import { POST } from "../../app/api/section-types/route";
 
 const def: SectionTypeSchema = {
-  type: "case_study", label: "Case study", category: "text",
+  type: "case_study",
+  label: "Case study",
+  category: "text",
   fields: [{ key: "body", type: "paragraph", label: "Body", required: true, maxWords: 200 }],
-  variants: [], schemaVersion: 1,
+  variants: [],
+  schemaVersion: 1,
 };
 const post = (body: unknown) =>
-  new Request("http://x/api/section-types", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+  new Request("http://x/api/section-types", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
 
 let admin = true;
 beforeEach(() => {

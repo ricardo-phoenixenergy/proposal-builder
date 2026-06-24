@@ -25,7 +25,10 @@ export function AssetUpload() {
       body.append("file", file);
       const res = await fetch("/api/assets", { method: "POST", body });
       if (!res.ok) {
-        notify("error", res.status === 415 ? "That file isn't an image." : "Upload failed. Please try again.");
+        notify(
+          "error",
+          res.status === 415 ? "That file isn't an image." : "Upload failed. Please try again.",
+        );
         return;
       }
       const { url } = (await res.json()) as { url: string };
@@ -41,7 +44,13 @@ export function AssetUpload() {
   return (
     <div className="field">
       <span className="field__label">Logo image</span>
-      <input aria-label="Upload logo" type="file" accept="image/*" disabled={busy} onChange={(e) => void onChange(e)} />
+      <input
+        aria-label="Upload logo"
+        type="file"
+        accept="image/*"
+        disabled={busy}
+        onChange={(e) => void onChange(e)}
+      />
       {theme.logoUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={theme.logoUrl} alt="Current logo" className="asset-thumb" />

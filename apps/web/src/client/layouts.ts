@@ -19,7 +19,12 @@ export async function createLayout(layout: SectionLayout): Promise<void> {
   }
 }
 
-export async function updateLayout(type: string, variant: string, pageFormat: string, layout: SectionLayout): Promise<void> {
+export async function updateLayout(
+  type: string,
+  variant: string,
+  pageFormat: string,
+  layout: SectionLayout,
+): Promise<void> {
   const res = await fetch(`/api/section-layouts/${type}/${variant}/${pageFormat}`, {
     method: "PUT",
     headers: { "content-type": "application/json" },
@@ -31,7 +36,13 @@ export async function updateLayout(type: string, variant: string, pageFormat: st
   }
 }
 
-export async function deleteLayout(type: string, variant: string, pageFormat: string): Promise<void> {
-  const res = await fetch(`/api/section-layouts/${type}/${variant}/${pageFormat}`, { method: "DELETE" });
+export async function deleteLayout(
+  type: string,
+  variant: string,
+  pageFormat: string,
+): Promise<void> {
+  const res = await fetch(`/api/section-layouts/${type}/${variant}/${pageFormat}`, {
+    method: "DELETE",
+  });
   if (!res.ok) throw new Error("Delete failed");
 }

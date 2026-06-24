@@ -8,7 +8,13 @@ import { createProposal } from "../../client/persistence";
 import type { Folder } from "../../client/folders";
 import { useProposalStore } from "../../state/proposalStore";
 
-export function NewProposalDialog({ folders, onClose }: { folders: Folder[]; onClose: () => void }) {
+export function NewProposalDialog({
+  folders,
+  onClose,
+}: {
+  folders: Folder[];
+  onClose: () => void;
+}) {
   const notify = useProposalStore((s) => s.notify);
   const router = useRouter();
   const [templates, setTemplates] = useState<Template[]>([]);
@@ -48,23 +54,56 @@ export function NewProposalDialog({ folders, onClose }: { folders: Folder[]; onC
     <div className="modal" role="dialog" aria-label="New proposal">
       <div className="modal__card">
         <h2>New proposal</h2>
-        <label className="field"><span className="field__label">Title</span>
-          <input aria-label="Title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Untitled proposal" />
+        <label className="field">
+          <span className="field__label">Title</span>
+          <input
+            aria-label="Title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Untitled proposal"
+          />
         </label>
-        <label className="field"><span className="field__label">Template</span>
-          <select aria-label="Template" value={templateId} onChange={(e) => setTemplateId(e.target.value)}>
-            {templates.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+        <label className="field">
+          <span className="field__label">Template</span>
+          <select
+            aria-label="Template"
+            value={templateId}
+            onChange={(e) => setTemplateId(e.target.value)}
+          >
+            {templates.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
+            ))}
           </select>
         </label>
-        <label className="field"><span className="field__label">Folder</span>
-          <select aria-label="Folder" value={folderId} onChange={(e) => setFolderId(e.target.value)}>
+        <label className="field">
+          <span className="field__label">Folder</span>
+          <select
+            aria-label="Folder"
+            value={folderId}
+            onChange={(e) => setFolderId(e.target.value)}
+          >
             <option value="">Unfiled</option>
-            {folders.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
+            {folders.map((f) => (
+              <option key={f.id} value={f.id}>
+                {f.name}
+              </option>
+            ))}
           </select>
         </label>
         <div className="modal__actions">
-          <button type="button" className="btn btn--ghost" onClick={onClose}>Cancel</button>
-          <button type="button" className="btn btn--primary" disabled={busy || templateId === ""} onClick={() => void create()}>{busy ? "Creating…" : "Create"}</button>
+          <button type="button" className="btn btn--ghost" onClick={onClose}>
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="btn btn--primary"
+            disabled={busy || templateId === ""}
+            onClick={() => void create()}
+          >
+            {busy ? "Creating…" : "Create"}
+          </button>
         </div>
       </div>
     </div>

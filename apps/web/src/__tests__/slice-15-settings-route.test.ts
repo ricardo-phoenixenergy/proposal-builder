@@ -6,7 +6,11 @@ import { setSessionUserResolverForTests } from "../server/auth/sessionUser";
 import { GET, PUT } from "../../app/api/admin/settings/route";
 
 const put = (body: unknown) =>
-  new Request("http://x/api/admin/settings", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+  new Request("http://x/api/admin/settings", {
+    method: "PUT",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
 
 beforeEach(() => {
   setRepoForTests(createMemoryRepo());

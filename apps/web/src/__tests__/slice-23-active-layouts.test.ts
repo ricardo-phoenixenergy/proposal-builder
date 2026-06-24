@@ -3,11 +3,19 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createMemoryRepo } from "../server/repo/memory";
 import { setRepoForTests } from "../server/repo";
 import { getLayout, resetLayoutsForTests, type SectionLayout } from "@proposal/shared";
-import { getMergedLayouts, refreshActiveLayouts, invalidateActiveLayouts } from "../server/registry/activeLayouts";
+import {
+  getMergedLayouts,
+  refreshActiveLayouts,
+  invalidateActiveLayouts,
+} from "../server/registry/activeLayouts";
 
 const layout: SectionLayout = {
-  type: "cover", variant: "cover", pageFormat: "a4_portrait", name: "Cover",
-  root: { kind: "stack", children: [] }, version: 1,
+  type: "cover",
+  variant: "cover",
+  pageFormat: "a4_portrait",
+  name: "Cover",
+  root: { kind: "stack", children: [] },
+  version: 1,
 };
 
 beforeEach(() => {

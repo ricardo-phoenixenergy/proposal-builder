@@ -120,14 +120,23 @@ export function Inspector() {
     <aside aria-label="Inspector" className="pane inspector">
       {/* Document disclosure: template + theme */}
       <div className="group">
-        <button type="button" className="group__title group__toggle" aria-expanded={docOpen} onClick={() => setDocOpen((v) => !v)}>
+        <button
+          type="button"
+          className="group__title group__toggle"
+          aria-expanded={docOpen}
+          onClick={() => setDocOpen((v) => !v)}
+        >
           Document {docOpen ? "▾" : "▸"}
         </button>
         {docOpen ? (
           <>
             <div className="field">
               <span className="field__label">Template</span>
-              <select aria-label="Template" value={document.templateId} onChange={(e) => applyTemplateAction(e.target.value)}>
+              <select
+                aria-label="Template"
+                value={document.templateId}
+                onChange={(e) => applyTemplateAction(e.target.value)}
+              >
                 {templates
                   .filter((t) => !t.deprecated || t.id === document.templateId)
                   .map((t) => (
@@ -136,12 +145,18 @@ export function Inspector() {
                     </option>
                   ))}
               </select>
-              {structureLocked ? <small className="meter">Structure & theme are locked by this template.</small> : null}
+              {structureLocked ? (
+                <small className="meter">Structure & theme are locked by this template.</small>
+              ) : null}
             </div>
 
             <div className="field">
               <span className="field__label">Page format</span>
-              <select aria-label="Page format" value={document.pageFormat ?? "a4_portrait"} onChange={(e) => setPageFormat(e.target.value)}>
+              <select
+                aria-label="Page format"
+                value={document.pageFormat ?? "a4_portrait"}
+                onChange={(e) => setPageFormat(e.target.value)}
+              >
                 {PAGE_FORMATS.map((f) => (
                   <option key={f.id} value={f.id}>
                     {f.label}
@@ -151,7 +166,11 @@ export function Inspector() {
             </div>
             <div className="field">
               <span className="field__label">Mode</span>
-              <select aria-label="Page mode" value={document.pageMode ?? "report"} onChange={(e) => setPageMode(e.target.value as "report" | "slides")}>
+              <select
+                aria-label="Page mode"
+                value={document.pageMode ?? "report"}
+                onChange={(e) => setPageMode(e.target.value as "report" | "slides")}
+              >
                 <option value="report">Report (flowing pages)</option>
                 <option value="slides">Slides (one section per page)</option>
               </select>
@@ -159,10 +178,24 @@ export function Inspector() {
 
             <div className="group__sub">
               <div className="group__title">Theme{pinned ? " · pinned" : ""}</div>
-              <fieldset disabled={pinned} style={{ border: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 10 }}>
+              <fieldset
+                disabled={pinned}
+                style={{
+                  border: "none",
+                  margin: 0,
+                  padding: 0,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 10,
+                }}
+              >
                 <div className="field">
                   <span className="field__label">Preset</span>
-                  <select aria-label="Theme preset" value={isForked ? "custom" : theme.id} onChange={(e) => selectPreset(e.target.value)}>
+                  <select
+                    aria-label="Theme preset"
+                    value={isForked ? "custom" : theme.id}
+                    onChange={(e) => selectPreset(e.target.value)}
+                  >
                     {isForked ? <option value="custom">Custom (forked)</option> : null}
                     {themes.map((t) => (
                       <option key={t.id} value={t.id}>
@@ -177,15 +210,29 @@ export function Inspector() {
                     <button type="button" className="btn btn--ghost" onClick={forkTheme}>
                       Fork to edit
                     </button>
-                    <small className="meter">Presets are read-only. Fork to customise colours, fonts, and the logo.</small>
+                    <small className="meter">
+                      Presets are read-only. Fork to customise colours, fonts, and the logo.
+                    </small>
                   </div>
                 ) : (
                   <>
                     <div className="tabs" role="tablist" aria-label="Theme editor">
-                      <button type="button" className="tab" role="tab" aria-selected={tab === "tokens"} onClick={() => setTab("tokens")}>
+                      <button
+                        type="button"
+                        className="tab"
+                        role="tab"
+                        aria-selected={tab === "tokens"}
+                        onClick={() => setTab("tokens")}
+                      >
                         Tokens
                       </button>
-                      <button type="button" className="tab" role="tab" aria-selected={tab === "code"} onClick={() => setTab("code")}>
+                      <button
+                        type="button"
+                        className="tab"
+                        role="tab"
+                        aria-selected={tab === "code"}
+                        onClick={() => setTab("code")}
+                      >
                         Code
                       </button>
                     </div>
@@ -230,7 +277,8 @@ export function Inspector() {
 
           {isUnstyled ? (
             <p className="notice notice--warn" data-flag="unstyled">
-              No layout is registered for this section — it&apos;s rendering with the generic (unstyled) fallback.
+              No layout is registered for this section — it&apos;s rendering with the generic
+              (unstyled) fallback.
             </p>
           ) : null}
 
@@ -245,7 +293,11 @@ export function Inspector() {
           {choiceSlot ? (
             <div className="field">
               <span className="field__label">Commercial model (choice slot)</span>
-              <select aria-label="Choice type" value={selected.type} onChange={(e) => setSectionType(selected.id, e.target.value)}>
+              <select
+                aria-label="Choice type"
+                value={selected.type}
+                onChange={(e) => setSectionType(selected.id, e.target.value)}
+              >
                 {choiceSlot.allowed.map((t) => (
                   <option key={t} value={t}>
                     {getSectionType(t)?.label ?? t}
@@ -266,7 +318,12 @@ export function Inspector() {
                 onChange={(e) => setSectionInstruction(e.target.value)}
                 placeholder="Optional instruction, e.g. 'make it more concise'"
               />
-              <button type="button" className="btn btn--primary" disabled={busy} onClick={rewriteSection}>
+              <button
+                type="button"
+                className="btn btn--primary"
+                disabled={busy}
+                onClick={rewriteSection}
+              >
                 {busy ? "Working…" : "Rewrite section with AI"}
               </button>
             </div>
@@ -302,7 +359,10 @@ export function Inspector() {
               }
 
               if (kind === "manual") {
-                const value = typeof selected.data[field.key] === "string" ? (selected.data[field.key] as string) : "";
+                const value =
+                  typeof selected.data[field.key] === "string"
+                    ? (selected.data[field.key] as string)
+                    : "";
                 if (field.type === "image") {
                   return (
                     <ImageField
@@ -318,7 +378,13 @@ export function Inspector() {
                 return (
                   <label className="field" key={field.key}>
                     <span className="field__label">{label}</span>
-                    <input aria-label={`field-${field.key}`} value={value} readOnly={locked} disabled={locked} onChange={(e) => setField(field.key, e.target.value)} />
+                    <input
+                      aria-label={`field-${field.key}`}
+                      value={value}
+                      readOnly={locked}
+                      disabled={locked}
+                      onChange={(e) => setField(field.key, e.target.value)}
+                    />
                   </label>
                 );
               }
@@ -327,17 +393,26 @@ export function Inspector() {
               const raw = selected.data[field.key];
               const isList = field.type === "list";
               const textValue = isList
-                ? (Array.isArray(raw) ? (raw as string[]).join("\n") : "")
+                ? Array.isArray(raw)
+                  ? (raw as string[]).join("\n")
+                  : ""
                 : typeof raw === "string"
                   ? (raw as string)
                   : "";
-              const onChange = (v: string) => setField(field.key, isList ? v.split("\n").filter((x) => x.length > 0) : v);
+              const onChange = (v: string) =>
+                setField(field.key, isList ? v.split("\n").filter((x) => x.length > 0) : v);
 
               return (
                 <div className="field" key={field.key}>
                   <span className="field__label">{label}</span>
                   {field.type === "text" ? (
-                    <input aria-label={`field-${field.key}`} value={textValue} readOnly={locked} disabled={locked} onChange={(e) => onChange(e.target.value)} />
+                    <input
+                      aria-label={`field-${field.key}`}
+                      value={textValue}
+                      readOnly={locked}
+                      disabled={locked}
+                      onChange={(e) => onChange(e.target.value)}
+                    />
                   ) : (
                     <textarea
                       aria-label={`field-${field.key}`}
@@ -355,9 +430,16 @@ export function Inspector() {
                         aria-label={`instruction-${field.key}`}
                         placeholder="Field instruction (optional)"
                         value={fieldInstr[field.key] ?? ""}
-                        onChange={(e) => setFieldInstr((m) => ({ ...m, [field.key]: e.target.value }))}
+                        onChange={(e) =>
+                          setFieldInstr((m) => ({ ...m, [field.key]: e.target.value }))
+                        }
                       />
-                      <button type="button" className="btn btn--ghost" disabled={busy} onClick={() => rewriteField(field.key)}>
+                      <button
+                        type="button"
+                        className="btn btn--ghost"
+                        disabled={busy}
+                        onClick={() => rewriteField(field.key)}
+                      >
                         Rewrite field
                       </button>
                     </div>
@@ -382,7 +464,11 @@ export function Inspector() {
           {!structureLocked && variants.length > 0 ? (
             <div className="field">
               <span className="field__label">Variant</span>
-              <select aria-label="Variant" value={selected.variant ?? typeSchema.defaultVariant ?? ""} onChange={(e) => setVariant(selected.id, e.target.value)}>
+              <select
+                aria-label="Variant"
+                value={selected.variant ?? typeSchema.defaultVariant ?? ""}
+                onChange={(e) => setVariant(selected.id, e.target.value)}
+              >
                 {variants.map((v) => (
                   <option key={v} value={v}>
                     {v}

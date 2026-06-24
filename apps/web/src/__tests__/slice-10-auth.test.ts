@@ -31,14 +31,20 @@ describe("password hashing (scrypt, no plaintext at rest)", () => {
 
 describe("authenticateUser — DB-backed credentials (§13.10)", () => {
   it("returns the user for a stored email + correct password", async () => {
-    const created = await getRepo().createUser({ email: "Owner@Phoenix.test", passwordHash: hashPassword("hunter2") });
+    const created = await getRepo().createUser({
+      email: "Owner@Phoenix.test",
+      passwordHash: hashPassword("hunter2"),
+    });
     const user = await authenticateUser("owner@phoenix.test", "hunter2"); // case-insensitive email
     expect(user?.id).toBe(created.id);
     expect(user?.email).toBe("owner@phoenix.test");
   });
 
   it("rejects a wrong password", async () => {
-    await getRepo().createUser({ email: "owner@phoenix.test", passwordHash: hashPassword("hunter2") });
+    await getRepo().createUser({
+      email: "owner@phoenix.test",
+      passwordHash: hashPassword("hunter2"),
+    });
     expect(await authenticateUser("owner@phoenix.test", "nope")).toBeNull();
   });
 
