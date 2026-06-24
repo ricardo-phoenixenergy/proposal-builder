@@ -21,6 +21,10 @@ export async function POST(request: Request): Promise<Response> {
   if (!file.type.startsWith("image/")) {
     return NextResponse.json({ error: "Only image uploads are allowed" }, { status: 415 });
   }
+  const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+  if (file.size > MAX_IMAGE_BYTES) {
+    return NextResponse.json({ error: "Image is too large (max 10 MB)." }, { status: 413 });
+  }
 
   const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
   const blob = await put(`assets/${owner}/${safeName}`, file, {
