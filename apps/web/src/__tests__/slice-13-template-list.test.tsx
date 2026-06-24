@@ -19,6 +19,7 @@ describe("TemplateList", () => {
       <TemplateList
         templates={[...builtInTemplates, authored]}
         inUse={["tmpl_sales"]}
+        sectionTypes={[]}
         onChange={vi.fn()}
       />,
     );

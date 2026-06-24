@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { builtInTemplates, type Template } from "@proposal/shared";
+import { builtInTemplates, type SectionTypeSchema, type Template } from "@proposal/shared";
 import { setTemplateDeprecated } from "../../client/templates";
 import { useProposalStore } from "../../state/proposalStore";
 import { TemplateEditor } from "./TemplateEditor";
@@ -13,10 +13,12 @@ function isBuiltIn(id: string): boolean {
 export function TemplateList({
   templates,
   inUse,
+  sectionTypes,
   onChange,
 }: {
   templates: Template[];
   inUse: string[];
+  sectionTypes: SectionTypeSchema[];
   onChange: (t: Template[]) => void;
 }) {
   const notify = useProposalStore((s) => s.notify);
@@ -43,6 +45,7 @@ export function TemplateList({
       <TemplateEditor
         {...(editor.initial ? { initial: editor.initial } : {})}
         mode={editor.mode}
+        sectionTypes={sectionTypes}
         onDone={async () => {
           setEditor(null);
           await refresh();

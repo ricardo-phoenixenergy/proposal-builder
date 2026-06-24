@@ -1,8 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import type { SectionTypeSchema } from "@proposal/shared";
 import { TemplateEditor } from "../ui/admin/TemplateEditor";
-import { useProposalStore } from "../state/proposalStore";
 
 afterEach(() => {
   cleanup();
@@ -22,7 +21,6 @@ const sectionTypes: SectionTypeSchema[] = [
 
 describe("TemplateEditor", () => {
   it("creates a template: fills name + a slot, then POSTs", async () => {
-    useProposalStore.setState({ sectionTypes });
     const f = vi.fn(() =>
       Promise.resolve(
         new Response(JSON.stringify({ template: {} }), {
@@ -34,7 +32,14 @@ describe("TemplateEditor", () => {
     vi.stubGlobal("fetch", f);
     const onDone = vi.fn();
 
-    render(<TemplateEditor mode="create" onDone={onDone} onCancel={() => {}} />);
+    render(
+      <TemplateEditor
+        mode="create"
+        sectionTypes={sectionTypes}
+        onDone={onDone}
+        onCancel={() => {}}
+      />,
+    );
 
     fireEvent.change(screen.getByLabelText("Template id"), { target: { value: "tmpl_new" } });
     fireEvent.change(screen.getByLabelText("Template name"), { target: { value: "New One" } });
@@ -49,10 +54,39 @@ describe("TemplateEditor", () => {
   });
 
   it("disables Save while the draft is invalid (no slots)", () => {
-    useProposalStore.setState({ sectionTypes });
-    render(<TemplateEditor mode="create" onDone={() => {}} onCancel={() => {}} />);
+    render(
+      <TemplateEditor
+        mode="create"
+        sectionTypes={sectionTypes}
+        onDone={() => {}}
+        onCancel={() => {}}
+      />,
+    );
     fireEvent.change(screen.getByLabelText("Template id"), { target: { value: "tmpl_new" } });
     fireEvent.change(screen.getByLabelText("Template name"), { target: { value: "New One" } });
     expect(screen.getByRole("button", { name: /^save/i })).toBeDisabled(); // zero slots → invalid
+  });
+
+  it("populates the slot-type dropdown from the sectionTypes prop and validates (regression: blank dropdown on /admin)", () => {
+    // Regression for the /admin Templates editor: it must NOT depend on the
+    // Zustand store (un-hydrated on the admin route). With types supplied as a
+    // prop, adding a slot yields a real type and a valid draft (Save enabled).
+    render(
+      <TemplateEditor
+        mode="create"
+        sectionTypes={sectionTypes}
+        onDone={() => {}}
+        onCancel={() => {}}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText("Template id"), { target: { value: "tmpl_new" } });
+    fireEvent.change(screen.getByLabelText("Template name"), { target: { value: "New One" } });
+    fireEvent.click(screen.getByRole("button", { name: /add slot/i }));
+
+    const slotType = screen.getByLabelText("Slot type") as HTMLSelectElement;
+    const options = within(slotType).getAllByRole("option") as HTMLOptionElement[];
+    expect(options.map((o) => o.value)).toEqual(["text"]); // not blank
+    expect(slotType.value).toBe("text"); // new slot defaulted to a real type, not ""
+    expect(screen.getByRole("button", { name: /^save/i })).toBeEnabled(); // no "known section type" error
   });
 });

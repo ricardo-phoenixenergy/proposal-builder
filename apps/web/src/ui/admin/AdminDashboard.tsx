@@ -78,7 +78,12 @@ export function AdminDashboard({
           ) : panel === "users" ? (
             <UsersView currentUserId={currentUserId} />
           ) : panel === "templates" ? (
-            <TemplateList templates={tmpls} inUse={inUseTemplates} onChange={setTmpls} />
+            <TemplateList
+              templates={tmpls}
+              inUse={inUseTemplates}
+              sectionTypes={types}
+              onChange={setTmpls}
+            />
           ) : (
             <SettingsPanel initialModel={aiModel} />
           )}

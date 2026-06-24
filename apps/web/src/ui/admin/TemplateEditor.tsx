@@ -1,7 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { validateTemplateDefinition, type SlotLock, type Template } from "@proposal/shared";
+import {
+  validateTemplateDefinition,
+  type SectionTypeSchema,
+  type SlotLock,
+  type Template,
+} from "@proposal/shared";
 import { createTemplate, updateTemplate } from "../../client/templates";
 import { useProposalStore } from "../../state/proposalStore";
 import { themes } from "../../theme/themes";
@@ -39,16 +44,20 @@ function toDef(
 export function TemplateEditor({
   initial,
   mode = "create",
+  sectionTypes,
   onDone,
   onCancel,
 }: {
   initial?: Template;
   mode?: "create" | "edit";
+  /** Known section types (server-provided merged registry). The /admin route
+   *  does not hydrate the proposal store, so these MUST come in as a prop —
+   *  reading the store here leaves the slot-type dropdown blank. */
+  sectionTypes: SectionTypeSchema[];
   onDone: () => void | Promise<void>;
   onCancel: () => void;
 }) {
   const notify = useProposalStore((s) => s.notify);
-  const sectionTypes = useProposalStore((s) => s.sectionTypes);
   const editing = mode === "edit";
   const pickableTypes = sectionTypes.filter((t) => !t.deprecated);
 
