@@ -233,6 +233,20 @@ export function createMemoryRepo(): Repository {
       return null;
     },
 
+    async patchUser(id, change) {
+      for (const u of users.values()) {
+        if (u.id !== id) continue;
+        const updated: StoredUser = {
+          ...u,
+          ...(change.isAdmin !== undefined ? { isAdmin: change.isAdmin } : {}),
+          ...(change.disabled !== undefined ? { disabled: change.disabled } : {}),
+        };
+        users.set(u.email, updated);
+        return toSummary(updated);
+      }
+      return null;
+    },
+
     async setUserPassword(id, passwordHash) {
       for (const u of users.values()) {
         if (u.id !== id) continue;

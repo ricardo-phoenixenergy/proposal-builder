@@ -306,6 +306,18 @@ export function createPostgresRepo(): Repository {
       return row ? toUserSummary(row) : null;
     },
 
+    async patchUser(id, change) {
+      const set: Partial<{ isAdmin: boolean; disabled: boolean }> = {};
+      if (change.isAdmin !== undefined) set.isAdmin = change.isAdmin;
+      if (change.disabled !== undefined) set.disabled = change.disabled;
+      if (Object.keys(set).length === 0) {
+        const [row] = await db.select().from(users).where(eq(users.id, id));
+        return row ? toUserSummary(row) : null;
+      }
+      const [row] = await db.update(users).set(set).where(eq(users.id, id)).returning();
+      return row ? toUserSummary(row) : null;
+    },
+
     async setUserPassword(id, passwordHash) {
       const rows = await db.update(users).set({ passwordHash }).where(eq(users.id, id)).returning();
       return rows.length > 0;
