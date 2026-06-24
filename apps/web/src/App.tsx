@@ -11,6 +11,7 @@ import { SaveControl } from "./ui/SaveControl";
 import { Autosave } from "./ui/Autosave";
 import { Toast } from "./ui/Toast";
 import { SignOutButton } from "./ui/SignOutButton";
+import { UndoRedo } from "./ui/UndoRedo";
 
 /**
  * The three-pane editor shell (§11): outline · live preview · inspector. The
@@ -59,6 +60,7 @@ export function App({ id, isAdmin }: { id?: string; isAdmin?: boolean } = {}) {
           <span className="topbar__sub">{document.client.name}</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <UndoRedo />
           <SaveControl />
           <ExportGate />
           {isAdmin ? (
