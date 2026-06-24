@@ -29,8 +29,10 @@ describe("in-memory repository — proposals", () => {
     expect(saved?.document.title).toBe("Edited title");
     expect((await repo.getProposal(created.id))?.document.title).toBe("Edited title");
 
+    // delete is now a soft-delete (4a): hidden from the active list, recoverable.
     expect(await repo.deleteProposal(created.id)).toBe(true);
-    expect(await repo.getProposal(created.id)).toBeNull();
+    expect((await repo.listProposals("owner_1")).map((p) => p.id)).not.toContain(created.id);
+    expect((await repo.getProposal(created.id))?.deletedAt).toBeTruthy();
   });
 
   it("scopes the list by owner", async () => {

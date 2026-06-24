@@ -1,4 +1,5 @@
 import { boolean, index, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import type { ProposalDocument, Template, ThemeTokens } from "@proposal/shared";
 
 /** §12 data model. Content/structure/presentation kept intact as JSONB. */
@@ -22,10 +23,15 @@ export const proposals = pgTable(
     document: jsonb("document").$type<ProposalDocument>().notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    // Soft-delete (4a): null = live; a timestamp = in the trash, recoverable.
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
   },
   (t) => [
-    index("proposals_owner_id_idx").on(t.ownerId),
     index("proposals_folder_id_idx").on(t.folderId),
+    // Partial index for the hot path: the active (non-trashed) list per owner.
+    index("proposals_owner_active_idx")
+      .on(t.ownerId)
+      .where(sql`${t.deletedAt} is null`),
   ],
 );
 

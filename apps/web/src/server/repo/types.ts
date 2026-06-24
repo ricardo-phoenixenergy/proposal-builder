@@ -14,6 +14,8 @@ export interface StoredProposal {
   folderId: string | null;
   createdAt: string;
   updatedAt: string;
+  /** Soft-delete (4a): null = live; ISO timestamp = in the trash, recoverable. */
+  deletedAt: string | null;
 }
 export interface ProposalVersion {
   id: string;
@@ -92,7 +94,14 @@ export interface Repository {
   getProposal(id: string): Promise<StoredProposal | null>;
   /** Autosave: replace the document, bump updatedAt. Returns null if unknown. */
   saveProposal(id: string, document: ProposalDocument): Promise<StoredProposal | null>;
+  /** Soft-delete: move to the trash (sets deletedAt). False if unknown/already trashed. */
   deleteProposal(id: string): Promise<boolean>;
+  /** Trash listing: proposals the owner has soft-deleted, most-recent first. */
+  listTrashedProposals(ownerId: string): Promise<ProposalSummary[]>;
+  /** Bring a trashed proposal back (clears deletedAt). False if unknown/not trashed. */
+  restoreProposal(id: string): Promise<boolean>;
+  /** Permanently delete a proposal AND its versions (hard delete). False if unknown. */
+  purgeProposal(id: string): Promise<boolean>;
 
   listVersions(proposalId: string): Promise<ProposalVersion[]>;
   /** Capture the proposal's current document as an immutable version (export snapshot). */

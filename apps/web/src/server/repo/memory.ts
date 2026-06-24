@@ -48,7 +48,9 @@ export function createMemoryRepo(): Repository {
 
   return {
     async listProposals(ownerId) {
-      return [...proposals.values()].filter((p) => p.ownerId === ownerId).map(toProposalSummary);
+      return [...proposals.values()]
+        .filter((p) => p.ownerId === ownerId && p.deletedAt === null)
+        .map(toProposalSummary);
     },
 
     async createProposal(ownerId, document, folderId = null) {
@@ -60,6 +62,7 @@ export function createMemoryRepo(): Repository {
         folderId,
         createdAt: now(),
         updatedAt: now(),
+        deletedAt: null,
       };
       proposals.set(id, stored);
       return clone(stored);
@@ -84,7 +87,7 @@ export function createMemoryRepo(): Repository {
 
     async duplicateProposal(ownerId, id) {
       const src = proposals.get(id);
-      if (!src || src.ownerId !== ownerId) return null;
+      if (!src || src.ownerId !== ownerId || src.deletedAt !== null) return null;
       const newId = uid("prop");
       const stored: StoredProposal = {
         id: newId,
@@ -93,6 +96,7 @@ export function createMemoryRepo(): Repository {
         folderId: src.folderId,
         createdAt: now(),
         updatedAt: now(),
+        deletedAt: null,
       };
       proposals.set(newId, stored);
       return clone(stored);
@@ -116,6 +120,27 @@ export function createMemoryRepo(): Repository {
     },
 
     async deleteProposal(id) {
+      const p = proposals.get(id);
+      if (!p || p.deletedAt !== null) return false;
+      proposals.set(id, { ...p, deletedAt: now() });
+      return true;
+    },
+
+    async listTrashedProposals(ownerId) {
+      return [...proposals.values()]
+        .filter((p) => p.ownerId === ownerId && p.deletedAt !== null)
+        .sort((a, b) => (a.deletedAt! < b.deletedAt! ? 1 : -1))
+        .map(toProposalSummary);
+    },
+
+    async restoreProposal(id) {
+      const p = proposals.get(id);
+      if (!p || p.deletedAt === null) return false;
+      proposals.set(id, { ...p, deletedAt: null });
+      return true;
+    },
+
+    async purgeProposal(id) {
       versions.delete(id);
       return proposals.delete(id);
     },
