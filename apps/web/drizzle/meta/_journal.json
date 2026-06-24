@@ -57,6 +57,13 @@
       "when": 1782221500181,
       "tag": "0007_funny_leper_queen",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1782312308363,
+      "tag": "0008_plain_blizzard",
+      "breakpoints": true
     }
   ]
 }
