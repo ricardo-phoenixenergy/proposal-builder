@@ -93,6 +93,21 @@ export function removeSection(document: ProposalDocument, sectionId: string): Pr
   return { ...document, sections: document.sections.filter((s) => s.id !== sectionId) };
 }
 
+/** Swap a section with its neighbor (direction -1 = up, +1 = down). No-op at bounds / unknown id. */
+export function moveSection(
+  document: ProposalDocument,
+  id: string,
+  direction: -1 | 1,
+): ProposalDocument {
+  const i = document.sections.findIndex((s) => s.id === id);
+  if (i < 0) return document;
+  const j = i + direction;
+  if (j < 0 || j >= document.sections.length) return document;
+  const sections = [...document.sections];
+  [sections[i], sections[j]] = [sections[j]!, sections[i]!];
+  return { ...document, sections };
+}
+
 /** Toggle a section's manual page break, immutably. */
 export function setSectionPageBreak(
   doc: ProposalDocument,

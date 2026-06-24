@@ -24,6 +24,7 @@ import {
   insertSection,
   removeSection,
   setSectionPageBreak,
+  moveSection,
 } from "./mutations";
 import * as persistence from "../client/persistence";
 import { fetchSectionTypes } from "../client/sectionTypes";
@@ -90,6 +91,8 @@ export interface ProposalState {
   insertSection: (type: string, index: number) => void;
   /** Remove a section; clears the selection if it was the removed one. */
   removeSection: (id: string) => void;
+  /** Swap a section with its neighbor; no-op at bounds. Selection is unaffected (section keeps its id). */
+  moveSection: (id: string, direction: -1 | 1) => void;
   /** Toggle a section's manual page break. */
   setPageBreakBefore: (sectionId: string, value: boolean) => void;
   /** Set the document page format (§J). */
@@ -256,6 +259,8 @@ export const useProposalStore = create<ProposalState>()(
           document: removeSection(state.document, id),
           selectedId: state.selectedId === id ? null : state.selectedId,
         })),
+      moveSection: (id, direction) =>
+        set((state) => ({ document: moveSection(state.document, id, direction) })),
       setPageBreakBefore: (sectionId, value) =>
         set((state) => ({ document: setSectionPageBreak(state.document, sectionId, value) })),
       setPageFormat: (id) => set((state) => ({ document: { ...state.document, pageFormat: id } })),

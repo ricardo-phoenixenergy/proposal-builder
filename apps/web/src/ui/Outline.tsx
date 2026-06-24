@@ -21,6 +21,7 @@ export function Outline() {
   const locked = isStructureLocked(templates.find((t) => t.id === templateId) ?? openTemplate);
   const insertSection = useProposalStore((s) => s.insertSection);
   const removeSection = useProposalStore((s) => s.removeSection);
+  const moveSection = useProposalStore((s) => s.moveSection);
 
   const types = listSectionTypes();
 
@@ -82,18 +83,40 @@ export function Outline() {
                 </span>
               </button>
               {!locked ? (
-                <button
-                  type="button"
-                  className="outline-item__delete"
-                  aria-label="Delete section"
-                  title="Delete section"
-                  onClick={() => {
-                    if (window.confirm("Delete this section? This cannot be undone."))
-                      removeSection(section.id);
-                  }}
-                >
-                  ✕
-                </button>
+                <>
+                  <button
+                    type="button"
+                    className="outline-item__move"
+                    aria-label="Move section up"
+                    title="Move up"
+                    disabled={i === 0}
+                    onClick={() => moveSection(section.id, -1)}
+                  >
+                    ↑
+                  </button>
+                  <button
+                    type="button"
+                    className="outline-item__move"
+                    aria-label="Move section down"
+                    title="Move down"
+                    disabled={i === sections.length - 1}
+                    onClick={() => moveSection(section.id, 1)}
+                  >
+                    ↓
+                  </button>
+                  <button
+                    type="button"
+                    className="outline-item__delete"
+                    aria-label="Delete section"
+                    title="Delete section"
+                    onClick={() => {
+                      if (window.confirm("Delete this section? This cannot be undone."))
+                        removeSection(section.id);
+                    }}
+                  >
+                    ✕
+                  </button>
+                </>
               ) : null}
               <InsertControl index={i + 1} />
             </div>
