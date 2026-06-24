@@ -1,4 +1,9 @@
-import { getSectionType, isStructureLocked, listSectionTypes, openTemplate } from "@proposal/shared";
+import {
+  getSectionType,
+  isStructureLocked,
+  listSectionTypes,
+  openTemplate,
+} from "@proposal/shared";
 import { resolveSection } from "../registry/componentRegistry";
 import { useProposalStore } from "../state/proposalStore";
 
@@ -41,7 +46,12 @@ export function Outline() {
   return (
     <nav aria-label="Outline" className="pane pane--rail">
       <div className="pane__heading">
-        Outline{locked ? <span className="tag tag--unstyled" style={{ marginLeft: 6 }}>locked</span> : null}
+        Outline
+        {locked ? (
+          <span className="tag tag--unstyled" style={{ marginLeft: 6 }}>
+            locked
+          </span>
+        ) : null}
       </div>
       <div className="outline">
         <InsertControl index={0} />
@@ -78,7 +88,8 @@ export function Outline() {
                   aria-label="Delete section"
                   title="Delete section"
                   onClick={() => {
-                    if (window.confirm("Delete this section? This cannot be undone.")) removeSection(section.id);
+                    if (window.confirm("Delete this section? This cannot be undone."))
+                      removeSection(section.id);
                   }}
                 >
                   ✕

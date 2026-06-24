@@ -13,7 +13,12 @@ describe("repo proposals — summary, folder, rename/move/duplicate", () => {
   it("summary carries client + folderId", async () => {
     const created = await repo.createProposal("owner_a", sampleProposal, "fld_1");
     const [s] = await repo.listProposals("owner_a");
-    expect(s).toMatchObject({ id: created.id, title: sampleProposal.title, client: sampleProposal.client.name, folderId: "fld_1" });
+    expect(s).toMatchObject({
+      id: created.id,
+      title: sampleProposal.title,
+      client: sampleProposal.client.name,
+      folderId: "fld_1",
+    });
   });
 
   it("createProposal defaults folderId to null", async () => {

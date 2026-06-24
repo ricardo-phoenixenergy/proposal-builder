@@ -13,7 +13,9 @@ export function interpretAnthropicResponse(res: AnthropicLike): string {
     throw new Error("The model declined to generate this content. Try rephrasing the brief.");
   }
   if (res.stop_reason === "max_tokens") {
-    throw new Error("The response hit the length limit. Shorten the brief or reduce the section's fields, then retry.");
+    throw new Error(
+      "The response hit the length limit. Shorten the brief or reduce the section's fields, then retry.",
+    );
   }
   const text = res.content
     .filter((b) => b.type === "text" && typeof b.text === "string")

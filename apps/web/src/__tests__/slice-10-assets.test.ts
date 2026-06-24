@@ -28,7 +28,9 @@ function form(file?: File): Request {
 describe("POST /api/assets — logo/image upload to Blob (§10.2, §13.10)", () => {
   it("401s when unauthenticated", async () => {
     owner = null;
-    expect((await uploadAsset(form(new File(["x"], "logo.png", { type: "image/png" })))).status).toBe(401);
+    expect(
+      (await uploadAsset(form(new File(["x"], "logo.png", { type: "image/png" })))).status,
+    ).toBe(401);
     expect(put).not.toHaveBeenCalled();
   });
 
@@ -38,7 +40,9 @@ describe("POST /api/assets — logo/image upload to Blob (§10.2, §13.10)", () 
   });
 
   it("415s for a non-image file", async () => {
-    expect((await uploadAsset(form(new File(["x"], "data.csv", { type: "text/csv" })))).status).toBe(415);
+    expect(
+      (await uploadAsset(form(new File(["x"], "data.csv", { type: "text/csv" })))).status,
+    ).toBe(415);
     expect(put).not.toHaveBeenCalled();
   });
 
@@ -47,6 +51,10 @@ describe("POST /api/assets — logo/image upload to Blob (§10.2, §13.10)", () 
     expect(res.status).toBe(200);
     const body = (await res.json()) as { url: string };
     expect(body.url).toContain("https://blob.test/");
-    expect(put).toHaveBeenCalledWith(expect.stringContaining("owner_a"), expect.anything(), expect.objectContaining({ access: "public" }));
+    expect(put).toHaveBeenCalledWith(
+      expect.stringContaining("owner_a"),
+      expect.anything(),
+      expect.objectContaining({ access: "public" }),
+    );
   });
 });

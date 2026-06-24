@@ -14,6 +14,7 @@ const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
 
 // Feed Monaco the theme JSON Schema for inline validation + autocomplete.
 const configureJsonSchema: BeforeMount = (monaco) => {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access -- Monaco json extension types are separate from @monaco-editor/react; the call is correct at runtime
   monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
     validate: true,
     enableSchemaRequest: false,
@@ -27,7 +28,12 @@ const configureJsonSchema: BeforeMount = (monaco) => {
   });
 };
 
-const ConfiguredEditor: EditorLike = ({ defaultValue, value, language, onChange }: EditorLikeProps) => (
+const ConfiguredEditor: EditorLike = ({
+  defaultValue,
+  value,
+  language,
+  onChange,
+}: EditorLikeProps) => (
   <MonacoEditor
     height="100%"
     defaultLanguage={language ?? "json"}

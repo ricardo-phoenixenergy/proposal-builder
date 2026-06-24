@@ -7,7 +7,11 @@ import { setSessionUserResolverForTests } from "../server/auth/sessionUser";
 import { POST } from "../../app/api/users/[id]/password/route";
 
 const post = (id: string, body: unknown) => ({
-  req: new Request(`http://x/api/users/${id}/password`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }),
+  req: new Request(`http://x/api/users/${id}/password`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  }),
   ctx: { params: Promise.resolve({ id }) },
 });
 

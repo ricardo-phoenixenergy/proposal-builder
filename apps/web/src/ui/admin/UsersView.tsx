@@ -73,11 +73,30 @@ export function UsersView({ currentUserId }: { currentUserId: string }) {
         <h2>Users</h2>
       </div>
 
-      <form className="userform" onSubmit={onCreate}>
-        <input aria-label="Email" type="email" placeholder="email@company.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
-        <input aria-label="Password" type="password" placeholder="Password (min 8)" value={password} onChange={(e) => setPassword(e.target.value)} required />
+      <form className="userform" onSubmit={(e) => void onCreate(e)}>
+        <input
+          aria-label="Email"
+          type="email"
+          placeholder="email@company.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+        <input
+          aria-label="Password"
+          type="password"
+          placeholder="Password (min 8)"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
         <label className="userform__admin">
-          <input type="checkbox" checked={makeAdmin} onChange={(e) => setMakeAdmin(e.target.checked)} /> Admin
+          <input
+            type="checkbox"
+            checked={makeAdmin}
+            onChange={(e) => setMakeAdmin(e.target.checked)}
+          />{" "}
+          Admin
         </label>
         <button type="submit" className="btn btn--primary">
           Create account

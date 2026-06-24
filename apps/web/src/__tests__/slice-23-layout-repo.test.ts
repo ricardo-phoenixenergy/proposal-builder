@@ -4,7 +4,12 @@ import { createMemoryRepo } from "../server/repo/memory";
 import type { SectionLayout } from "@proposal/shared";
 
 const layout = (variant: string, pageFormat = "a4_portrait"): SectionLayout => ({
-  type: "cover", variant, pageFormat, name: variant, root: { kind: "stack", children: [] }, version: 1,
+  type: "cover",
+  variant,
+  pageFormat,
+  name: variant,
+  root: { kind: "stack", children: [] },
+  version: 1,
 });
 
 describe("memory repo — section layouts", () => {

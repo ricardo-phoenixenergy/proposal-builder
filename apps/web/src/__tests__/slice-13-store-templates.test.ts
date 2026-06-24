@@ -4,8 +4,14 @@ import { builtInTemplates, type Template } from "@proposal/shared";
 import { useProposalStore } from "../state/proposalStore";
 
 const authored: Template = {
-  id: "tmpl_sales", name: "Sales", themeId: "theme_phoenix_default", locked: false,
-  slots: [{ kind: "fixed", type: "text", lock: "open" }, { kind: "fixed", type: "executive_summary", lock: "open" }],
+  id: "tmpl_sales",
+  name: "Sales",
+  themeId: "theme_phoenix_default",
+  locked: false,
+  slots: [
+    { kind: "fixed", type: "text", lock: "open" },
+    { kind: "fixed", type: "executive_summary", lock: "open" },
+  ],
 };
 
 afterEach(() => vi.unstubAllGlobals());
@@ -15,13 +21,23 @@ beforeEach(() => {
 
 describe("store templates", () => {
   it("initialises templates to the built-ins", () => {
-    expect(useProposalStore.getState().templates.map((t) => t.id)).toEqual(builtInTemplates.map((t) => t.id));
+    expect(useProposalStore.getState().templates.map((t) => t.id)).toEqual(
+      builtInTemplates.map((t) => t.id),
+    );
   });
 
   it("loadTemplates hydrates from the API", async () => {
-    vi.stubGlobal("fetch", vi.fn(() =>
-      Promise.resolve(new Response(JSON.stringify({ templates: [...builtInTemplates, authored] }), { status: 200, headers: { "content-type": "application/json" } })),
-    ));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() =>
+        Promise.resolve(
+          new Response(JSON.stringify({ templates: [...builtInTemplates, authored] }), {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          }),
+        ),
+      ),
+    );
     await useProposalStore.getState().loadTemplates();
     expect(useProposalStore.getState().templates.map((t) => t.id)).toContain("tmpl_sales");
   });

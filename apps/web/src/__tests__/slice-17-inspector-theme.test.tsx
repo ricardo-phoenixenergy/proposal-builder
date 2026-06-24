@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { useProposalStore } from "../state/proposalStore";
 import { Inspector } from "../ui/Inspector";
@@ -6,7 +6,14 @@ import { defaultTheme } from "../theme/defaultTheme";
 
 beforeEach(() => {
   useProposalStore.setState({
-    document: { id: "p1", title: "T", client: { name: "C" }, themeId: "theme_default", templateId: "open", sections: [] },
+    document: {
+      id: "p1",
+      title: "T",
+      client: { name: "C" },
+      themeId: "theme_default",
+      templateId: "open",
+      sections: [],
+    },
     theme: defaultTheme,
     selectedId: null,
     templates: useProposalStore.getState().templates,

@@ -9,11 +9,18 @@ import { invalidateActiveRegistry } from "../server/registry/activeRegistry";
 import { PUT } from "../../app/api/templates/[id]/route";
 
 const tmpl: Template = {
-  id: "tmpl_sales", name: "Sales", themeId: "theme_phoenix_default", locked: false,
+  id: "tmpl_sales",
+  name: "Sales",
+  themeId: "theme_phoenix_default",
+  locked: false,
   slots: [{ kind: "fixed", type: "text", lock: "open" }],
 };
 const put = (id: string, body: unknown) => ({
-  req: new Request(`http://x/api/templates/${id}`, { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }),
+  req: new Request(`http://x/api/templates/${id}`, {
+    method: "PUT",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  }),
   ctx: { params: Promise.resolve({ id }) },
 });
 

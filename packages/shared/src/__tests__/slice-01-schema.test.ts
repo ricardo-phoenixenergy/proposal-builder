@@ -10,9 +10,7 @@ import { sampleProposal } from "../samples/sample-proposal";
 /** Pull the `data` subschema for one section type out of the built allOf. */
 function dataSchemaFor(type: string): any {
   const schema = buildSectionSchema(builtInSectionTypes) as any;
-  const branch = schema.allOf.find(
-    (b: any) => b.if?.properties?.type?.const === type,
-  );
+  const branch = schema.allOf.find((b: any) => b.if?.properties?.type?.const === type);
   return branch?.then?.properties?.data;
 }
 
@@ -66,7 +64,9 @@ describe("validateSection — Ajv structure + app-layer rules", () => {
     };
     const result = validateSection(section);
     expect(result.valid).toBe(false);
-    expect(result.errors.some((e) => e.path.includes("heading") && e.source === "schema")).toBe(true);
+    expect(result.errors.some((e) => e.path.includes("heading") && e.source === "schema")).toBe(
+      true,
+    );
   });
 
   it("rejects a missing required field (schema)", () => {
@@ -77,7 +77,11 @@ describe("validateSection — Ajv structure + app-layer rules", () => {
     };
     const result = validateSection(section);
     expect(result.valid).toBe(false);
-    expect(result.errors.some((e) => e.message.toLowerCase().includes("body") || e.path.includes("body"))).toBe(true);
+    expect(
+      result.errors.some(
+        (e) => e.message.toLowerCase().includes("body") || e.path.includes("body"),
+      ),
+    ).toBe(true);
   });
 
   it("rejects unknown additional properties in data (schema)", () => {

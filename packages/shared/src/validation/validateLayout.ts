@@ -1,8 +1,15 @@
 import type { ValidationError, ValidationResult } from "./result";
 import type { FieldType, SectionTypeSchema } from "../types/section";
 import {
-  ALIGNS, CHART_KINDS, CONTAINER_KINDS, LEAF_KINDS, SIZE_SCALES, SPACE_SCALES,
-  TOKEN_COLORS, TOKEN_FONTS, WEIGHTS,
+  ALIGNS,
+  CHART_KINDS,
+  CONTAINER_KINDS,
+  LEAF_KINDS,
+  SIZE_SCALES,
+  SPACE_SCALES,
+  TOKEN_COLORS,
+  TOKEN_FONTS,
+  WEIGHTS,
 } from "../types/layout";
 
 const MAX_DEPTH = 4;
@@ -36,14 +43,21 @@ const STYLE_VOCAB: Record<string, readonly string[]> = {
 export function validateLayout(layout: unknown, typeSchema: SectionTypeSchema): ValidationResult {
   const errors: ValidationError[] = [];
   const push = (path: string, message: string) => errors.push({ path, message, source: "app" });
-  const fieldType = (key: string): FieldType | undefined => typeSchema.fields.find((f) => f.key === key)?.type;
+  const fieldType = (key: string): FieldType | undefined =>
+    typeSchema.fields.find((f) => f.key === key)?.type;
 
   if (typeof layout !== "object" || layout === null) {
-    return { valid: false, errors: [{ path: "", message: "Expected a layout object", source: "app" }] };
+    return {
+      valid: false,
+      errors: [{ path: "", message: "Expected a layout object", source: "app" }],
+    };
   }
   const root = (layout as { root?: unknown }).root;
   if (root === undefined || root === null) {
-    return { valid: false, errors: [{ path: "/root", message: "layout.root is required", source: "app" }] };
+    return {
+      valid: false,
+      errors: [{ path: "/root", message: "layout.root is required", source: "app" }],
+    };
   }
 
   const validateStyle = (style: unknown, path: string) => {
@@ -100,7 +114,11 @@ export function validateLayout(layout: unknown, typeSchema: SectionTypeSchema): 
     if (b["position"] !== undefined && b["position"] !== "cover" && b["position"] !== "contain") {
       push(`${path}/position`, 'position must be "cover" or "contain"');
     }
-    if (b["minHeight"] !== undefined && b["minHeight"] !== "page" && !SIZE_SCALES.includes(b["minHeight"] as never)) {
+    if (
+      b["minHeight"] !== undefined &&
+      b["minHeight"] !== "page" &&
+      !SIZE_SCALES.includes(b["minHeight"] as never)
+    ) {
       push(`${path}/minHeight`, 'minHeight must be a size scale or "page"');
     }
   };
@@ -116,7 +134,10 @@ export function validateLayout(layout: unknown, typeSchema: SectionTypeSchema): 
     }
     const b = block as Record<string, unknown>;
     const kind = b["kind"];
-    if (typeof kind !== "string" || (!LEAF_KINDS.includes(kind as never) && !CONTAINER_KINDS.includes(kind as never))) {
+    if (
+      typeof kind !== "string" ||
+      (!LEAF_KINDS.includes(kind as never) && !CONTAINER_KINDS.includes(kind as never))
+    ) {
       push(`${path}/kind`, `unknown block kind "${String(kind)}"`);
       return;
     }
@@ -131,7 +152,8 @@ export function validateLayout(layout: unknown, typeSchema: SectionTypeSchema): 
       } else {
         const ft = fieldType(f);
         if (ft === undefined) push(`${path}/field`, `field "${f}" does not exist on this type`);
-        else if (!allowed.includes(ft)) push(`${path}/field`, `${kind} cannot bind to a ${ft} field`);
+        else if (!allowed.includes(ft))
+          push(`${path}/field`, `${kind} cannot bind to a ${ft} field`);
       }
       if (kind === "chart" && !CHART_KINDS.includes(b["chart"] as never)) {
         push(`${path}/chart`, `chart must be one of ${CHART_KINDS.join(", ")}`);
@@ -145,13 +167,15 @@ export function validateLayout(layout: unknown, typeSchema: SectionTypeSchema): 
       } else {
         fields.forEach((f, i) => {
           const ft = typeof f === "string" ? fieldType(f) : undefined;
-          if (ft !== "text" && ft !== "paragraph") push(`${path}/fields/${i}`, "keyValue fields must be text/paragraph");
+          if (ft !== "text" && ft !== "paragraph")
+            push(`${path}/fields/${i}`, "keyValue fields must be text/paragraph");
         });
       }
       return;
     }
     if (kind === "callout" || kind === "text") {
-      if (typeof b["text"] !== "string" || b["text"].trim() === "") push(`${path}/text`, `${kind} requires non-empty text`);
+      if (typeof b["text"] !== "string" || b["text"].trim() === "")
+        push(`${path}/text`, `${kind} requires non-empty text`);
       return;
     }
     if (kind === "logo" || kind === "divider") return; // bind nothing
@@ -172,12 +196,17 @@ export function validateLayout(layout: unknown, typeSchema: SectionTypeSchema): 
       } else {
         const widths = b["widths"];
         if (widths !== undefined) {
-          if (!Array.isArray(widths) || widths.length !== cols.length || widths.some((w) => typeof w !== "number" || w <= 0)) {
+          if (
+            !Array.isArray(widths) ||
+            widths.length !== cols.length ||
+            widths.some((w) => typeof w !== "number" || w <= 0)
+          ) {
             push(`${path}/widths`, "widths must match the column count and be positive");
           }
         }
         cols.forEach((col, i) => {
-          if (!Array.isArray(col)) push(`${path}/columns/${i}`, "each column must be an array of blocks");
+          if (!Array.isArray(col))
+            push(`${path}/columns/${i}`, "each column must be an array of blocks");
           else col.forEach((c, j) => walk(c, `${path}/columns/${i}/${j}`, depth + 1));
         });
       }

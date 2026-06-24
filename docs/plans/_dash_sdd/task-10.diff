@@ -1,0 +1,225 @@
+=== commits ===
+214d1e2 feat(dashboard): folder sidebar with filter + folder CRUD
+
+=== stat ===
+ .../src/__tests__/slice-14-folder-sidebar.test.tsx | 20 ++++++
+ apps/web/src/ui/dashboard/Dashboard.tsx            | 43 +++++++++----
+ apps/web/src/ui/dashboard/FolderSidebar.tsx        | 73 ++++++++++++++++++++++
+ 3 files changed, 125 insertions(+), 11 deletions(-)
+
+=== diff ===
+diff --git a/apps/web/src/__tests__/slice-14-folder-sidebar.test.tsx b/apps/web/src/__tests__/slice-14-folder-sidebar.test.tsx
+new file mode 100644
+index 0000000..f32bee3
+--- /dev/null
++++ b/apps/web/src/__tests__/slice-14-folder-sidebar.test.tsx
+@@ -0,0 +1,20 @@
++import { afterEach, describe, expect, it, vi } from "vitest";
++import { cleanup, render, screen, fireEvent } from "@testing-library/react";
++import { FolderSidebar } from "../ui/dashboard/FolderSidebar";
++import type { Folder } from "../client/folders";
++
++afterEach(cleanup);
++
++const folders: Folder[] = [{ id: "f1", ownerId: "o", name: "Sales", createdAt: "t" }];
++
++describe("FolderSidebar", () => {
++  it("lists All / folder / Unfiled and fires onSelect", () => {
++    const onSelect = vi.fn();
++    render(<FolderSidebar folders={folders} counts={{ all: 3, unfiled: 1, byFolder: { f1: 2 } }} selected="all" onSelect={onSelect} onChange={vi.fn()} />);
++    expect(screen.getByRole("button", { name: /all/i })).toBeInTheDocument();
++    fireEvent.click(screen.getByRole("button", { name: /sales/i }));
++    expect(onSelect).toHaveBeenCalledWith("f1");
++    fireEvent.click(screen.getByRole("button", { name: /unfiled/i }));
++    expect(onSelect).toHaveBeenCalledWith(null);
++  });
++});
+diff --git a/apps/web/src/ui/dashboard/Dashboard.tsx b/apps/web/src/ui/dashboard/Dashboard.tsx
+index 9a7bf51..6736707 100644
+--- a/apps/web/src/ui/dashboard/Dashboard.tsx
++++ b/apps/web/src/ui/dashboard/Dashboard.tsx
+@@ -4,50 +4,70 @@ import { useMemo, useState } from "react";
+ import { useRouter } from "next/navigation";
+ import {
+   listProposals,
+   updateProposalMeta,
+   duplicateProposal,
+   deleteProposal,
+   downloadProposalPdf,
+   type ProposalSummary,
+ } from "../../client/persistence";
+ import type { Folder } from "../../client/folders";
++import { fetchFolders } from "../../client/folders";
+ import { useProposalStore } from "../../state/proposalStore";
++import { FolderSidebar } from "./FolderSidebar";
+ import { ProposalGrid } from "./ProposalGrid";
+ 
+ type Sort = "recent" | "title";
+ 
+ export function Dashboard({
+   initialProposals,
+   initialFolders,
+   isAdmin,
+ }: {
+   initialProposals: ProposalSummary[];
+   initialFolders: Folder[];
+   isAdmin: boolean;
+ }) {
+   const notify = useProposalStore((s) => s.notify);
+   const router = useRouter();
+   const [proposals, setProposals] = useState(initialProposals);
+-  const [folders] = useState(initialFolders);
++  const [folders, setFolders] = useState(initialFolders);
+   const [search, setSearch] = useState("");
+   const [sort, setSort] = useState<Sort>("recent");
+-  const selectedFolderId: string | null | "all" = "all"; // sidebar wires this in Task 10
++  const [selectedFolderId, setSelectedFolderId] = useState<"all" | null | string>("all");
+ 
+   const refresh = async () => {
+     try {
+       setProposals(await listProposals());
+     } catch {
+       notify("error", "Couldn't refresh proposals.");
+     }
+   };
+ 
++  const refreshFolders = async () => {
++    try {
++      setFolders(await fetchFolders());
++      setProposals(await listProposals());
++    } catch {
++      notify("error", "Couldn't refresh folders.");
++    }
++  };
++
++  const counts = useMemo(() => ({
++    all: proposals.length,
++    unfiled: proposals.filter((p) => p.folderId === null).length,
++    byFolder: folders.reduce<Record<string, number>>((acc, f) => {
++      acc[f.id] = proposals.filter((p) => p.folderId === f.id).length;
++      return acc;
++    }, {}),
++  }), [proposals, folders]);
++
+   const visible = useMemo(() => {
+     const q = search.trim().toLowerCase();
+     let list = proposals;
+     if (selectedFolderId !== "all") {
+       list = list.filter((p) => (selectedFolderId === null ? p.folderId === null : p.folderId === selectedFolderId));
+     }
+     if (q) list = list.filter((p) => p.title.toLowerCase().includes(q) || p.client.toLowerCase().includes(q));
+     return [...list].sort((a, b) =>
+       sort === "title" ? a.title.localeCompare(b.title) : b.updatedAt.localeCompare(a.updatedAt),
+     );
+@@ -111,22 +131,23 @@ export function Dashboard({
+ 
+       <div className="dash__toolbar">
+         <input aria-label="Search title or client" placeholder="Search title or client…" value={search} onChange={(e) => setSearch(e.target.value)} />
+         <select aria-label="Sort" value={sort} onChange={(e) => setSort(e.target.value as Sort)}>
+           <option value="recent">Recent</option>
+           <option value="title">Title A–Z</option>
+         </select>
+         <button type="button" className="btn btn--primary" onClick={() => router.push("/p/new")}>+ New</button>
+       </div>
+ 
+-      <main className="dash__main">
+-        {proposals.length === 0 ? (
+-          <div className="dash__empty">
+-            <p>No proposals yet.</p>
+-          </div>
+-        ) : (
+-          <ProposalGrid proposals={visible} folders={folders} handlers={handlers} />
+-        )}
+-      </main>
++      <div className="dash__body">
++        <FolderSidebar folders={folders} counts={counts} selected={selectedFolderId} onSelect={setSelectedFolderId} onChange={refreshFolders} />
++        <main className="dash__main">
++          {proposals.length === 0 ? (
++            <div className="dash__empty"><p>No proposals yet.</p></div>
++          ) : (
++            <ProposalGrid proposals={visible} folders={folders} handlers={handlers} />
++          )}
++        </main>
++      </div>
+     </div>
+   );
+ }
+diff --git a/apps/web/src/ui/dashboard/FolderSidebar.tsx b/apps/web/src/ui/dashboard/FolderSidebar.tsx
+new file mode 100644
+index 0000000..18b462a
+--- /dev/null
++++ b/apps/web/src/ui/dashboard/FolderSidebar.tsx
+@@ -0,0 +1,73 @@
++"use client";
++
++import type { Folder } from "../../client/folders";
++import { createFolder, renameFolder, deleteFolder } from "../../client/folders";
++import { useProposalStore } from "../../state/proposalStore";
++
++type Selected = "all" | null | string;
++
++export function FolderSidebar({
++  folders,
++  counts,
++  selected,
++  onSelect,
++  onChange,
++}: {
++  folders: Folder[];
++  counts: { all: number; unfiled: number; byFolder: Record<string, number> };
++  selected: Selected;
++  onSelect: (s: Selected) => void;
++  onChange: () => void | Promise<void>;
++}) {
++  const notify = useProposalStore((s) => s.notify);
++
++  const add = async () => {
++    const name = window.prompt("New folder name");
++    if (name === null || name.trim() === "") return;
++    try {
++      await createFolder(name.trim());
++      await onChange();
++    } catch {
++      notify("error", "Couldn't create the folder.");
++    }
++  };
++  const rename = async (f: Folder) => {
++    const name = window.prompt("Rename folder", f.name);
++    if (name === null || name.trim() === "") return;
++    try {
++      await renameFolder(f.id, name.trim());
++      await onChange();
++    } catch {
++      notify("error", "Couldn't rename the folder.");
++    }
++  };
++  const remove = async (f: Folder) => {
++    if (!window.confirm(`Delete folder "${f.name}"? Its proposals move to Unfiled.`)) return;
++    try {
++      await deleteFolder(f.id);
++      if (selected === f.id) onSelect("all");
++      await onChange();
++    } catch {
++      notify("error", "Couldn't delete the folder.");
++    }
++  };
++
++  const cls = (s: Selected) => `dash__folder${selected === s ? " dash__folder--active" : ""}`;
++
++  return (
++    <nav className="dash__sidebar" aria-label="Folders">
++      <button type="button" className={cls("all")} onClick={() => onSelect("all")}>All <span className="dash__count">{counts.all}</span></button>
++      {folders.map((f) => (
++        <div key={f.id} className="dash__folderrow">
++          <button type="button" className={cls(f.id)} onClick={() => onSelect(f.id)}>
++            {f.name} <span className="dash__count">{counts.byFolder[f.id] ?? 0}</span>
++          </button>
++          <button type="button" className="dash__folderedit" aria-label="Rename folder" title={`Rename ${f.name}`} onClick={() => rename(f)}>✎</button>
++          <button type="button" className="dash__folderdel" aria-label="Delete folder" title={`Delete ${f.name}`} onClick={() => remove(f)}>🗑</button>
++        </div>
++      ))}
++      <button type="button" className={cls(null)} onClick={() => onSelect(null)}>Unfiled <span className="dash__count">{counts.unfiled}</span></button>
++      <button type="button" className="btn dash__addfolder" onClick={add}>+ New folder</button>
++    </nav>
++  );
++}

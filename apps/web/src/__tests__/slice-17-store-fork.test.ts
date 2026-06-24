@@ -6,7 +6,11 @@ import { defaultTheme } from "../theme/defaultTheme";
 beforeEach(() => {
   useProposalStore.setState({
     document: {
-      id: "p1", title: "T", client: { name: "C" }, themeId: "theme_phoenix_default", templateId: "open",
+      id: "p1",
+      title: "T",
+      client: { name: "C" },
+      themeId: "theme_phoenix_default",
+      templateId: "open",
       sections: [],
     },
     theme: defaultTheme,
@@ -25,7 +29,9 @@ describe("theme fork", () => {
   it("editing while forked persists into document.theme", () => {
     useProposalStore.getState().forkTheme();
     const forked = useProposalStore.getState().theme;
-    useProposalStore.getState().setTheme({ ...forked, colors: { ...forked.colors, primary: "#123456" } });
+    useProposalStore
+      .getState()
+      .setTheme({ ...forked, colors: { ...forked.colors, primary: "#123456" } });
     expect(useProposalStore.getState().document.theme!.colors.primary).toBe("#123456");
   });
 

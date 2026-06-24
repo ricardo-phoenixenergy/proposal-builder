@@ -2,8 +2,20 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen, waitFor, within, fireEvent } from "@testing-library/react";
 import { UsersView } from "../ui/admin/UsersView";
 
-const me = { id: "me", email: "me@x.test", isAdmin: true, disabled: false, createdAt: "2026-01-01T00:00:00.000Z" };
-const other = { id: "other", email: "other@x.test", isAdmin: false, disabled: false, createdAt: "2026-01-02T00:00:00.000Z" };
+const me = {
+  id: "me",
+  email: "me@x.test",
+  isAdmin: true,
+  disabled: false,
+  createdAt: "2026-01-01T00:00:00.000Z",
+};
+const other = {
+  id: "other",
+  email: "other@x.test",
+  isAdmin: false,
+  disabled: false,
+  createdAt: "2026-01-02T00:00:00.000Z",
+};
 
 function mockFetch(handlers: Record<string, (init?: RequestInit) => Response>) {
   return vi.fn((url: string, init?: RequestInit) => {
@@ -13,9 +25,12 @@ function mockFetch(handlers: Record<string, (init?: RequestInit) => Response>) {
     return Promise.resolve(h(init));
   });
 }
-const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 
-beforeEach(() => vi.stubGlobal("fetch", mockFetch({ "GET /api/users": () => json({ users: [me, other] }) })));
+beforeEach(() =>
+  vi.stubGlobal("fetch", mockFetch({ "GET /api/users": () => json({ users: [me, other] }) })),
+);
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
@@ -38,11 +53,20 @@ describe("UsersView", () => {
   });
 
   it("creates an account and prepends it", async () => {
-    const created = { id: "new", email: "new@x.test", isAdmin: false, disabled: false, createdAt: "2026-01-03T00:00:00.000Z" };
-    vi.stubGlobal("fetch", mockFetch({
-      "GET /api/users": () => json({ users: [me, other] }),
-      "POST /api/users": () => json({ user: created }, 201),
-    }));
+    const created = {
+      id: "new",
+      email: "new@x.test",
+      isAdmin: false,
+      disabled: false,
+      createdAt: "2026-01-03T00:00:00.000Z",
+    };
+    vi.stubGlobal(
+      "fetch",
+      mockFetch({
+        "GET /api/users": () => json({ users: [me, other] }),
+        "POST /api/users": () => json({ user: created }, 201),
+      }),
+    );
     render(<UsersView currentUserId="me" />);
     await waitFor(() => expect(screen.getByText("me@x.test")).toBeInTheDocument());
 
@@ -54,10 +78,13 @@ describe("UsersView", () => {
   });
 
   it("toggles disable on another user via PATCH", async () => {
-    vi.stubGlobal("fetch", mockFetch({
-      "GET /api/users": () => json({ users: [me, other] }),
-      "PATCH /api/users/other": () => json({ user: { ...other, disabled: true } }),
-    }));
+    vi.stubGlobal(
+      "fetch",
+      mockFetch({
+        "GET /api/users": () => json({ users: [me, other] }),
+        "PATCH /api/users/other": () => json({ user: { ...other, disabled: true } }),
+      }),
+    );
     render(<UsersView currentUserId="me" />);
     await waitFor(() => expect(screen.getByText("other@x.test")).toBeInTheDocument());
 

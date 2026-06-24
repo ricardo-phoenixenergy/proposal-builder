@@ -27,8 +27,16 @@ export function ExportGate() {
     try {
       const res = await fetch(`/api/proposals/${proposalId}/export`, { method: "POST" });
       if (!res.ok) {
-        const body = (await res.json().catch(() => ({}))) as { error?: string; errors?: ValidationResult["errors"] };
-        setResult({ valid: false, errors: body.errors ?? [{ path: "", message: body.error ?? "Export failed", source: "app" }] });
+        const body = (await res.json().catch(() => ({}))) as {
+          error?: string;
+          errors?: ValidationResult["errors"];
+        };
+        setResult({
+          valid: false,
+          errors: body.errors ?? [
+            { path: "", message: body.error ?? "Export failed", source: "app" },
+          ],
+        });
         return;
       }
       const blob = await res.blob();
@@ -54,7 +62,13 @@ export function ExportGate() {
             <>
               <p style={{ margin: 0 }}>✓ Ready to export.</p>
               {proposalId ? (
-                <button type="button" className="btn btn--primary" style={{ marginTop: 8 }} disabled={busy} onClick={() => void onDownload()}>
+                <button
+                  type="button"
+                  className="btn btn--primary"
+                  style={{ marginTop: 8 }}
+                  disabled={busy}
+                  onClick={() => void onDownload()}
+                >
                   {busy ? "Rendering…" : "Download PDF"}
                 </button>
               ) : (
@@ -65,7 +79,9 @@ export function ExportGate() {
             </>
           ) : (
             <>
-              <strong>Blocked — {result.errors.length} issue{result.errors.length === 1 ? "" : "s"}:</strong>
+              <strong>
+                Blocked — {result.errors.length} issue{result.errors.length === 1 ? "" : "s"}:
+              </strong>
               <ul style={{ margin: "8px 0 0", paddingLeft: 18 }}>
                 {result.errors.map((e, i) => (
                   <li key={i}>
@@ -75,7 +91,12 @@ export function ExportGate() {
               </ul>
             </>
           )}
-          <button type="button" className="btn btn--ghost" style={{ marginTop: 8 }} onClick={() => setResult(null)}>
+          <button
+            type="button"
+            className="btn btn--ghost"
+            style={{ marginTop: 8 }}
+            onClick={() => setResult(null)}
+          >
             Close
           </button>
         </div>

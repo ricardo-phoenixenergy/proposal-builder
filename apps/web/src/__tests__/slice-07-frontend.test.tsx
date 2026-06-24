@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { App } from "../App";
 import { Inspector } from "../ui/Inspector";
 import { useProposalStore } from "../state/proposalStore";
@@ -9,10 +9,20 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: vi.fn(), push: 
 // App now calls loadSectionTypes and loadTemplates on mount. Stub fetch so tests
 // remain hermetic — jsdom has no real fetch.
 beforeEach(() => {
-  vi.stubGlobal("fetch", vi.fn((url: string) => {
-    const body = String(url).includes("/api/templates") ? { templates: [] } : { sectionTypes: [] };
-    return Promise.resolve(new Response(JSON.stringify(body), { status: 200, headers: { "content-type": "application/json" } }));
-  }));
+  vi.stubGlobal(
+    "fetch",
+    vi.fn((url: string) => {
+      const body = String(url).includes("/api/templates")
+        ? { templates: [] }
+        : { sectionTypes: [] };
+      return Promise.resolve(
+        new Response(JSON.stringify(body), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        }),
+      );
+    }),
+  );
   // Start each test on the locked Prelim template.
   useProposalStore.getState().applyTemplate("tmpl_prelim");
 });
@@ -72,6 +82,8 @@ describe("ExportGate — the hard gate (§9)", () => {
     });
 
     fireEvent.click(screen.getByRole("button", { name: /export pdf/i }));
-    expect(screen.getByRole("dialog", { name: /export check/i })).toHaveTextContent(/ready to export/i);
+    expect(screen.getByRole("dialog", { name: /export check/i })).toHaveTextContent(
+      /ready to export/i,
+    );
   });
 });

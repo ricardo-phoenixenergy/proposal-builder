@@ -17,12 +17,18 @@ export function validateTemplateDefinition(
   const push = (path: string, message: string) => errors.push({ path, message, source: "app" });
 
   if (typeof def !== "object" || def === null) {
-    return { valid: false, errors: [{ path: "", message: "Expected a template object", source: "app" }] };
+    return {
+      valid: false,
+      errors: [{ path: "", message: "Expected a template object", source: "app" }],
+    };
   }
   const d = def as Record<string, unknown>;
 
   if (typeof d["id"] !== "string" || !ID_KEY.test(d["id"])) {
-    push("/id", "id must be a lowercase slug (letters, digits, underscore; starting with a letter)");
+    push(
+      "/id",
+      "id must be a lowercase slug (letters, digits, underscore; starting with a letter)",
+    );
   }
   if (typeof d["name"] !== "string" || d["name"].trim() === "") push("/name", "name is required");
   if (typeof d["themeId"] !== "string" || !ctx.themeIds.includes(d["themeId"])) {
@@ -45,7 +51,8 @@ export function validateTemplateDefinition(
         return;
       }
       const type = s["type"];
-      const typeSchema = typeof type === "string" ? ctx.sectionTypes.find((t) => t.type === type) : undefined;
+      const typeSchema =
+        typeof type === "string" ? ctx.sectionTypes.find((t) => t.type === type) : undefined;
       if (!typeSchema) push(`/slots/${i}/type`, "slot type must be a known section type");
       if (!LOCKS.includes(s["lock"] as (typeof LOCKS)[number])) {
         push(`/slots/${i}/lock`, "lock must be one of open, fixed, editable-copy, editable-data");
@@ -56,10 +63,13 @@ export function validateTemplateDefinition(
           push(`/slots/${i}/data`, "data must be an object");
         } else if (typeSchema) {
           const textKeys = new Set(
-            typeSchema.fields.filter((f) => f.type === "text" || f.type === "paragraph").map((f) => f.key),
+            typeSchema.fields
+              .filter((f) => f.type === "text" || f.type === "paragraph")
+              .map((f) => f.key),
           );
-          for (const k of Object.keys(data as Record<string, unknown>)) {
-            if (!textKeys.has(k)) push(`/slots/${i}/data/${k}`, `"${k}" is not a text field on ${String(type)}`);
+          for (const k of Object.keys(data)) {
+            if (!textKeys.has(k))
+              push(`/slots/${i}/data/${k}`, `"${k}" is not a text field on ${String(type)}`);
           }
         }
       }

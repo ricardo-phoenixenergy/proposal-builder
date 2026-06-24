@@ -16,7 +16,8 @@ export function estimateMaxOutputTokens(typeSchema: SectionTypeSchema): number {
   let chars = 0;
   for (const field of typeSchema.fields) {
     if (fieldKind(field) !== "ai") continue;
-    chars += field.maxChars ?? (field.maxWords !== undefined ? field.maxWords * 6 : DEFAULT_FIELD_CHARS);
+    chars +=
+      field.maxChars ?? (field.maxWords !== undefined ? field.maxWords * 6 : DEFAULT_FIELD_CHARS);
   }
   const tokens = Math.ceil(chars / CHARS_PER_TOKEN) + JSON_OVERHEAD_TOKENS;
   return Math.min(CEILING, Math.max(FLOOR, tokens));

@@ -35,7 +35,10 @@ export function ImageField({
       body.append("file", file);
       const res = await fetch("/api/assets", { method: "POST", body });
       if (!res.ok) {
-        notify("error", res.status === 415 ? "That file isn't an image." : "Upload failed. Please try again.");
+        notify(
+          "error",
+          res.status === 415 ? "That file isn't an image." : "Upload failed. Please try again.",
+        );
         return;
       }
       const { url } = (await res.json()) as { url: string };

@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { getAtPath, updateAtPath, insertChild, removeAtPath, moveAtPath } from "../ui/admin/layoutTree";
+import {
+  getAtPath,
+  updateAtPath,
+  insertChild,
+  removeAtPath,
+  moveAtPath,
+} from "../ui/admin/layoutTree";
 import type { Block } from "@proposal/shared";
 
 const tree = (): Block => ({

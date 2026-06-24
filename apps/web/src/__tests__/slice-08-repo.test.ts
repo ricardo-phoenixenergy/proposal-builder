@@ -77,7 +77,14 @@ function sampleTheme() {
   return {
     id: "theme_x",
     name: "X",
-    colors: { primary: "#000", accent: "#111", text: "#222", muted: "#333", surface: "#fff", line: "#eee" },
+    colors: {
+      primary: "#000",
+      accent: "#111",
+      text: "#222",
+      muted: "#333",
+      surface: "#fff",
+      line: "#eee",
+    },
     fonts: { heading: "Inter", body: "Inter" },
     radius: 8,
     spacing: 1,

@@ -6,8 +6,12 @@ import { Inspector } from "../ui/Inspector";
 import { defaultTheme } from "../theme/defaultTheme";
 
 const authored: SectionLayout = {
-  type: "executive_summary", variant: "authored_slide", pageFormat: "widescreen_16_9", name: "Slide",
-  root: { kind: "stack", children: [] }, version: 1,
+  type: "executive_summary",
+  variant: "authored_slide",
+  pageFormat: "widescreen_16_9",
+  name: "Slide",
+  root: { kind: "stack", children: [] },
+  version: 1,
 };
 
 beforeEach(() => {
@@ -15,9 +19,14 @@ beforeEach(() => {
   setActiveLayouts([authored]);
   useProposalStore.setState({
     document: {
-      id: "p1", title: "T", client: { name: "C" }, themeId: "theme_default", templateId: "open",
+      id: "p1",
+      title: "T",
+      client: { name: "C" },
+      themeId: "theme_default",
+      templateId: "open",
       sections: [{ id: "s1", type: "executive_summary", data: { heading: "H", body: "B" } }],
-      brief: "", pageFormat: "widescreen_16_9",
+      brief: "",
+      pageFormat: "widescreen_16_9",
     },
     theme: defaultTheme,
     selectedId: "s1",

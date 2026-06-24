@@ -33,7 +33,7 @@ export function Dashboard({
   const [folders, setFolders] = useState(initialFolders);
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<Sort>("recent");
-  const [selectedFolderId, setSelectedFolderId] = useState<"all" | null | string>("all");
+  const [selectedFolderId, setSelectedFolderId] = useState<string | null>("all");
   const [showNew, setShowNew] = useState(false);
 
   const refresh = async () => {
@@ -53,22 +53,30 @@ export function Dashboard({
     }
   };
 
-  const counts = useMemo(() => ({
-    all: proposals.length,
-    unfiled: proposals.filter((p) => p.folderId === null).length,
-    byFolder: folders.reduce<Record<string, number>>((acc, f) => {
-      acc[f.id] = proposals.filter((p) => p.folderId === f.id).length;
-      return acc;
-    }, {}),
-  }), [proposals, folders]);
+  const counts = useMemo(
+    () => ({
+      all: proposals.length,
+      unfiled: proposals.filter((p) => p.folderId === null).length,
+      byFolder: folders.reduce<Record<string, number>>((acc, f) => {
+        acc[f.id] = proposals.filter((p) => p.folderId === f.id).length;
+        return acc;
+      }, {}),
+    }),
+    [proposals, folders],
+  );
 
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
     let list = proposals;
     if (selectedFolderId !== "all") {
-      list = list.filter((p) => (selectedFolderId === null ? p.folderId === null : p.folderId === selectedFolderId));
+      list = list.filter((p) =>
+        selectedFolderId === null ? p.folderId === null : p.folderId === selectedFolderId,
+      );
     }
-    if (q) list = list.filter((p) => p.title.toLowerCase().includes(q) || p.client.toLowerCase().includes(q));
+    if (q)
+      list = list.filter(
+        (p) => p.title.toLowerCase().includes(q) || p.client.toLowerCase().includes(q),
+      );
     return [...list].sort((a, b) =>
       sort === "title" ? a.title.localeCompare(b.title) : b.updatedAt.localeCompare(a.updatedAt),
     );
@@ -125,27 +133,46 @@ export function Dashboard({
       <header className="topbar">
         <span className="topbar__title">Proposal Generator</span>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          {isAdmin ? <a className="btn btn--ghost" href="/admin">Admin</a> : null}
+          {isAdmin ? (
+            <a className="btn btn--ghost" href="/admin">
+              Admin
+            </a>
+          ) : null}
           <SignOutButton />
         </div>
       </header>
 
       <div className="dash__toolbar">
-        <input aria-label="Search title or client" placeholder="Search title or client…" value={search} onChange={(e) => setSearch(e.target.value)} />
+        <input
+          aria-label="Search title or client"
+          placeholder="Search title or client…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
         <select aria-label="Sort" value={sort} onChange={(e) => setSort(e.target.value as Sort)}>
           <option value="recent">Recent</option>
           <option value="title">Title A–Z</option>
         </select>
-        <button type="button" className="btn btn--primary" onClick={() => setShowNew(true)}>+ New</button>
+        <button type="button" className="btn btn--primary" onClick={() => setShowNew(true)}>
+          + New
+        </button>
       </div>
 
       <div className="dash__body">
-        <FolderSidebar folders={folders} counts={counts} selected={selectedFolderId} onSelect={setSelectedFolderId} onChange={refreshFolders} />
+        <FolderSidebar
+          folders={folders}
+          counts={counts}
+          selected={selectedFolderId}
+          onSelect={setSelectedFolderId}
+          onChange={refreshFolders}
+        />
         <main className="dash__main">
           {proposals.length === 0 ? (
             <div className="dash__empty">
               <p>No proposals yet.</p>
-              <button type="button" className="btn btn--primary" onClick={() => setShowNew(true)}>+ New proposal</button>
+              <button type="button" className="btn btn--primary" onClick={() => setShowNew(true)}>
+                + New proposal
+              </button>
             </div>
           ) : (
             <ProposalGrid proposals={visible} folders={folders} handlers={handlers} />

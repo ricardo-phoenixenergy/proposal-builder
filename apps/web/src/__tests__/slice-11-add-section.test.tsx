@@ -9,7 +9,10 @@ afterEach(cleanup);
 
 describe("Outline — add section", () => {
   it("appends a section of the picked type when structure is unlocked", () => {
-    useProposalStore.setState({ document: { ...sampleProposal, templateId: "tmpl_open" }, selectedId: null });
+    useProposalStore.setState({
+      document: { ...sampleProposal, templateId: "tmpl_open" },
+      selectedId: null,
+    });
     const before = useProposalStore.getState().document.sections.length;
 
     render(<Outline />);

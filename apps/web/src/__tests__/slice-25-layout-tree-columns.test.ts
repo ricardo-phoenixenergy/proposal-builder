@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { getAtPath, updateAtPath, insertChild, removeAtPath, moveAtPath } from "../ui/admin/layoutTree";
+import {
+  getAtPath,
+  updateAtPath,
+  insertChild,
+  removeAtPath,
+  moveAtPath,
+} from "../ui/admin/layoutTree";
 import type { Block } from "@proposal/shared";
 
 // root stack → [ columns[ [stack[heading]], [stack[paragraph]] ] ]
@@ -63,7 +69,10 @@ describe("layoutTree — columns traversal", () => {
   });
 
   it("still handles pure stack paths (5a behaviour)", () => {
-    const flat: Block = { kind: "stack", children: [{ kind: "heading", field: "h" }, { kind: "divider" }] };
+    const flat: Block = {
+      kind: "stack",
+      children: [{ kind: "heading", field: "h" }, { kind: "divider" }],
+    };
     expect(getAtPath(flat, [1])).toMatchObject({ kind: "divider" });
   });
 });

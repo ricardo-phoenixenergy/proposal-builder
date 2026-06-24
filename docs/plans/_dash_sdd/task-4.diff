@@ -1,0 +1,143 @@
+=== commits ===
+2f04e4c feat(api): POST folderId + PATCH /api/proposals/[id] (rename/move)
+
+=== stat ===
+ apps/web/app/api/proposals/[id]/route.ts           | 27 ++++++++++
+ apps/web/app/api/proposals/route.ts                |  7 ++-
+ .../__tests__/slice-14-proposals-routes.test.ts    | 58 ++++++++++++++++++++++
+ 3 files changed, 90 insertions(+), 2 deletions(-)
+
+=== diff ===
+diff --git a/apps/web/app/api/proposals/[id]/route.ts b/apps/web/app/api/proposals/[id]/route.ts
+index 289b8c7..4255034 100644
+--- a/apps/web/app/api/proposals/[id]/route.ts
++++ b/apps/web/app/api/proposals/[id]/route.ts
+@@ -25,10 +25,37 @@ export async function PUT(request: Request, { params }: Ctx): Promise<Response>
+   return saved ? NextResponse.json({ proposal: saved }) : NextResponse.json({ error: "Not found" }, { status: 404 });
+ }
+ 
+ export async function DELETE(_request: Request, { params }: Ctx): Promise<Response> {
+   const { id } = await params;
+   const owned = await requireOwnedProposal(id);
+   if (owned instanceof Response) return owned;
+   const ok = await getRepo().deleteProposal(id);
+   return ok ? new Response(null, { status: 204 }) : NextResponse.json({ error: "Not found" }, { status: 404 });
+ }
++
++/** PATCH — rename (title) and/or move (folderId). Owner-scoped. */
++export async function PATCH(request: Request, { params }: Ctx): Promise<Response> {
++  const { id } = await params;
++  const owned = await requireOwnedProposal(id);
++  if (owned instanceof Response) return owned;
++
++  const body = (await request.json().catch(() => null)) as { title?: unknown; folderId?: unknown } | null;
++  const patch: { title?: string; folderId?: string | null } = {};
++  if (typeof body?.title === "string" && body.title.trim() !== "") patch.title = body.title.trim();
++  if (body && "folderId" in body) {
++    const fid = body.folderId;
++    if (fid !== null && typeof fid !== "string") return NextResponse.json({ error: "Invalid folderId" }, { status: 400 });
++    if (typeof fid === "string") {
++      const owns = (await getRepo().listFolders(owned.ownerId)).some((f) => f.id === fid);
++      if (!owns) return NextResponse.json({ error: "Unknown folder" }, { status: 400 });
++    }
++    patch.folderId = fid as string | null;
++  }
++  if (patch.title === undefined && patch.folderId === undefined) {
++    return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
++  }
++
++  const summary = await getRepo().updateProposalMeta(id, patch);
++  if (!summary) return NextResponse.json({ error: "Not found" }, { status: 404 });
++  return NextResponse.json({ proposal: summary });
++}
+diff --git a/apps/web/app/api/proposals/route.ts b/apps/web/app/api/proposals/route.ts
+index 2d3ea2a..f306c84 100644
+--- a/apps/web/app/api/proposals/route.ts
++++ b/apps/web/app/api/proposals/route.ts
+@@ -7,17 +7,20 @@ import { getOwner } from "../../../src/server/auth/owner";
+ export async function GET(): Promise<Response> {
+   const owner = await getOwner();
+   if (!owner) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+   const proposals = await getRepo().listProposals(owner);
+   return NextResponse.json({ proposals });
+ }
+ 
+ export async function POST(request: Request): Promise<Response> {
+   const owner = await getOwner();
+   if (!owner) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+-  const document = (await request.json().catch(() => null)) as ProposalDocument | null;
++  const body = (await request.json().catch(() => null)) as { document?: ProposalDocument; folderId?: string | null } | ProposalDocument | null;
++  // Back-compat: accept either a bare document or { document, folderId }.
++  const document = (body && "document" in (body as object) ? (body as { document?: ProposalDocument }).document : (body as ProposalDocument)) ?? null;
++  const folderId = body && "folderId" in (body as object) ? ((body as { folderId?: string | null }).folderId ?? null) : null;
+   if (!document || typeof document !== "object" || !Array.isArray(document.sections)) {
+     return NextResponse.json({ error: "Expected a ProposalDocument" }, { status: 400 });
+   }
+-  const proposal = await getRepo().createProposal(owner, document);
++  const proposal = await getRepo().createProposal(owner, document, folderId);
+   return NextResponse.json({ proposal }, { status: 201 });
+ }
+diff --git a/apps/web/src/__tests__/slice-14-proposals-routes.test.ts b/apps/web/src/__tests__/slice-14-proposals-routes.test.ts
+new file mode 100644
+index 0000000..0721e4a
+--- /dev/null
++++ b/apps/web/src/__tests__/slice-14-proposals-routes.test.ts
+@@ -0,0 +1,58 @@
++// @vitest-environment node
++import { afterEach, beforeEach, describe, expect, it } from "vitest";
++import { sampleProposal } from "@proposal/shared";
++import { createMemoryRepo } from "../server/repo/memory";
++import { setRepoForTests, getRepo } from "../server/repo";
++import { setOwnerResolverForTests } from "../server/auth/owner";
++import { POST as createProposal } from "../../app/api/proposals/route";
++import { PATCH } from "../../app/api/proposals/[id]/route";
++
++const post = (body: unknown) =>
++  new Request("http://x/api/proposals", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
++const patch = (id: string, body: unknown) => ({
++  req: new Request(`http://x/api/proposals/${id}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }),
++  ctx: { params: Promise.resolve({ id }) },
++});
++
++beforeEach(() => {
++  setRepoForTests(createMemoryRepo());
++  setOwnerResolverForTests(async () => "owner_a");
++});
++afterEach(() => {
++  setRepoForTests(null);
++  setOwnerResolverForTests(null);
++});
++
++describe("POST /api/proposals (folderId)", () => {
++  it("creates in a folder", async () => {
++    const f = await getRepo().createFolder("owner_a", "Sales");
++    const res = await createProposal(post({ document: sampleProposal, folderId: f.id }));
++    expect(res.status).toBe(201);
++    expect((await getRepo().listProposals("owner_a"))[0]!.folderId).toBe(f.id);
++  });
++});
++
++describe("PATCH /api/proposals/[id]", () => {
++  it("renames and moves into an owned folder", async () => {
++    const f = await getRepo().createFolder("owner_a", "Sales");
++    const c = await getRepo().createProposal("owner_a", sampleProposal);
++    const r1 = patch(c.id, { title: "Renamed" });
++    expect((await PATCH(r1.req, r1.ctx)).status).toBe(200);
++    const r2 = patch(c.id, { folderId: f.id });
++    expect(((await (await PATCH(r2.req, r2.ctx)).json()) as { proposal: { folderId: string } }).proposal.folderId).toBe(f.id);
++  });
++
++  it("400s an empty patch and a foreign folder", async () => {
++    const c = await getRepo().createProposal("owner_a", sampleProposal);
++    const empty = patch(c.id, {});
++    expect((await PATCH(empty.req, empty.ctx)).status).toBe(400);
++    const foreign = patch(c.id, { folderId: "fld_not_mine" });
++    expect((await PATCH(foreign.req, foreign.ctx)).status).toBe(400);
++  });
++
++  it("404s another owner's proposal", async () => {
++    const c = await getRepo().createProposal("owner_b", sampleProposal);
++    const r = patch(c.id, { title: "x" });
++    expect((await PATCH(r.req, r.ctx)).status).toBe(404);
++  });
++});

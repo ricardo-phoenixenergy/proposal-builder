@@ -15,7 +15,9 @@ const caseStudy = {
   type: "case_study",
   label: "Case study",
   category: "text" as const,
-  fields: [{ key: "body", type: "paragraph" as const, label: "Body", required: true, maxChars: 1000 }],
+  fields: [
+    { key: "body", type: "paragraph" as const, label: "Body", required: true, maxChars: 1000 },
+  ],
   variants: [],
   schemaVersion: 1,
 };
@@ -43,7 +45,9 @@ describe("active section-type registry", () => {
   it("listSectionTypes hides deprecated by default", () => {
     setActiveSectionTypes([{ ...caseStudy, deprecated: true }]);
     expect(listSectionTypes().some((t) => t.type === "case_study")).toBe(false);
-    expect(listSectionTypes({ includeDeprecated: true }).some((t) => t.type === "case_study")).toBe(true);
+    expect(listSectionTypes({ includeDeprecated: true }).some((t) => t.type === "case_study")).toBe(
+      true,
+    );
   });
 
   it("validateSection picks up an authored type after hydration", () => {

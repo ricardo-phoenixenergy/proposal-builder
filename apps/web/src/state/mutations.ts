@@ -49,9 +49,7 @@ export function setSectionType(
   return {
     ...doc,
     sections: doc.sections.map((section) =>
-      section.id === sectionId
-        ? { id: section.id, type, data: emptyDataForType(type) }
-        : section,
+      section.id === sectionId ? { id: section.id, type, data: emptyDataForType(type) } : section,
     ),
   };
 }
@@ -70,7 +68,11 @@ export function appendSection(document: ProposalDocument, type: string): Proposa
 }
 
 /** Insert a new section of `type` (schema-default data) at `index` (clamped). Pure. */
-export function insertSection(document: ProposalDocument, type: string, index: number): ProposalDocument {
+export function insertSection(
+  document: ProposalDocument,
+  type: string,
+  index: number,
+): ProposalDocument {
   const schema = getSectionType(type);
   const id = `sec_${crypto.randomUUID().slice(0, 8)}`;
   const section = {
@@ -92,7 +94,11 @@ export function removeSection(document: ProposalDocument, sectionId: string): Pr
 }
 
 /** Toggle a section's manual page break, immutably. */
-export function setSectionPageBreak(doc: ProposalDocument, sectionId: string, value: boolean): ProposalDocument {
+export function setSectionPageBreak(
+  doc: ProposalDocument,
+  sectionId: string,
+  value: boolean,
+): ProposalDocument {
   return {
     ...doc,
     sections: doc.sections.map((s) => (s.id === sectionId ? { ...s, pageBreakBefore: value } : s)),

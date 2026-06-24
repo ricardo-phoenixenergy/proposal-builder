@@ -16,7 +16,10 @@ const nextAuth = NextAuth({
   ...authConfig,
   providers: [
     Credentials({
-      credentials: { email: { label: "Email", type: "email" }, password: { label: "Password", type: "password" } },
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
+      },
       authorize: async (credentials) => {
         const user = await authenticateUser(credentials?.email, credentials?.password);
         return user ? { id: user.id, email: user.email, isAdmin: user.isAdmin } : null;

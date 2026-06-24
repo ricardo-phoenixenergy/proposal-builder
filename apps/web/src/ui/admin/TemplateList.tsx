@@ -20,7 +20,9 @@ export function TemplateList({
   onChange: (t: Template[]) => void;
 }) {
   const notify = useProposalStore((s) => s.notify);
-  const [editor, setEditor] = useState<{ initial?: Template; mode: "create" | "edit" } | null>(null);
+  const [editor, setEditor] = useState<{ initial?: Template; mode: "create" | "edit" } | null>(
+    null,
+  );
 
   const refresh = async () => {
     const res = await fetch("/api/templates");
@@ -54,7 +56,11 @@ export function TemplateList({
     <div className="stlist">
       <div className="stlist__head">
         <h2>Templates</h2>
-        <button type="button" className="btn btn--primary" onClick={() => setEditor({ mode: "create" })}>
+        <button
+          type="button"
+          className="btn btn--primary"
+          onClick={() => setEditor({ mode: "create" })}
+        >
           New template
         </button>
       </div>
@@ -75,20 +81,36 @@ export function TemplateList({
                 {t.deprecated ? <span className="tag tag--unstyled">deprecated</span> : null}
               </div>
               <div className="stlist__actions">
-                <button type="button" className="btn" onClick={() => setEditor({ initial: { ...t, id: `${t.id}_copy` }, mode: "create" })}>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() =>
+                    setEditor({ initial: { ...t, id: `${t.id}_copy` }, mode: "create" })
+                  }
+                >
                   Duplicate
                 </button>
                 <button
                   type="button"
                   className="btn"
                   disabled={builtin || used}
-                  title={builtin ? "Built-ins are immutable — duplicate" : used ? "In use — duplicate to change" : undefined}
+                  title={
+                    builtin
+                      ? "Built-ins are immutable — duplicate"
+                      : used
+                        ? "In use — duplicate to change"
+                        : undefined
+                  }
                   onClick={() => setEditor({ initial: t, mode: "edit" })}
                 >
                   Edit
                 </button>
                 {builtin ? null : (
-                  <button type="button" className="btn" onClick={() => void onDeprecate(t.id, !t.deprecated)}>
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => void onDeprecate(t.id, !t.deprecated)}
+                  >
                     {t.deprecated ? "Restore" : "Deprecate"}
                   </button>
                 )}

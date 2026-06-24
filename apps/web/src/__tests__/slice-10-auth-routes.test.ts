@@ -10,7 +10,11 @@ import { createMemoryRepo } from "../server/repo/memory";
 import { setRepoForTests, getRepo } from "../server/repo";
 import { setOwnerResolverForTests } from "../server/auth/owner";
 import { GET as listProposals, POST as createProposal } from "../../app/api/proposals/route";
-import { GET as getProposal, PUT as saveProposal, DELETE as deleteProposal } from "../../app/api/proposals/[id]/route";
+import {
+  GET as getProposal,
+  PUT as saveProposal,
+  DELETE as deleteProposal,
+} from "../../app/api/proposals/[id]/route";
 import { POST as exportPdf } from "../../app/api/proposals/[id]/export/route";
 
 const ctx = (id: string) => ({ params: Promise.resolve({ id }) });
@@ -41,8 +45,11 @@ describe("API auth gating (§13.10)", () => {
   });
 
   it("scopes proposals to the signed-in owner — another owner cannot see or touch them", async () => {
-    const created = ((await (await createProposal(json("POST", sampleProposal))).json()) as { proposal: { id: string } })
-      .proposal;
+    const created = (
+      (await (await createProposal(json("POST", sampleProposal))).json()) as {
+        proposal: { id: string };
+      }
+    ).proposal;
 
     // owner_a sees it
     const mine = (await (await listProposals()).json()) as { proposals: { id: string }[] };
@@ -64,8 +71,11 @@ describe("API auth gating (§13.10)", () => {
   });
 
   it("lets the owner read their own proposal", async () => {
-    const created = ((await (await createProposal(json("POST", sampleProposal))).json()) as { proposal: { id: string } })
-      .proposal;
+    const created = (
+      (await (await createProposal(json("POST", sampleProposal))).json()) as {
+        proposal: { id: string };
+      }
+    ).proposal;
     expect((await getProposal(json("GET"), ctx(created.id))).status).toBe(200);
   });
 });

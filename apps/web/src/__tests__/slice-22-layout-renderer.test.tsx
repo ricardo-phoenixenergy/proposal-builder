@@ -6,14 +6,17 @@ import { setActiveSectionTypes, resetSectionTypesForTests } from "@proposal/shar
 import type { SectionLayout, SectionTypeSchema } from "@proposal/shared";
 
 const coverType: SectionTypeSchema = {
-  type: "cover", label: "Cover", category: "text",
+  type: "cover",
+  label: "Cover",
+  category: "text",
   fields: [
     { key: "title", type: "text", label: "Title" },
     { key: "subtitle", type: "paragraph", label: "Subtitle" },
     { key: "bullets", type: "list", label: "Bullets" },
     { key: "metrics", type: "dataset", label: "Metrics" },
   ],
-  variants: [], schemaVersion: 1,
+  variants: [],
+  schemaVersion: 1,
 };
 
 const data = {
@@ -24,7 +27,12 @@ const data = {
 };
 
 const layout = (root: SectionLayout["root"]): SectionLayout => ({
-  type: "cover", variant: "cover", pageFormat: "widescreen_16_9", name: "Cover", root, version: 1,
+  type: "cover",
+  variant: "cover",
+  pageFormat: "widescreen_16_9",
+  name: "Cover",
+  root,
+  version: 1,
 });
 
 afterEach(() => {
@@ -37,7 +45,8 @@ describe("LayoutRenderer", () => {
     const { container } = render(
       <LayoutRenderer
         layout={layout({
-          kind: "stack", gap: "md",
+          kind: "stack",
+          gap: "md",
           children: [
             { kind: "heading", field: "title", style: { color: "primary", align: "center" } },
             { kind: "paragraph", field: "subtitle" },
@@ -54,7 +63,9 @@ describe("LayoutRenderer", () => {
     expect(heading.textContent).toBe("Solar for Acme");
     expect(heading.style.color).toBe("var(--c-primary)");
     expect(heading.style.textAlign).toBe("center");
-    expect(container.querySelector('[data-block="paragraph"]')!.textContent).toBe("A turnkey path.");
+    expect(container.querySelector('[data-block="paragraph"]')!.textContent).toBe(
+      "A turnkey path.",
+    );
     expect(container.querySelectorAll('[data-block="list"] li').length).toBe(2);
     expect(container.querySelector('[data-block="text"]')!.textContent).toBe("Static caption");
     expect(container.querySelector('[data-block="divider"]')).toBeTruthy();
@@ -63,7 +74,11 @@ describe("LayoutRenderer", () => {
   it("renders a table block by reusing DataTable on the bound field", () => {
     setActiveSectionTypes([coverType]);
     const { container } = render(
-      <LayoutRenderer layout={layout({ kind: "stack", children: [{ kind: "table", field: "metrics" }] })} data={data} theme={defaultTheme} />,
+      <LayoutRenderer
+        layout={layout({ kind: "stack", children: [{ kind: "table", field: "metrics" }] })}
+        data={data}
+        theme={defaultTheme}
+      />,
     );
     expect(container.querySelector('[data-block="table"] table')).toBeTruthy();
   });
@@ -72,8 +87,12 @@ describe("LayoutRenderer", () => {
     const { container } = render(
       <LayoutRenderer
         layout={layout({
-          kind: "columns", widths: [2, 1],
-          columns: [[{ kind: "heading", field: "title" }], [{ kind: "paragraph", field: "subtitle" }]],
+          kind: "columns",
+          widths: [2, 1],
+          columns: [
+            [{ kind: "heading", field: "title" }],
+            [{ kind: "paragraph", field: "subtitle" }],
+          ],
         })}
         data={data}
         theme={defaultTheme}
@@ -88,7 +107,11 @@ describe("LayoutRenderer", () => {
 
   it("skips an unknown block kind without throwing", () => {
     const { container } = render(
-      <LayoutRenderer layout={layout({ kind: "stack", children: [{ kind: "marquee" } as never] })} data={data} theme={defaultTheme} />,
+      <LayoutRenderer
+        layout={layout({ kind: "stack", children: [{ kind: "marquee" } as never] })}
+        data={data}
+        theme={defaultTheme}
+      />,
     );
     expect(container.querySelector('[data-block="stack"]')).toBeTruthy();
     expect(container.querySelector('[data-block="marquee"]')).toBeNull();

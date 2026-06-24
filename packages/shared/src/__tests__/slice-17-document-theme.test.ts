@@ -30,7 +30,10 @@ const validTheme: ThemeTokens = {
 
 describe("document.theme (forked theme)", () => {
   it("accepts a document with a valid embedded theme", () => {
-    const doc: ProposalDocument = { ...sampleProposal, theme: { ...validTheme, id: "custom", name: "Custom" } };
+    const doc: ProposalDocument = {
+      ...sampleProposal,
+      theme: { ...validTheme, id: "custom", name: "Custom" },
+    };
     expect(validateDocument(doc).valid).toBe(true);
   });
 

@@ -1,11 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import type { Section } from "@proposal/shared";
-import {
-  createRegistry,
-  registerVariant,
-  resolveSection,
-} from "../registry/componentRegistry";
+import { createRegistry, registerVariant, resolveSection } from "../registry/componentRegistry";
 import { SectionRenderer } from "../render/SectionRenderer";
 import { ExecutiveSummary } from "../components/sections/ExecutiveSummary";
 import { GenericSection } from "../components/fallback/GenericSection";
@@ -88,9 +84,7 @@ describe("GenericSection — renders a dataset field as a plain table (§5.4)", 
   };
 
   it("renders column labels as headers and row values as cells", () => {
-    const { container } = render(
-      <SectionRenderer section={datasetSection} theme={defaultTheme} />,
-    );
+    const { container } = render(<SectionRenderer section={datasetSection} theme={defaultTheme} />);
     const table = container.querySelector('[data-field="table"] table');
     expect(table).toBeInTheDocument();
     expect(screen.getByText("Item")).toBeInTheDocument();

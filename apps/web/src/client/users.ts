@@ -11,7 +11,11 @@ export async function fetchUsers(): Promise<UserSummary[]> {
   return ((await res.json()) as { users: UserSummary[] }).users;
 }
 
-export async function createUser(input: { email: string; password: string; isAdmin: boolean }): Promise<UserSummary> {
+export async function createUser(input: {
+  email: string;
+  password: string;
+  isAdmin: boolean;
+}): Promise<UserSummary> {
   const res = await fetch("/api/users", {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -21,7 +25,10 @@ export async function createUser(input: { email: string; password: string; isAdm
   return ((await res.json()) as { user: UserSummary }).user;
 }
 
-export async function updateUser(id: string, change: { disabled?: boolean; isAdmin?: boolean }): Promise<UserSummary> {
+export async function updateUser(
+  id: string,
+  change: { disabled?: boolean; isAdmin?: boolean },
+): Promise<UserSummary> {
   const res = await fetch(`/api/users/${id}`, {
     method: "PATCH",
     headers: { "content-type": "application/json" },

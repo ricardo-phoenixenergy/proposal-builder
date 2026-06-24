@@ -84,5 +84,10 @@ export function buildFieldGenerationSchema(field: FieldSchema): JSONSchema | nul
   if (fieldKind(field) !== "ai") return null;
   const fieldSchema = fieldToGenerationSchema(field);
   if (fieldSchema === null) return null;
-  return { type: "object", required: ["value"], additionalProperties: false, properties: { value: fieldSchema } };
+  return {
+    type: "object",
+    required: ["value"],
+    additionalProperties: false,
+    properties: { value: fieldSchema },
+  };
 }

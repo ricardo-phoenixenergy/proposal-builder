@@ -7,7 +7,11 @@ import { defaultTheme } from "../theme/defaultTheme";
 beforeEach(() => {
   useProposalStore.setState({
     document: {
-      id: "p1", title: "T", client: { name: "C" }, themeId: "theme_default", templateId: "open",
+      id: "p1",
+      title: "T",
+      client: { name: "C" },
+      themeId: "theme_default",
+      templateId: "open",
       sections: [{ id: "s1", type: "executive_summary", data: { heading: "Hi", body: "Body" } }],
       brief: "",
     },

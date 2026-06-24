@@ -9,7 +9,8 @@ import { DEFAULT_PAGE_FORMAT } from "../render/page";
 const activeLayouts = new Map<string, SectionLayout>();
 let revision = 0;
 
-const lkey = (type: string, variant: string, pageFormat: string) => `${type}:${variant}:${pageFormat}`;
+const lkey = (type: string, variant: string, pageFormat: string) =>
+  `${type}:${variant}:${pageFormat}`;
 
 export function setActiveLayouts(list: SectionLayout[]): void {
   activeLayouts.clear();
@@ -17,14 +18,20 @@ export function setActiveLayouts(list: SectionLayout[]): void {
   revision++;
 }
 
-export function getLayout(type: string, variant: string, pageFormat?: string): SectionLayout | undefined {
+export function getLayout(
+  type: string,
+  variant: string,
+  pageFormat?: string,
+): SectionLayout | undefined {
   return activeLayouts.get(lkey(type, variant, pageFormat ?? DEFAULT_PAGE_FORMAT));
 }
 
 /** Authored variant slugs for a type that have a layout for the given format. */
 export function listLayoutVariants(type: string, pageFormat?: string): string[] {
   const fmt = pageFormat ?? DEFAULT_PAGE_FORMAT;
-  return [...activeLayouts.values()].filter((l) => l.type === type && l.pageFormat === fmt).map((l) => l.variant);
+  return [...activeLayouts.values()]
+    .filter((l) => l.type === type && l.pageFormat === fmt)
+    .map((l) => l.variant);
 }
 
 export function layoutsRevision(): number {

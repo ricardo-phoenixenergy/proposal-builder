@@ -19,7 +19,11 @@ beforeEach(() => {
   setActiveSectionTypes([coverType]);
   useProposalStore.setState({
     document: {
-      id: "p1", title: "T", client: { name: "C" }, themeId: "theme_default", templateId: "open",
+      id: "p1",
+      title: "T",
+      client: { name: "C" },
+      themeId: "theme_default",
+      templateId: "open",
       sections: [{ id: "s1", type: "cover_test", data: { cover_image: "" } }],
       brief: "",
     },

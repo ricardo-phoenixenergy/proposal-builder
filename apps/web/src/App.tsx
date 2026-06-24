@@ -52,14 +52,20 @@ export function App({ id, isAdmin }: { id?: string; isAdmin?: boolean } = {}) {
     <div className="app">
       <header className="topbar">
         <div className="topbar__brand">
-          <a className="btn btn--ghost" href="/">← Dashboard</a>
+          <a className="btn btn--ghost" href="/">
+            ← Dashboard
+          </a>
           <span className="topbar__title">{document.title}</span>
           <span className="topbar__sub">{document.client.name}</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <SaveControl />
           <ExportGate />
-          {isAdmin ? <a className="btn btn--ghost" href="/admin">Admin</a> : null}
+          {isAdmin ? (
+            <a className="btn btn--ghost" href="/admin">
+              Admin
+            </a>
+          ) : null}
           <SignOutButton />
         </div>
       </header>

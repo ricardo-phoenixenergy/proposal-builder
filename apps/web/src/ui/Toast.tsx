@@ -15,7 +15,12 @@ function ToastItem({ id, kind, message }: { id: number; kind: string; message: s
   return (
     <div className={`toast toast--${kind}`} role={kind === "error" ? "alert" : "status"}>
       <span className="toast__msg">{message}</span>
-      <button type="button" className="toast__close" aria-label="Dismiss notification" onClick={() => dismiss(id)}>
+      <button
+        type="button"
+        className="toast__close"
+        aria-label="Dismiss notification"
+        onClick={() => dismiss(id)}
+      >
         ×
       </button>
     </div>

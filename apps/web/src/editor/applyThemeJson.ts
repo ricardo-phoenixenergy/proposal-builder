@@ -16,7 +16,9 @@ export function applyThemeJson(text: string): ApplyThemeResult {
   } catch (e) {
     return {
       ok: false,
-      errors: [{ path: "", message: e instanceof Error ? e.message : "Invalid JSON", source: "schema" }],
+      errors: [
+        { path: "", message: e instanceof Error ? e.message : "Invalid JSON", source: "schema" },
+      ],
     };
   }
 

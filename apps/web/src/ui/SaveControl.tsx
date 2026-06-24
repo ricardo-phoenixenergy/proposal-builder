@@ -17,7 +17,12 @@ export function SaveControl() {
 
   if (!proposalId) {
     return (
-      <button type="button" className="btn" disabled={status === "saving"} onClick={() => void persistNew()}>
+      <button
+        type="button"
+        className="btn"
+        disabled={status === "saving"}
+        onClick={() => void persistNew()}
+      >
         {status === "saving" ? "Saving…" : "Save to cloud"}
       </button>
     );

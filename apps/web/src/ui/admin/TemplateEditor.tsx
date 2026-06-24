@@ -10,7 +10,13 @@ const LOCKS: SlotLock[] = ["open", "editable-copy", "editable-data", "fixed"];
 
 type DraftSlot = { id: string; type: string; lock: SlotLock; data: Record<string, string> };
 
-function toDef(id: string, name: string, themeId: string, locked: boolean, slots: DraftSlot[]): Template {
+function toDef(
+  id: string,
+  name: string,
+  themeId: string,
+  locked: boolean,
+  slots: DraftSlot[],
+): Template {
   return {
     id: id.trim(),
     name: name.trim(),
@@ -22,7 +28,9 @@ function toDef(id: string, name: string, themeId: string, locked: boolean, slots
         kind: "fixed" as const,
         type,
         lock,
-        ...(hasData ? { data: Object.fromEntries(Object.entries(data).filter(([, v]) => v.trim() !== "")) } : {}),
+        ...(hasData
+          ? { data: Object.fromEntries(Object.entries(data).filter(([, v]) => v.trim() !== "")) }
+          : {}),
       };
     }),
   };
@@ -49,23 +57,40 @@ export function TemplateEditor({
   const [themeId, setThemeId] = useState(initial?.themeId ?? themes[0]?.id ?? "");
   const [locked, setLocked] = useState(initial?.locked ?? false);
   const [slots, setSlots] = useState<DraftSlot[]>(
-    (initial?.slots ?? []).flatMap((s) =>
-      s.kind === "fixed"
-        ? [{ id: crypto.randomUUID(), type: s.type, lock: s.lock, data: Object.fromEntries(Object.entries(s.data ?? {}).map(([k, v]) => [k, String(v)])) }]
-        : [], // choice slots aren't editable in v1; drop them from the draft
+    (initial?.slots ?? []).flatMap(
+      (s) =>
+        s.kind === "fixed"
+          ? [
+              {
+                id: crypto.randomUUID(),
+                type: s.type,
+                lock: s.lock,
+                data: Object.fromEntries(
+                  Object.entries(s.data ?? {}).map(([k, v]) => [k, String(v)]),
+                ),
+              },
+            ]
+          : [], // choice slots aren't editable in v1; drop them from the draft
     ),
   );
   const [busy, setBusy] = useState(false);
 
-  const def = useMemo(() => toDef(id, name, themeId, locked, slots), [id, name, themeId, locked, slots]);
+  const def = useMemo(
+    () => toDef(id, name, themeId, locked, slots),
+    [id, name, themeId, locked, slots],
+  );
   const result = useMemo(
     () => validateTemplateDefinition(def, { sectionTypes, themeIds: themes.map((t) => t.id) }),
     [def, sectionTypes],
   );
 
   const addSlot = () =>
-    setSlots((s) => [...s, { id: crypto.randomUUID(), type: pickableTypes[0]?.type ?? "", lock: "open", data: {} }]);
-  const patch = (i: number, p: Partial<DraftSlot>) => setSlots((s) => s.map((x, j) => (j === i ? { ...x, ...p } : x)));
+    setSlots((s) => [
+      ...s,
+      { id: crypto.randomUUID(), type: pickableTypes[0]?.type ?? "", lock: "open", data: {} },
+    ]);
+  const patch = (i: number, p: Partial<DraftSlot>) =>
+    setSlots((s) => s.map((x, j) => (j === i ? { ...x, ...p } : x)));
   const remove = (i: number) => setSlots((s) => s.filter((_, j) => j !== i));
   const move = (i: number, dir: -1 | 1) =>
     setSlots((s) => {
@@ -76,7 +101,9 @@ export function TemplateEditor({
       return next;
     });
   const textFieldsOf = (type: string) =>
-    (sectionTypes.find((t) => t.type === type)?.fields ?? []).filter((f) => f.type === "text" || f.type === "paragraph");
+    (sectionTypes.find((t) => t.type === type)?.fields ?? []).filter(
+      (f) => f.type === "text" || f.type === "paragraph",
+    );
 
   const save = async () => {
     setBusy(true);
@@ -98,41 +125,83 @@ export function TemplateEditor({
 
       <label className="field">
         <span className="field__label">Template id</span>
-        <input aria-label="Template id" value={id} disabled={editing} onChange={(e) => setId(e.target.value)} placeholder="tmpl_sales" />
+        <input
+          aria-label="Template id"
+          value={id}
+          disabled={editing}
+          onChange={(e) => setId(e.target.value)}
+          placeholder="tmpl_sales"
+        />
       </label>
       <label className="field">
         <span className="field__label">Template name</span>
-        <input aria-label="Template name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Sales proposal" />
+        <input
+          aria-label="Template name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Sales proposal"
+        />
       </label>
       <label className="field">
         <span className="field__label">Theme</span>
         <select aria-label="Theme" value={themeId} onChange={(e) => setThemeId(e.target.value)}>
           {themes.map((t) => (
-            <option key={t.id} value={t.id}>{t.name}</option>
+            <option key={t.id} value={t.id}>
+              {t.name}
+            </option>
           ))}
         </select>
       </label>
       <label className="steditor__req">
-        <input type="checkbox" checked={locked} onChange={(e) => setLocked(e.target.checked)} /> Locked (pins structure &amp; theme)
+        <input type="checkbox" checked={locked} onChange={(e) => setLocked(e.target.checked)} />{" "}
+        Locked (pins structure &amp; theme)
       </label>
 
       <div className="field">
         <span className="field__label">Slots</span>
         {slots.map((s, i) => (
           <div key={s.id} className="steditor__field" data-slot={i}>
-            <select aria-label="Slot type" value={s.type} onChange={(e) => patch(i, { type: e.target.value })}>
+            <select
+              aria-label="Slot type"
+              value={s.type}
+              onChange={(e) => patch(i, { type: e.target.value })}
+            >
               {pickableTypes.map((t) => (
-                <option key={t.type} value={t.type}>{t.label}</option>
+                <option key={t.type} value={t.type}>
+                  {t.label}
+                </option>
               ))}
             </select>
-            <select aria-label="Slot lock" value={s.lock} onChange={(e) => patch(i, { lock: e.target.value as SlotLock })}>
+            <select
+              aria-label="Slot lock"
+              value={s.lock}
+              onChange={(e) => patch(i, { lock: e.target.value as SlotLock })}
+            >
               {LOCKS.map((l) => (
-                <option key={l} value={l}>{l}</option>
+                <option key={l} value={l}>
+                  {l}
+                </option>
               ))}
             </select>
-            <button type="button" className="btn btn--ghost" onClick={() => move(i, -1)} aria-label="Move up">↑</button>
-            <button type="button" className="btn btn--ghost" onClick={() => move(i, 1)} aria-label="Move down">↓</button>
-            <button type="button" className="btn btn--ghost" onClick={() => remove(i)}>Remove</button>
+            <button
+              type="button"
+              className="btn btn--ghost"
+              onClick={() => move(i, -1)}
+              aria-label="Move up"
+            >
+              ↑
+            </button>
+            <button
+              type="button"
+              className="btn btn--ghost"
+              onClick={() => move(i, 1)}
+              aria-label="Move down"
+            >
+              ↓
+            </button>
+            <button type="button" className="btn btn--ghost" onClick={() => remove(i)}>
+              Remove
+            </button>
             {s.lock === "fixed" ? (
               <div className="steditor__fixed">
                 {textFieldsOf(s.type).map((f) => (
@@ -148,22 +217,33 @@ export function TemplateEditor({
             ) : null}
           </div>
         ))}
-        <button type="button" className="btn" onClick={addSlot}>Add slot</button>
+        <button type="button" className="btn" onClick={addSlot}>
+          Add slot
+        </button>
       </div>
 
       {!result.valid ? (
         <ul className="notice notice--warn">
           {result.errors.map((e, i) => (
-            <li key={i}><code>{e.path}</code> — {e.message}</li>
+            <li key={i}>
+              <code>{e.path}</code> — {e.message}
+            </li>
           ))}
         </ul>
       ) : null}
 
       <div className="steditor__actions">
-        <button type="button" className="btn btn--primary" disabled={!result.valid || busy} onClick={() => void save()}>
+        <button
+          type="button"
+          className="btn btn--primary"
+          disabled={!result.valid || busy}
+          onClick={() => void save()}
+        >
           {busy ? "Saving…" : "Save"}
         </button>
-        <button type="button" className="btn btn--ghost" onClick={onCancel}>Cancel</button>
+        <button type="button" className="btn btn--ghost" onClick={onCancel}>
+          Cancel
+        </button>
       </div>
     </div>
   );

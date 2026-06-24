@@ -4,7 +4,7 @@ import type { Folder } from "../../client/folders";
 import { createFolder, renameFolder, deleteFolder } from "../../client/folders";
 import { useProposalStore } from "../../state/proposalStore";
 
-type Selected = "all" | null | string;
+type Selected = string | null;
 
 export function FolderSidebar({
   folders,
@@ -56,18 +56,40 @@ export function FolderSidebar({
 
   return (
     <nav className="dash__sidebar" aria-label="Folders">
-      <button type="button" className={cls("all")} onClick={() => onSelect("all")}>All <span className="dash__count">{counts.all}</span></button>
+      <button type="button" className={cls("all")} onClick={() => onSelect("all")}>
+        All <span className="dash__count">{counts.all}</span>
+      </button>
       {folders.map((f) => (
         <div key={f.id} className="dash__folderrow">
           <button type="button" className={cls(f.id)} onClick={() => onSelect(f.id)}>
             {f.name} <span className="dash__count">{counts.byFolder[f.id] ?? 0}</span>
           </button>
-          <button type="button" className="dash__folderedit" aria-label="Rename folder" title={`Rename ${f.name}`} onClick={() => rename(f)}>✎</button>
-          <button type="button" className="dash__folderdel" aria-label="Delete folder" title={`Delete ${f.name}`} onClick={() => remove(f)}>🗑</button>
+          <button
+            type="button"
+            className="dash__folderedit"
+            aria-label="Rename folder"
+            title={`Rename ${f.name}`}
+            onClick={() => void rename(f)}
+          >
+            ✎
+          </button>
+          <button
+            type="button"
+            className="dash__folderdel"
+            aria-label="Delete folder"
+            title={`Delete ${f.name}`}
+            onClick={() => void remove(f)}
+          >
+            🗑
+          </button>
         </div>
       ))}
-      <button type="button" className={cls(null)} onClick={() => onSelect(null)}>Unfiled <span className="dash__count">{counts.unfiled}</span></button>
-      <button type="button" className="btn dash__addfolder" onClick={add}>+ New folder</button>
+      <button type="button" className={cls(null)} onClick={() => onSelect(null)}>
+        Unfiled <span className="dash__count">{counts.unfiled}</span>
+      </button>
+      <button type="button" className="btn dash__addfolder" onClick={() => void add()}>
+        + New folder
+      </button>
     </nav>
   );
 }

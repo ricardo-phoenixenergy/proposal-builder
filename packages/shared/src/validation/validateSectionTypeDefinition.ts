@@ -19,12 +19,18 @@ export function validateSectionTypeDefinition(def: unknown): ValidationResult {
   const push = (path: string, message: string) => errors.push({ path, message, source: "app" });
 
   if (typeof def !== "object" || def === null) {
-    return { valid: false, errors: [{ path: "", message: "Expected a section-type object", source: "app" }] };
+    return {
+      valid: false,
+      errors: [{ path: "", message: "Expected a section-type object", source: "app" }],
+    };
   }
   const d = def as Record<string, unknown>;
 
   if (typeof d["type"] !== "string" || !TYPE_KEY.test(d["type"])) {
-    push("/type", "type must be a lowercase slug (letters, digits, underscore; starting with a letter)");
+    push(
+      "/type",
+      "type must be a lowercase slug (letters, digits, underscore; starting with a letter)",
+    );
   }
   if (typeof d["label"] !== "string" || d["label"].trim() === "") {
     push("/label", "label is required");
@@ -51,7 +57,10 @@ export function validateSectionTypeDefinition(def: unknown): ValidationResult {
         push(`/fields/${i}/label`, "field label is required");
       }
       if (!ALLOWED_FIELD_TYPES.includes(f["type"] as (typeof ALLOWED_FIELD_TYPES)[number])) {
-        push(`/fields/${i}/type`, "field type must be one of text, paragraph, list, dataset, matrix, image");
+        push(
+          `/fields/${i}/type`,
+          "field type must be one of text, paragraph, list, dataset, matrix, image",
+        );
       }
       for (const limit of LIMIT_KEYS) {
         if (f[limit] !== undefined && !isPositiveInt(f[limit])) {
@@ -62,7 +71,10 @@ export function validateSectionTypeDefinition(def: unknown): ValidationResult {
   }
 
   if (d["variants"] !== undefined) {
-    if (!Array.isArray(d["variants"]) || d["variants"].some((v) => typeof v !== "string" || v === "")) {
+    if (
+      !Array.isArray(d["variants"]) ||
+      d["variants"].some((v) => typeof v !== "string" || v === "")
+    ) {
       push("/variants", "variants must be an array of non-empty strings");
     }
   }

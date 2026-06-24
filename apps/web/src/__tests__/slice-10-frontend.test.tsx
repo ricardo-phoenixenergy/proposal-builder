@@ -28,7 +28,14 @@ describe("Inspector — variant-aware content-range warning (§13.10)", () => {
     useProposalStore.setState({
       document: {
         ...sampleProposal,
-        sections: [{ id: "sx", type: "executive_summary", variant: "banner", data: { heading: "Summary", body: longBody } }],
+        sections: [
+          {
+            id: "sx",
+            type: "executive_summary",
+            variant: "banner",
+            data: { heading: "Summary", body: longBody },
+          },
+        ],
       },
       selectedId: "sx",
     });
@@ -51,10 +58,17 @@ describe("AssetUpload — logo upload to Blob (§13.10)", () => {
 
     render(<AssetUpload />);
     const input = screen.getByLabelText(/logo/i);
-    fireEvent.change(input, { target: { files: [new File(["x"], "logo.png", { type: "image/png" })] } });
+    fireEvent.change(input, {
+      target: { files: [new File(["x"], "logo.png", { type: "image/png" })] },
+    });
 
-    await waitFor(() => expect(useProposalStore.getState().theme.logoUrl).toBe("https://blob.test/logo.png"));
-    expect(fetchMock).toHaveBeenCalledWith("/api/assets", expect.objectContaining({ method: "POST" }));
+    await waitFor(() =>
+      expect(useProposalStore.getState().theme.logoUrl).toBe("https://blob.test/logo.png"),
+    );
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/assets",
+      expect.objectContaining({ method: "POST" }),
+    );
     vi.unstubAllGlobals();
   });
 });

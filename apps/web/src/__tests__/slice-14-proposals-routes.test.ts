@@ -8,9 +8,17 @@ import { POST as createProposal } from "../../app/api/proposals/route";
 import { PATCH } from "../../app/api/proposals/[id]/route";
 
 const post = (body: unknown) =>
-  new Request("http://x/api/proposals", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+  new Request("http://x/api/proposals", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
 const patch = (id: string, body: unknown) => ({
-  req: new Request(`http://x/api/proposals/${id}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }),
+  req: new Request(`http://x/api/proposals/${id}`, {
+    method: "PATCH",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  }),
   ctx: { params: Promise.resolve({ id }) },
 });
 
@@ -39,7 +47,10 @@ describe("PATCH /api/proposals/[id]", () => {
     const r1 = patch(c.id, { title: "Renamed" });
     expect((await PATCH(r1.req, r1.ctx)).status).toBe(200);
     const r2 = patch(c.id, { folderId: f.id });
-    expect(((await (await PATCH(r2.req, r2.ctx)).json()) as { proposal: { folderId: string } }).proposal.folderId).toBe(f.id);
+    expect(
+      ((await (await PATCH(r2.req, r2.ctx)).json()) as { proposal: { folderId: string } }).proposal
+        .folderId,
+    ).toBe(f.id);
   });
 
   it("400s an empty patch and a foreign folder", async () => {

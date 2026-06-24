@@ -8,6 +8,6 @@ import { tableToDataset, type Dataset } from "@proposal/shared";
  */
 export function csvToDataset(csv: string): Dataset {
   const result = Papa.parse<string[]>(csv, { skipEmptyLines: true });
-  const table = (result.data as unknown[][]).map((row) => row.map((cell) => String(cell ?? "")));
+  const table = result.data.map((row) => row.map((cell) => cell ?? ""));
   return tableToDataset(table);
 }

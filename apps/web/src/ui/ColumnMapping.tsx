@@ -54,7 +54,14 @@ export function ColumnMapping({ sectionId }: { sectionId: string }) {
         </select>
       </label>
 
-      <fieldset style={{ border: "1px solid var(--c-line)", display: "flex", flexDirection: "column", gap: 4 }}>
+      <fieldset
+        style={{
+          border: "1px solid var(--c-line)",
+          display: "flex",
+          flexDirection: "column",
+          gap: 4,
+        }}
+      >
         <legend>Value columns (series)</legend>
         {numCols.map((c) => (
           <label key={c.key} style={{ display: "flex", gap: 6 }}>

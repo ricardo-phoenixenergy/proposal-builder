@@ -58,16 +58,28 @@ export function SectionLayoutsView({ type, onBack }: { type: string; onBack: () 
     <div className="steditor">
       <div className="stlist__head">
         <h2>Layouts · {typeSchema?.label ?? type}</h2>
-        <button type="button" className="btn btn--ghost" onClick={onBack}>← Back</button>
+        <button type="button" className="btn btn--ghost" onClick={onBack}>
+          ← Back
+        </button>
       </div>
 
       <div className="field field--row">
-        <select aria-label="New layout format" value={newFormat} onChange={(e) => setNewFormat(e.target.value)}>
+        <select
+          aria-label="New layout format"
+          value={newFormat}
+          onChange={(e) => setNewFormat(e.target.value)}
+        >
           {PAGE_FORMATS.map((f) => (
-            <option key={f.id} value={f.id}>{f.label}</option>
+            <option key={f.id} value={f.id}>
+              {f.label}
+            </option>
           ))}
         </select>
-        <button type="button" className="btn btn--primary" onClick={() => setEditor({ mode: "create", pageFormat: newFormat })}>
+        <button
+          type="button"
+          className="btn btn--primary"
+          onClick={() => setEditor({ mode: "create", pageFormat: newFormat })}
+        >
           New layout
         </button>
       </div>
@@ -80,13 +92,24 @@ export function SectionLayoutsView({ type, onBack }: { type: string; onBack: () 
             <li key={`${l.variant}:${l.pageFormat}`} className="stlist__row">
               <div className="stlist__main">
                 <span>{l.name}</span>
-                <span className="stlist__key">{l.variant} · {l.pageFormat}</span>
+                <span className="stlist__key">
+                  {l.variant} · {l.pageFormat}
+                </span>
               </div>
               <div className="stlist__actions">
-                <button type="button" className="btn" onClick={() => setEditor({ mode: "edit", pageFormat: l.pageFormat, initial: l })}>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => setEditor({ mode: "edit", pageFormat: l.pageFormat, initial: l })}
+                >
                   Edit
                 </button>
-                <button type="button" className="btn btn--ghost" aria-label={`delete-${l.variant}-${l.pageFormat}`} onClick={() => void remove(l)}>
+                <button
+                  type="button"
+                  className="btn btn--ghost"
+                  aria-label={`delete-${l.variant}-${l.pageFormat}`}
+                  onClick={() => void remove(l)}
+                >
                   Delete
                 </button>
               </div>

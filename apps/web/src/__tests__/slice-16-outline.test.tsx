@@ -6,8 +6,15 @@ import { Outline } from "../ui/Outline";
 beforeEach(() => {
   useProposalStore.setState({
     document: {
-      id: "p1", title: "T", client: { name: "C" }, themeId: "theme_default", templateId: "open",
-      sections: [{ id: "a", type: "text", data: {} }, { id: "b", type: "text", data: {} }],
+      id: "p1",
+      title: "T",
+      client: { name: "C" },
+      themeId: "theme_default",
+      templateId: "open",
+      sections: [
+        { id: "a", type: "text", data: {} },
+        { id: "b", type: "text", data: {} },
+      ],
     },
     selectedId: "a",
     templates: useProposalStore.getState().templates,

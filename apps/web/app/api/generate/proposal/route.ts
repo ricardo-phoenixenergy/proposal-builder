@@ -29,7 +29,11 @@ export async function POST(request: Request): Promise<Response> {
   const { brief, types } = body as { brief: string; types: string[] };
 
   const limitError = checkGenerationInput({ brief });
-  if (limitError) return new Response(JSON.stringify({ error: limitError }), { status: 400, headers: { "content-type": "application/json" } });
+  if (limitError)
+    return new Response(JSON.stringify({ error: limitError }), {
+      status: 400,
+      headers: { "content-type": "application/json" },
+    });
 
   const textTypes = types.filter((t) => getSectionType(t)?.category === "text");
 

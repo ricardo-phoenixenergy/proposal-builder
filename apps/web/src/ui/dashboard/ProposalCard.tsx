@@ -33,7 +33,9 @@ export function ProposalCard({
   onDelete: (id: string) => void;
 }) {
   const [menu, setMenu] = useState(false);
-  const folderName = proposal.folderId ? folders.find((f) => f.id === proposal.folderId)?.name ?? "—" : "Unfiled";
+  const folderName = proposal.folderId
+    ? (folders.find((f) => f.id === proposal.folderId)?.name ?? "—")
+    : "Unfiled";
 
   return (
     <li data-proposal={proposal.id} className="pcard">
@@ -44,22 +46,85 @@ export function ProposalCard({
         <span className="tag">{folderName}</span>
       </div>
       <div className="pcard__actions">
-        <a className="btn btn--primary" href={`/p/${proposal.id}`}>Open</a>
-        <button type="button" className="btn" aria-label="Download" onClick={() => onDownload(proposal.id)}>⬇</button>
-        <button type="button" className="btn" aria-label="More actions" onClick={() => setMenu((m) => !m)}>⋯</button>
+        <a className="btn btn--primary" href={`/p/${proposal.id}`}>
+          Open
+        </a>
+        <button
+          type="button"
+          className="btn"
+          aria-label="Download"
+          onClick={() => onDownload(proposal.id)}
+        >
+          ⬇
+        </button>
+        <button
+          type="button"
+          className="btn"
+          aria-label="More actions"
+          onClick={() => setMenu((m) => !m)}
+        >
+          ⋯
+        </button>
       </div>
       {menu ? (
         <div className="pcard__menu" role="menu">
-          <button type="button" role="menuitem" onClick={() => { setMenu(false); onDuplicate(proposal.id); }}>Duplicate</button>
-          <button type="button" role="menuitem" onClick={() => { setMenu(false); onRename(proposal.id, proposal.title); }}>Rename</button>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setMenu(false);
+              onDuplicate(proposal.id);
+            }}
+          >
+            Duplicate
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setMenu(false);
+              onRename(proposal.id, proposal.title);
+            }}
+          >
+            Rename
+          </button>
           <div className="pcard__submenu">
             <span className="pcard__submenu-label">Move to</span>
-            <button type="button" role="menuitem" onClick={() => { setMenu(false); onMove(proposal.id, null); }}>Unfiled</button>
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setMenu(false);
+                onMove(proposal.id, null);
+              }}
+            >
+              Unfiled
+            </button>
             {folders.map((f) => (
-              <button key={f.id} type="button" role="menuitem" onClick={() => { setMenu(false); onMove(proposal.id, f.id); }}>{f.name}</button>
+              <button
+                key={f.id}
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setMenu(false);
+                  onMove(proposal.id, f.id);
+                }}
+              >
+                {f.name}
+              </button>
             ))}
           </div>
-          <button type="button" role="menuitem" className="pcard__danger" onClick={() => { setMenu(false); onDelete(proposal.id); }}>Delete</button>
+          <button
+            type="button"
+            role="menuitem"
+            className="pcard__danger"
+            onClick={() => {
+              setMenu(false);
+              onDelete(proposal.id);
+            }}
+          >
+            Delete
+          </button>
         </div>
       ) : null}
     </li>

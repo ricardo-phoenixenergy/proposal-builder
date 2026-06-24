@@ -19,3 +19,6 @@ coverage/
 # OS / editor
 .DS_Store
 *.log
+
+# Brainstorming visual-companion scratch files
+.superpowers/

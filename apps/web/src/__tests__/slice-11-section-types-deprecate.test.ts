@@ -9,13 +9,20 @@ import { invalidateActiveRegistry } from "../server/registry/activeRegistry";
 import { POST } from "../../app/api/section-types/[type]/deprecate/route";
 
 const def: SectionTypeSchema = {
-  type: "case_study", label: "Case study", category: "text",
+  type: "case_study",
+  label: "Case study",
+  category: "text",
   fields: [{ key: "body", type: "paragraph", label: "Body", required: true }],
-  variants: [], schemaVersion: 1,
+  variants: [],
+  schemaVersion: 1,
 };
 const ctx = (type: string) => ({ params: Promise.resolve({ type }) });
 const post = (deprecated: boolean) =>
-  new Request("http://x", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ deprecated }) });
+  new Request("http://x", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ deprecated }),
+  });
 
 beforeEach(() => {
   setRepoForTests(createMemoryRepo());

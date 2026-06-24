@@ -32,7 +32,7 @@ export function updateAtPath(root: Block, path: number[], fn: (b: Block) => Bloc
     return {
       ...root,
       children: root.children.map((c, i) => (i === head ? updateAtPath(c, rest, fn) : c)),
-    } as Block;
+    };
   }
   if (root.kind === "columns") {
     const [col, idx, ...rest] = path;
@@ -41,7 +41,7 @@ export function updateAtPath(root: Block, path: number[], fn: (b: Block) => Bloc
       columns: root.columns.map((column, ci) =>
         ci === col ? column.map((c, bi) => (bi === idx ? updateAtPath(c, rest, fn) : c)) : column,
       ),
-    } as Block;
+    };
   }
   return root; // leaf with a non-empty path → no-op
 }

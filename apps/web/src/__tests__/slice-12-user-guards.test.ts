@@ -7,32 +7,42 @@ import { assertCanModify, GuardError } from "../server/auth/userGuards";
 beforeEach(() => setRepoForTests(createMemoryRepo()));
 afterEach(() => setRepoForTests(null));
 
-const mkAdmin = (email: string) => getRepo().createUser({ email, passwordHash: "h", isAdmin: true });
-const mkMember = (email: string) => getRepo().createUser({ email, passwordHash: "h", isAdmin: false });
+const mkAdmin = (email: string) =>
+  getRepo().createUser({ email, passwordHash: "h", isAdmin: true });
+const mkMember = (email: string) =>
+  getRepo().createUser({ email, passwordHash: "h", isAdmin: false });
 
 describe("assertCanModify", () => {
   it("blocks disabling your own account", async () => {
     const me = await mkAdmin("me@x.test");
     await mkAdmin("other@x.test"); // not the last admin
-    await expect(assertCanModify(me.id, me.id, { disabled: true })).rejects.toBeInstanceOf(GuardError);
+    await expect(assertCanModify(me.id, me.id, { disabled: true })).rejects.toBeInstanceOf(
+      GuardError,
+    );
   });
 
   it("blocks demoting your own account", async () => {
     const me = await mkAdmin("me@x.test");
     await mkAdmin("other@x.test");
-    await expect(assertCanModify(me.id, me.id, { isAdmin: false })).rejects.toBeInstanceOf(GuardError);
+    await expect(assertCanModify(me.id, me.id, { isAdmin: false })).rejects.toBeInstanceOf(
+      GuardError,
+    );
   });
 
   it("blocks disabling the only active admin", async () => {
     const a = await mkAdmin("a@x.test");
     const actor = await mkMember("actor@x.test"); // distinct actor; guard doesn't re-check the actor's role — `a` is the sole active admin
-    await expect(assertCanModify(actor.id, a.id, { disabled: true })).rejects.toBeInstanceOf(GuardError);
+    await expect(assertCanModify(actor.id, a.id, { disabled: true })).rejects.toBeInstanceOf(
+      GuardError,
+    );
   });
 
   it("blocks demoting the only active admin", async () => {
     const a = await mkAdmin("a@x.test");
     const actor = await mkMember("actor@x.test");
-    await expect(assertCanModify(actor.id, a.id, { isAdmin: false })).rejects.toBeInstanceOf(GuardError);
+    await expect(assertCanModify(actor.id, a.id, { isAdmin: false })).rejects.toBeInstanceOf(
+      GuardError,
+    );
   });
 
   it("allows disabling an admin when another active admin remains", async () => {

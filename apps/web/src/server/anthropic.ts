@@ -1,6 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { CreateMessageFn } from "./generateSection";
-import type { AnthropicLike } from "./anthropicResponse";
 import { interpretAnthropicResponse } from "./anthropicResponse";
 import { logAiCall } from "./observability";
 
@@ -12,7 +11,13 @@ function getClient(): Anthropic {
   return client;
 }
 
-export const anthropicCreateMessage: CreateMessageFn = async ({ model, system, user, schema, maxOutputTokens }) => {
+export const anthropicCreateMessage: CreateMessageFn = async ({
+  model,
+  system,
+  user,
+  schema,
+  maxOutputTokens,
+}) => {
   const startedAt = Date.now();
   try {
     const response = await getClient().messages.create({
@@ -22,7 +27,7 @@ export const anthropicCreateMessage: CreateMessageFn = async ({ model, system, u
       messages: [{ role: "user", content: user }],
       output_config: { format: { type: "json_schema", schema } },
     });
-    const text = interpretAnthropicResponse(response as unknown as AnthropicLike);
+    const text = interpretAnthropicResponse(response);
     logAiCall({
       model,
       inputTokens: response.usage?.input_tokens,

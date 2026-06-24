@@ -6,7 +6,13 @@ import { defaultTheme } from "../theme/defaultTheme";
 import type { ProposalDocument } from "@proposal/shared";
 
 const docWith = (extra: Partial<ProposalDocument>): ProposalDocument => ({
-  id: "p", title: "T", client: { name: "C" }, themeId: "theme_midnight", templateId: "open", sections: [], ...extra,
+  id: "p",
+  title: "T",
+  client: { name: "C" },
+  themeId: "theme_midnight",
+  templateId: "open",
+  sections: [],
+  ...extra,
 });
 
 describe("resolvePrintTheme", () => {
@@ -20,6 +26,8 @@ describe("resolvePrintTheme", () => {
   });
 
   it("falls back to the default for an unknown preset", () => {
-    expect(resolvePrintTheme(docWith({ themeId: "nope" }), themes, defaultTheme).id).toBe(defaultTheme.id);
+    expect(resolvePrintTheme(docWith({ themeId: "nope" }), themes, defaultTheme).id).toBe(
+      defaultTheme.id,
+    );
   });
 });

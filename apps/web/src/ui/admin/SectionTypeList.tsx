@@ -26,12 +26,16 @@ export function SectionTypeList({
   onChange: (t: SectionTypeSchema[]) => void;
 }) {
   const notify = useProposalStore((s) => s.notify);
-  const [editor, setEditor] = useState<{ initial?: SectionTypeSchema; mode: "create" | "edit" } | null>(null);
+  const [editor, setEditor] = useState<{
+    initial?: SectionTypeSchema;
+    mode: "create" | "edit";
+  } | null>(null);
   const [layoutsFor, setLayoutsFor] = useState<string | null>(null);
 
   const refresh = async () => {
     const res = await fetch("/api/section-types");
-    if (res.ok) onChange(((await res.json()) as { sectionTypes: SectionTypeSchema[] }).sectionTypes);
+    if (res.ok)
+      onChange(((await res.json()) as { sectionTypes: SectionTypeSchema[] }).sectionTypes);
   };
 
   const onDeprecate = async (type: string, deprecated: boolean) => {
@@ -65,7 +69,11 @@ export function SectionTypeList({
     <div className="stlist">
       <div className="stlist__head">
         <h2>Section types</h2>
-        <button type="button" className="btn btn--primary" onClick={() => setEditor({ mode: "create" })}>
+        <button
+          type="button"
+          className="btn btn--primary"
+          onClick={() => setEditor({ mode: "create" })}
+        >
           New type
         </button>
       </div>
@@ -92,7 +100,13 @@ export function SectionTypeList({
                 {unstyled ? <span className="tag tag--unstyled">unstyled</span> : null}
               </div>
               <div className="stlist__actions">
-                <button type="button" className="btn" onClick={() => setEditor({ initial: { ...t, type: `${t.type}_copy` }, mode: "create" })}>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() =>
+                    setEditor({ initial: { ...t, type: `${t.type}_copy` }, mode: "create" })
+                  }
+                >
                   Duplicate
                 </button>
                 <button
@@ -104,7 +118,11 @@ export function SectionTypeList({
                 >
                   Edit
                 </button>
-                <button type="button" className="btn" onClick={() => void onDeprecate(t.type, !t.deprecated)}>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => void onDeprecate(t.type, !t.deprecated)}
+                >
                   {t.deprecated ? "Restore" : "Deprecate"}
                 </button>
                 <button type="button" className="btn" onClick={() => setLayoutsFor(t.type)}>

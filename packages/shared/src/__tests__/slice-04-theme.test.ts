@@ -35,7 +35,9 @@ describe("themeSchema + validateTheme", () => {
     delete (bad["colors"] as Record<string, unknown>)["primary"];
     const result = validateTheme(bad);
     expect(result.valid).toBe(false);
-    expect(result.errors.some((e) => e.source === "schema" && e.path.includes("colors"))).toBe(true);
+    expect(result.errors.some((e) => e.source === "schema" && e.path.includes("colors"))).toBe(
+      true,
+    );
   });
 
   it("rejects a non-numeric radius", () => {

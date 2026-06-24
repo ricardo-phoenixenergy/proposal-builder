@@ -17,7 +17,10 @@ function isEmpty(value: unknown): boolean {
  * conformance, choice-slot allowlist, immutable locked fields, and that every
  * editable-but-required field is filled. Returns field-pointed errors.
  */
-export function validateForExport(document: ProposalDocument, template: Template): ValidationResult {
+export function validateForExport(
+  document: ProposalDocument,
+  template: Template,
+): ValidationResult {
   const errors: ValidationError[] = [...validateDocument(document).errors];
 
   if (template.locked) {
@@ -37,12 +40,20 @@ export function validateForExport(document: ProposalDocument, template: Template
 
       if (slot.kind === "fixed") {
         if (section.type !== slot.type) {
-          errors.push({ path: `${at}/type`, message: `locked slot expects type "${slot.type}"`, source: "app" });
+          errors.push({
+            path: `${at}/type`,
+            message: `locked slot expects type "${slot.type}"`,
+            source: "app",
+          });
         }
         if (slot.lock === "fixed" && slot.data) {
           for (const [key, value] of Object.entries(slot.data)) {
             if (JSON.stringify(section.data[key]) !== JSON.stringify(value)) {
-              errors.push({ path: `${at}/data/${key}`, message: `locked field "${key}" was changed`, source: "app" });
+              errors.push({
+                path: `${at}/data/${key}`,
+                message: `locked field "${key}" was changed`,
+                source: "app",
+              });
             }
           }
         }

@@ -1,0 +1,210 @@
+=== commits ===
+178d90c feat(dashboard): new-proposal dialog (template pick → create → open)
+
+=== stat ===
+ .../web/src/__tests__/slice-14-new-dialog.test.tsx | 30 +++++++++
+ apps/web/src/ui/dashboard/Dashboard.tsx            | 12 ++--
+ apps/web/src/ui/dashboard/NewProposalDialog.tsx    | 72 ++++++++++++++++++++++
+ 3 files changed, 110 insertions(+), 4 deletions(-)
+
+=== diff ===
+diff --git a/apps/web/src/__tests__/slice-14-new-dialog.test.tsx b/apps/web/src/__tests__/slice-14-new-dialog.test.tsx
+new file mode 100644
+index 0000000..edf2983
+--- /dev/null
++++ b/apps/web/src/__tests__/slice-14-new-dialog.test.tsx
+@@ -0,0 +1,30 @@
++import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
++import { cleanup, render, screen, fireEvent, waitFor } from "@testing-library/react";
++import { NewProposalDialog } from "../ui/dashboard/NewProposalDialog";
++
++const { push } = vi.hoisted(() => ({ push: vi.fn() }));
++vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
++
++beforeEach(() => {
++  push.mockReset();
++  vi.stubGlobal("fetch", vi.fn((url: string, init?: RequestInit) => {
++    const u = String(url);
++    if (u.includes("/api/templates")) return Promise.resolve(new Response(JSON.stringify({ templates: [{ id: "tmpl_open", name: "Open", themeId: "theme_phoenix_default", locked: false, slots: [{ kind: "fixed", type: "text", lock: "open" }] }] }), { status: 200, headers: { "content-type": "application/json" } }));
++    if (u === "/api/proposals" && init?.method === "POST") return Promise.resolve(new Response(JSON.stringify({ proposal: { id: "prop_new", document: {} } }), { status: 201, headers: { "content-type": "application/json" } }));
++    return Promise.resolve(new Response(JSON.stringify({}), { status: 200, headers: { "content-type": "application/json" } }));
++  }));
++});
++afterEach(() => {
++  cleanup();
++  vi.unstubAllGlobals();
++});
++
++describe("NewProposalDialog", () => {
++  it("creates from a template and routes to the new editor", async () => {
++    render(<NewProposalDialog folders={[]} onClose={vi.fn()} />);
++    await waitFor(() => expect(screen.getByLabelText(/template/i)).toBeInTheDocument());
++    fireEvent.change(screen.getByLabelText(/title/i), { target: { value: "Acme Q3" } });
++    fireEvent.click(screen.getByRole("button", { name: /create/i }));
++    await waitFor(() => expect(push).toHaveBeenCalledWith("/p/prop_new"));
++  });
++});
+diff --git a/apps/web/src/ui/dashboard/Dashboard.tsx b/apps/web/src/ui/dashboard/Dashboard.tsx
+index 6736707..b6dfca4 100644
+--- a/apps/web/src/ui/dashboard/Dashboard.tsx
++++ b/apps/web/src/ui/dashboard/Dashboard.tsx
+@@ -1,46 +1,46 @@
+ "use client";
+ 
+ import { useMemo, useState } from "react";
+-import { useRouter } from "next/navigation";
+ import {
+   listProposals,
+   updateProposalMeta,
+   duplicateProposal,
+   deleteProposal,
+   downloadProposalPdf,
+   type ProposalSummary,
+ } from "../../client/persistence";
+ import type { Folder } from "../../client/folders";
+ import { fetchFolders } from "../../client/folders";
+ import { useProposalStore } from "../../state/proposalStore";
+ import { FolderSidebar } from "./FolderSidebar";
+ import { ProposalGrid } from "./ProposalGrid";
++import { NewProposalDialog } from "./NewProposalDialog";
+ 
+ type Sort = "recent" | "title";
+ 
+ export function Dashboard({
+   initialProposals,
+   initialFolders,
+   isAdmin,
+ }: {
+   initialProposals: ProposalSummary[];
+   initialFolders: Folder[];
+   isAdmin: boolean;
+ }) {
+   const notify = useProposalStore((s) => s.notify);
+-  const router = useRouter();
+   const [proposals, setProposals] = useState(initialProposals);
+   const [folders, setFolders] = useState(initialFolders);
+   const [search, setSearch] = useState("");
+   const [sort, setSort] = useState<Sort>("recent");
+   const [selectedFolderId, setSelectedFolderId] = useState<"all" | null | string>("all");
++  const [showNew, setShowNew] = useState(false);
+ 
+   const refresh = async () => {
+     try {
+       setProposals(await listProposals());
+     } catch {
+       notify("error", "Couldn't refresh proposals.");
+     }
+   };
+ 
+   const refreshFolders = async () => {
+@@ -128,26 +128,30 @@ export function Dashboard({
+           <a className="btn btn--ghost" href="/api/auth/signout">Sign out</a>
+         </div>
+       </header>
+ 
+       <div className="dash__toolbar">
+         <input aria-label="Search title or client" placeholder="Search title or client…" value={search} onChange={(e) => setSearch(e.target.value)} />
+         <select aria-label="Sort" value={sort} onChange={(e) => setSort(e.target.value as Sort)}>
+           <option value="recent">Recent</option>
+           <option value="title">Title A–Z</option>
+         </select>
+-        <button type="button" className="btn btn--primary" onClick={() => router.push("/p/new")}>+ New</button>
++        <button type="button" className="btn btn--primary" onClick={() => setShowNew(true)}>+ New</button>
+       </div>
+ 
+       <div className="dash__body">
+         <FolderSidebar folders={folders} counts={counts} selected={selectedFolderId} onSelect={setSelectedFolderId} onChange={refreshFolders} />
+         <main className="dash__main">
+           {proposals.length === 0 ? (
+-            <div className="dash__empty"><p>No proposals yet.</p></div>
++            <div className="dash__empty">
++              <p>No proposals yet.</p>
++              <button type="button" className="btn btn--primary" onClick={() => setShowNew(true)}>+ New proposal</button>
++            </div>
+           ) : (
+             <ProposalGrid proposals={visible} folders={folders} handlers={handlers} />
+           )}
+         </main>
+       </div>
++      {showNew ? <NewProposalDialog folders={folders} onClose={() => setShowNew(false)} /> : null}
+     </div>
+   );
+ }
+diff --git a/apps/web/src/ui/dashboard/NewProposalDialog.tsx b/apps/web/src/ui/dashboard/NewProposalDialog.tsx
+new file mode 100644
+index 0000000..1958288
+--- /dev/null
++++ b/apps/web/src/ui/dashboard/NewProposalDialog.tsx
+@@ -0,0 +1,72 @@
++"use client";
++
++import { useEffect, useState } from "react";
++import { useRouter } from "next/navigation";
++import { applyTemplate, type Template } from "@proposal/shared";
++import { fetchTemplates } from "../../client/templates";
++import { createProposal } from "../../client/persistence";
++import type { Folder } from "../../client/folders";
++import { useProposalStore } from "../../state/proposalStore";
++
++export function NewProposalDialog({ folders, onClose }: { folders: Folder[]; onClose: () => void }) {
++  const notify = useProposalStore((s) => s.notify);
++  const router = useRouter();
++  const [templates, setTemplates] = useState<Template[]>([]);
++  const [templateId, setTemplateId] = useState("");
++  const [title, setTitle] = useState("");
++  const [folderId, setFolderId] = useState<string>("");
++  const [busy, setBusy] = useState(false);
++
++  useEffect(() => {
++    void (async () => {
++      try {
++        const t = (await fetchTemplates()).filter((x) => !x.deprecated);
++        setTemplates(t);
++        setTemplateId(t[0]?.id ?? "");
++      } catch {
++        notify("error", "Couldn't load templates.");
++      }
++    })();
++  }, [notify]);
++
++  const create = async () => {
++    const template = templates.find((t) => t.id === templateId);
++    if (!template) return;
++    setBusy(true);
++    try {
++      const document = applyTemplate(template);
++      if (title.trim()) document.title = title.trim();
++      const { id } = await createProposal(document, folderId === "" ? null : folderId);
++      router.push(`/p/${id}`);
++    } catch {
++      notify("error", "Couldn't create the proposal.");
++      setBusy(false);
++    }
++  };
++
++  return (
++    <div className="modal" role="dialog" aria-label="New proposal">
++      <div className="modal__card">
++        <h2>New proposal</h2>
++        <label className="field"><span className="field__label">Title</span>
++          <input aria-label="Title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Untitled proposal" />
++        </label>
++        <label className="field"><span className="field__label">Template</span>
++          <select aria-label="Template" value={templateId} onChange={(e) => setTemplateId(e.target.value)}>
++            {templates.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
++          </select>
++        </label>
++        <label className="field"><span className="field__label">Folder</span>
++          <select aria-label="Folder" value={folderId} onChange={(e) => setFolderId(e.target.value)}>
++            <option value="">Unfiled</option>
++            {folders.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
++          </select>
++        </label>
++        <div className="modal__actions">
++          <button type="button" className="btn btn--ghost" onClick={onClose}>Cancel</button>
++          <button type="button" className="btn btn--primary" disabled={busy || templateId === ""} onClick={() => void create()}>{busy ? "Creating…" : "Create"}</button>
++        </div>
++      </div>
++    </div>
++  );
++}

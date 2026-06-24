@@ -33,7 +33,8 @@ export function MatrixEditor({ sectionId }: { sectionId: string }) {
   const maxOptions = matrixField?.maxColumns ?? Infinity;
   const maxMetrics = matrixField?.maxRows ?? Infinity;
 
-  const update = (next: ComparisonMatrix) => setSectionData(sectionId, { ...section.data, matrix: next });
+  const update = (next: ComparisonMatrix) =>
+    setSectionData(sectionId, { ...section.data, matrix: next });
 
   return (
     <>

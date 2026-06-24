@@ -16,7 +16,11 @@ export const authConfig = {
   callbacks: {
     authorized({ auth, request }) {
       const { pathname } = request.nextUrl;
-      if (PUBLIC_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`) || pathname.startsWith(p))) {
+      if (
+        PUBLIC_PREFIXES.some(
+          (p) => pathname === p || pathname.startsWith(`${p}/`) || pathname.startsWith(p),
+        )
+      ) {
         return true;
       }
       if (pathname === "/admin" || pathname.startsWith("/admin/")) {
@@ -26,7 +30,8 @@ export const authConfig = {
     },
     jwt({ token, user }) {
       if (user?.id) token.id = user.id;
-      if (user && "isAdmin" in user) token.isAdmin = (user as { isAdmin?: boolean }).isAdmin === true;
+      if (user && "isAdmin" in user)
+        token.isAdmin = (user as { isAdmin?: boolean }).isAdmin === true;
       return token;
     },
     session({ session, token }) {

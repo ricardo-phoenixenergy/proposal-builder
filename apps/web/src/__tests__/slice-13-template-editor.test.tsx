@@ -10,13 +10,27 @@ afterEach(() => {
 });
 
 const sectionTypes: SectionTypeSchema[] = [
-  { type: "text", label: "Text", category: "text", variants: [], schemaVersion: 1, fields: [{ key: "heading", type: "text" }] },
+  {
+    type: "text",
+    label: "Text",
+    category: "text",
+    variants: [],
+    schemaVersion: 1,
+    fields: [{ key: "heading", type: "text" }],
+  },
 ];
 
 describe("TemplateEditor", () => {
   it("creates a template: fills name + a slot, then POSTs", async () => {
     useProposalStore.setState({ sectionTypes });
-    const f = vi.fn(() => Promise.resolve(new Response(JSON.stringify({ template: {} }), { status: 201, headers: { "content-type": "application/json" } })));
+    const f = vi.fn(() =>
+      Promise.resolve(
+        new Response(JSON.stringify({ template: {} }), {
+          status: 201,
+          headers: { "content-type": "application/json" },
+        }),
+      ),
+    );
     vi.stubGlobal("fetch", f);
     const onDone = vi.fn();
 
@@ -28,7 +42,9 @@ describe("TemplateEditor", () => {
     // the new slot defaults its type to the first section type ("text") and lock to "open"
 
     fireEvent.click(screen.getByRole("button", { name: /^save/i }));
-    await waitFor(() => expect(f).toHaveBeenCalledWith("/api/templates", expect.objectContaining({ method: "POST" })));
+    await waitFor(() =>
+      expect(f).toHaveBeenCalledWith("/api/templates", expect.objectContaining({ method: "POST" })),
+    );
     await waitFor(() => expect(onDone).toHaveBeenCalled());
   });
 

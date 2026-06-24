@@ -24,7 +24,9 @@ describe("POST /api/data/import", () => {
   it("returns a normalized dataset for an uploaded CSV file", async () => {
     const form = new FormData();
     form.append("file", new File(["A,B\n1,2\n3,4"], "data.csv", { type: "text/csv" }));
-    const res = await POST(new Request("http://localhost/api/data/import", { method: "POST", body: form }));
+    const res = await POST(
+      new Request("http://localhost/api/data/import", { method: "POST", body: form }),
+    );
     expect(res.status).toBe(200);
     const body = (await res.json()) as { dataset: Dataset };
     expect(body.dataset.columns).toHaveLength(2);
@@ -32,7 +34,9 @@ describe("POST /api/data/import", () => {
   });
 
   it("400s when no file is provided", async () => {
-    const res = await POST(new Request("http://localhost/api/data/import", { method: "POST", body: new FormData() }));
+    const res = await POST(
+      new Request("http://localhost/api/data/import", { method: "POST", body: new FormData() }),
+    );
     expect(res.status).toBe(400);
   });
 });

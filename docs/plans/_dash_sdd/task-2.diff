@@ -1,0 +1,179 @@
+=== commits ===
+f04a1f6 feat(repo): folders CRUD, deleteFolder unfiles proposals (memory)
+
+=== stat ===
+ .../src/__tests__/slice-14-folders-repo.test.ts    | 29 +++++++++++++++++++
+ apps/web/src/server/repo/memory.ts                 | 33 ++++++++++++++++++++++
+ apps/web/src/server/repo/types.ts                  | 13 +++++++++
+ 3 files changed, 75 insertions(+)
+
+=== diff ===
+diff --git a/apps/web/src/__tests__/slice-14-folders-repo.test.ts b/apps/web/src/__tests__/slice-14-folders-repo.test.ts
+new file mode 100644
+index 0000000..39ad360
+--- /dev/null
++++ b/apps/web/src/__tests__/slice-14-folders-repo.test.ts
+@@ -0,0 +1,29 @@
++// @vitest-environment node
++import { beforeEach, describe, expect, it } from "vitest";
++import { sampleProposal } from "@proposal/shared";
++import { createMemoryRepo } from "../server/repo/memory";
++import type { Repository } from "../server/repo/types";
++
++let repo: Repository;
++beforeEach(() => {
++  repo = createMemoryRepo();
++});
++
++describe("repo folders (owner-scoped)", () => {
++  it("creates, lists (own only), renames", async () => {
++    const f = await repo.createFolder("owner_a", "Sales");
++    await repo.createFolder("owner_b", "Theirs");
++    expect((await repo.listFolders("owner_a")).map((x) => x.name)).toEqual(["Sales"]);
++    expect((await repo.renameFolder("owner_a", f.id, "Renamed"))?.name).toBe("Renamed");
++    expect(await repo.renameFolder("owner_b", f.id, "Hijack")).toBeNull(); // not owner
++  });
++
++  it("deleteFolder unfiles its proposals (folderId -> null), owner-scoped", async () => {
++    const f = await repo.createFolder("owner_a", "Sales");
++    const p = await repo.createProposal("owner_a", sampleProposal, f.id);
++    expect(await repo.deleteFolder("owner_b", f.id)).toBe(false); // not owner
++    expect(await repo.deleteFolder("owner_a", f.id)).toBe(true);
++    expect((await repo.getProposal(p.id))?.folderId).toBeNull();
++    expect(await repo.listFolders("owner_a")).toHaveLength(0);
++  });
++});
+diff --git a/apps/web/src/server/repo/memory.ts b/apps/web/src/server/repo/memory.ts
+index 15342ae..129eadc 100644
+--- a/apps/web/src/server/repo/memory.ts
++++ b/apps/web/src/server/repo/memory.ts
+@@ -1,12 +1,13 @@
+ import type { ProposalDocument, ThemeTokens } from "@proposal/shared";
+ import type {
++  Folder,
+   ProposalSummary,
+   ProposalVersion,
+   Repository,
+   SectionTypeRow,
+   StoredProposal,
+   StoredTheme,
+   TemplateRow,
+   StoredUser,
+   UserSummary,
+ } from "./types";
+@@ -31,20 +32,21 @@ const toProposalSummary = (p: StoredProposal): ProposalSummary => ({
+ });
+ 
+ /** In-memory repository — used by tests and as the zero-config local-dev default. */
+ export function createMemoryRepo(): Repository {
+   const proposals = new Map<string, StoredProposal>();
+   const versions = new Map<string, ProposalVersion[]>();
+   const themes = new Map<string, StoredTheme>();
+   const templates = new Map<string, TemplateRow>(); // keyed by template id
+   const users = new Map<string, StoredUser>(); // keyed by lowercased email
+   const sectionTypeRows = new Map<string, SectionTypeRow>();
++  const folders = new Map<string, Folder>(); // keyed by folder id
+ 
+   return {
+     async listProposals(ownerId) {
+       return [...proposals.values()].filter((p) => p.ownerId === ownerId).map(toProposalSummary);
+     },
+ 
+     async createProposal(ownerId, document, folderId = null) {
+       const id = uid("prop");
+       const stored: StoredProposal = {
+         id,
+@@ -256,12 +258,43 @@ export function createMemoryRepo(): Repository {
+       return clone(row);
+     },
+ 
+     async listInUseTypeKeys() {
+       const keys = new Set<string>();
+       for (const p of proposals.values()) {
+         for (const s of p.document.sections) keys.add(s.type);
+       }
+       return [...keys];
+     },
++
++    async listFolders(ownerId) {
++      return [...folders.values()]
++        .filter((f) => f.ownerId === ownerId)
++        .sort((a, b) => a.name.localeCompare(b.name))
++        .map(clone);
++    },
++
++    async createFolder(ownerId, name) {
++      const folder: Folder = { id: uid("fld"), ownerId, name: name.trim(), createdAt: now() };
++      folders.set(folder.id, folder);
++      return clone(folder);
++    },
++
++    async renameFolder(ownerId, id, name) {
++      const f = folders.get(id);
++      if (!f || f.ownerId !== ownerId) return null;
++      const updated: Folder = { ...f, name: name.trim() };
++      folders.set(id, updated);
++      return clone(updated);
++    },
++
++    async deleteFolder(ownerId, id) {
++      const f = folders.get(id);
++      if (!f || f.ownerId !== ownerId) return false;
++      folders.delete(id);
++      for (const [pid, p] of proposals) {
++        if (p.folderId === id && p.ownerId === ownerId) proposals.set(pid, { ...p, folderId: null });
++      }
++      return true;
++    },
+   };
+ }
+diff --git a/apps/web/src/server/repo/types.ts b/apps/web/src/server/repo/types.ts
+index 156d6a4..ae8f303 100644
+--- a/apps/web/src/server/repo/types.ts
++++ b/apps/web/src/server/repo/types.ts
+@@ -51,20 +51,27 @@ export interface UserSummary {
+ }
+ 
+ /** Thrown by createUser when an account with the same (normalized) email exists. */
+ export class DuplicateEmailError extends Error {
+   constructor(email: string) {
+     super(`An account with email "${email}" already exists`);
+     this.name = "DuplicateEmailError";
+   }
+ }
+ 
++export interface Folder {
++  id: string;
++  ownerId: string;
++  name: string;
++  createdAt: string;
++}
++
+ export interface SectionTypeRow {
+   type: string;
+   definition: import("@proposal/shared").SectionTypeSchema | null;
+   deprecated: boolean;
+   updatedAt: string;
+ }
+ 
+ /**
+  * Persistence boundary (§12). Two implementations: in-memory (tests + zero-config
+  * local dev) and Postgres/Drizzle (when DATABASE_URL is set). Route handlers
+@@ -106,11 +113,17 @@ export interface Repository {
+   setUserAdmin(id: string, isAdmin: boolean): Promise<UserSummary | null>;
+   setUserPassword(id: string, passwordHash: string): Promise<boolean>;
+   countActiveAdmins(): Promise<number>;
+ 
+   /** Builder (§11). Authored section-type rows; null definition = built-in overlay. */
+   listSectionTypeRows(): Promise<SectionTypeRow[]>;
+   upsertSectionType(row: { type: string; definition: SectionTypeRow["definition"]; deprecated: boolean }): Promise<SectionTypeRow>;
+   setSectionTypeDeprecated(type: string, deprecated: boolean): Promise<SectionTypeRow | null>;
+   /** Distinct section-type keys referenced by any stored proposal (freeze check). */
+   listInUseTypeKeys(): Promise<string[]>;
++
++  /** Folders (flat, one level). Deleting a folder unfiles its proposals (folderId → null). */
++  listFolders(ownerId: string): Promise<Folder[]>;
++  createFolder(ownerId: string, name: string): Promise<Folder>;
++  renameFolder(ownerId: string, id: string, name: string): Promise<Folder | null>;
++  deleteFolder(ownerId: string, id: string): Promise<boolean>;
+ }

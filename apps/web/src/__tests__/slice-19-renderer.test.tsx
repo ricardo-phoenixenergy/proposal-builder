@@ -7,7 +7,11 @@ import type { ProposalDocument } from "@proposal/shared";
 afterEach(() => cleanup());
 
 const doc: ProposalDocument = {
-  id: "p1", title: "T", client: { name: "C" }, themeId: "theme_default", templateId: "open",
+  id: "p1",
+  title: "T",
+  client: { name: "C" },
+  themeId: "theme_default",
+  templateId: "open",
   sections: [
     { id: "a", type: "text", data: { heading: "A", body: "Body A" } },
     { id: "b", type: "text", data: { heading: "B", body: "Body B" }, pageBreakBefore: true },

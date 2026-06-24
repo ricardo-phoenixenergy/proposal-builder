@@ -1,0 +1,15 @@
+# Normalize line endings to LF in the repo (Prettier emits LF; this stops CRLF
+# churn from inflating every diff on Windows checkouts and keeps lint-staged/
+# Prettier from fighting git's autocrlf).
+* text=auto eol=lf
+
+# Binary/asset types git should never touch.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary
