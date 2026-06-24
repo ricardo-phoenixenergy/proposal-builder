@@ -1,4 +1,4 @@
-import { getSectionType } from "@proposal/shared";
+import { getSectionType, checkGenerationInput } from "@proposal/shared";
 import { generateSection } from "../../../../src/server/generateSection";
 import { anthropicCreateMessage } from "../../../../src/server/anthropic";
 import { requireOwner } from "../../../../src/server/auth/guard";
@@ -27,6 +27,10 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   const { brief, types } = body as { brief: string; types: string[] };
+
+  const limitError = checkGenerationInput({ brief });
+  if (limitError) return new Response(JSON.stringify({ error: limitError }), { status: 400, headers: { "content-type": "application/json" } });
+
   const textTypes = types.filter((t) => getSectionType(t)?.category === "text");
 
   const encoder = new TextEncoder();

@@ -3,7 +3,12 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 const DEFAULT_TTL_MS = 2 * 60 * 1000; // a render token only needs to outlive one Chromium navigation
 
 function secret(): string {
-  return process.env.AUTH_SECRET ?? "dev-only-render-secret";
+  const s = process.env.AUTH_SECRET;
+  if (s && s.length > 0) return s;
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("AUTH_SECRET must be set in production (render token signing).");
+  }
+  return "dev-only-render-secret";
 }
 
 function sign(payload: string): string {

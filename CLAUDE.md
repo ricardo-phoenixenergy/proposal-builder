@@ -74,12 +74,14 @@ three-layer separation (see Non-negotiables).
 
 ## Commands
 
-<!-- Fill in once scaffolded; run /init to let Claude Code discover and populate these. -->
-- Install: `TBD`
-- Dev: `TBD`
-- Build: `TBD`
-- Test: `TBD`
-- Lint/format: `TBD`
+- Install: `npm install`
+- Dev: `npm run dev` (root; proxies to `npm run dev -w @proposal/web`)
+- Build: `npm run build -w @proposal/web`
+- Test: `npm test` (vitest run); watch: `npm run test:watch`
+- Typecheck: `npm run typecheck` (covers shared + apps/web prod + apps/web test)
+- DB migrate: `npm run db:generate -w @proposal/web` then `npm run db:migrate -w @proposal/web` (requires `DATABASE_URL` in shell for drizzle-kit)
+- Create user: `npm run user:create -w @proposal/web` (or `-- --admin email password` for admin)
+- Required env (in `apps/web/.env.local`): `ANTHROPIC_API_KEY`, `AUTH_SECRET`, `DATABASE_URL` (Neon Postgres). Optional: `PUPPETEER_EXECUTABLE_PATH` (local PDF), `CHROMIUM_PACK_URL` (Vercel PDF override), `BLOB_READ_WRITE_TOKEN` (image uploads)
 
 ## Conventions
 

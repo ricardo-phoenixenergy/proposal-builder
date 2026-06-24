@@ -14,6 +14,10 @@ export async function POST(request: Request): Promise<Response> {
   if (!(file instanceof File)) {
     return NextResponse.json({ error: "Expected a 'file' field" }, { status: 400 });
   }
+  const MAX_CSV_BYTES = 5 * 1024 * 1024;
+  if (file.size > MAX_CSV_BYTES) {
+    return NextResponse.json({ error: "CSV is too large (max 5 MB)." }, { status: 413 });
+  }
   const text = await file.text();
   const dataset = csvToDataset(text);
   return NextResponse.json({ dataset });
