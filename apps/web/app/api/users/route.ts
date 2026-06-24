@@ -37,7 +37,7 @@ export async function POST(request: Request): Promise<Response> {
   try {
     const user = await getRepo().createUser({
       email,
-      passwordHash: hashPassword(password),
+      passwordHash: await hashPassword(password),
       isAdmin,
     });
     const summary: UserSummary = {

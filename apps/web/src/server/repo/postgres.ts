@@ -84,7 +84,7 @@ export function createPostgresRepo(): Repository {
       const folderId = patch.folderId !== undefined ? patch.folderId : existing.folderId;
       const [row] = await db
         .update(proposals)
-        .set({ document, folderId })
+        .set({ document, folderId, updatedAt: new Date() })
         .where(eq(proposals.id, id))
         .returning();
       return toProposalSummary(row!);
@@ -144,17 +144,22 @@ export function createPostgresRepo(): Repository {
     },
 
     async snapshotVersion(proposalId) {
-      const current = await this.getProposal(proposalId);
-      if (!current) return null;
-      const [row] = await db
-        .insert(proposalVersions)
-        .values({ id: uid("ver"), proposalId, document: current.document })
-        .returning();
+      const id = uid("ver");
+      const result = await db.execute(sql`
+        INSERT INTO proposal_versions (id, proposal_id, document, created_at)
+        SELECT ${id}, id, document, now() FROM proposals WHERE id = ${proposalId}
+        RETURNING id, proposal_id, document, created_at
+      `);
+      const rows =
+        (result as unknown as { rows?: Record<string, unknown>[] }).rows ??
+        (result as unknown as Record<string, unknown>[]);
+      const row = rows[0];
+      if (!row) return null;
       return {
-        id: row!.id,
-        proposalId,
-        document: row!.document,
-        createdAt: row!.createdAt.toISOString(),
+        id: row["id"] as string,
+        proposalId: row["proposal_id"] as string,
+        document: row["document"] as import("@proposal/shared").ProposalDocument,
+        createdAt: new Date(row["created_at"] as string).toISOString(),
       };
     },
 
@@ -303,6 +308,18 @@ export function createPostgresRepo(): Repository {
 
     async setUserAdmin(id, isAdmin) {
       const [row] = await db.update(users).set({ isAdmin }).where(eq(users.id, id)).returning();
+      return row ? toUserSummary(row) : null;
+    },
+
+    async patchUser(id, change) {
+      const set: Partial<{ isAdmin: boolean; disabled: boolean }> = {};
+      if (change.isAdmin !== undefined) set.isAdmin = change.isAdmin;
+      if (change.disabled !== undefined) set.disabled = change.disabled;
+      if (Object.keys(set).length === 0) {
+        const [row] = await db.select().from(users).where(eq(users.id, id));
+        return row ? toUserSummary(row) : null;
+      }
+      const [row] = await db.update(users).set(set).where(eq(users.id, id)).returning();
       return row ? toUserSummary(row) : null;
     },
 

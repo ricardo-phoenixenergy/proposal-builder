@@ -3,7 +3,6 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "../../../../src/server/auth/guard";
 import { assertCanModify, GuardError } from "../../../../src/server/auth/userGuards";
 import { getRepo } from "../../../../src/server/repo";
-import type { UserSummary } from "../../../../src/server/repo/types";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -31,10 +30,11 @@ export async function PATCH(request: Request, { params }: Ctx): Promise<Response
     throw e;
   }
 
-  let summary: UserSummary | null = null;
-  if (change.isAdmin !== undefined) summary = await getRepo().setUserAdmin(id, change.isAdmin);
-  if (change.disabled !== undefined) summary = await getRepo().setUserDisabled(id, change.disabled);
+  const summary = await getRepo().patchUser(id, change);
   if (!summary) return NextResponse.json({ error: "Not found" }, { status: 404 });
-
+  if (change.disabled === true) {
+    const { invalidateUserActiveCache } = await import("../../../../src/server/auth/sessionUser");
+    invalidateUserActiveCache(id);
+  }
   return NextResponse.json({ user: summary });
 }

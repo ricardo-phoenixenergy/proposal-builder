@@ -126,6 +126,11 @@ export interface Repository {
   listUsers(): Promise<UserSummary[]>;
   setUserDisabled(id: string, disabled: boolean): Promise<UserSummary | null>;
   setUserAdmin(id: string, isAdmin: boolean): Promise<UserSummary | null>;
+  /** Apply isAdmin and/or disabled in a single atomic update. Null if unknown. */
+  patchUser(
+    id: string,
+    change: { isAdmin?: boolean; disabled?: boolean },
+  ): Promise<UserSummary | null>;
   setUserPassword(id: string, passwordHash: string): Promise<boolean>;
   countActiveAdmins(): Promise<number>;
 

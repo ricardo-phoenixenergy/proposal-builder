@@ -1,35 +1,54 @@
-import { boolean, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { boolean, index, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import type { ProposalDocument, Template, ThemeTokens } from "@proposal/shared";
 
 /** §12 data model. Content/structure/presentation kept intact as JSONB. */
-export const folders = pgTable("folders", {
-  id: text("id").primaryKey(),
-  ownerId: text("owner_id").notNull(),
-  name: text("name").notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+export const folders = pgTable(
+  "folders",
+  {
+    id: text("id").primaryKey(),
+    ownerId: text("owner_id").notNull(),
+    name: text("name").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("folders_owner_id_idx").on(t.ownerId)],
+);
 
-export const proposals = pgTable("proposals", {
-  id: text("id").primaryKey(),
-  ownerId: text("owner_id").notNull(),
-  folderId: text("folder_id"),
-  document: jsonb("document").$type<ProposalDocument>().notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-});
+export const proposals = pgTable(
+  "proposals",
+  {
+    id: text("id").primaryKey(),
+    ownerId: text("owner_id").notNull(),
+    folderId: text("folder_id"),
+    document: jsonb("document").$type<ProposalDocument>().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("proposals_owner_id_idx").on(t.ownerId),
+    index("proposals_folder_id_idx").on(t.folderId),
+  ],
+);
 
-export const proposalVersions = pgTable("proposal_versions", {
-  id: text("id").primaryKey(),
-  proposalId: text("proposal_id").notNull(),
-  document: jsonb("document").$type<ProposalDocument>().notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+export const proposalVersions = pgTable(
+  "proposal_versions",
+  {
+    id: text("id").primaryKey(),
+    proposalId: text("proposal_id").notNull(),
+    document: jsonb("document").$type<ProposalDocument>().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("proposal_versions_proposal_id_idx").on(t.proposalId)],
+);
 
-export const themes = pgTable("themes", {
-  id: text("id").primaryKey(),
-  ownerId: text("owner_id").notNull(),
-  tokens: jsonb("tokens").$type<ThemeTokens>().notNull(),
-});
+export const themes = pgTable(
+  "themes",
+  {
+    id: text("id").primaryKey(),
+    ownerId: text("owner_id").notNull(),
+    tokens: jsonb("tokens").$type<ThemeTokens>().notNull(),
+  },
+  (t) => [index("themes_owner_id_idx").on(t.ownerId)],
+);
 
 export const templates = pgTable("templates", {
   id: text("id").primaryKey(),

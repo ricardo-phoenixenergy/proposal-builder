@@ -30,7 +30,7 @@ describe("POST /api/users/[id]/password", () => {
     const { req, ctx } = post(u.id, { password: "brandnewpw" });
     expect((await POST(req, ctx)).status).toBe(200);
     const stored = await getRepo().getUserById(u.id);
-    expect(verifyPassword("brandnewpw", stored!.passwordHash)).toBe(true);
+    expect(await verifyPassword("brandnewpw", stored!.passwordHash)).toBe(true);
   });
 
   it("400s a short password", async () => {
