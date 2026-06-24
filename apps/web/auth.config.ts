@@ -1,8 +1,9 @@
 import type { NextAuthConfig } from "next-auth";
 
 /** Paths reachable without a session. /print is authorised per-request by a signed
- *  render token (see renderToken.ts), so it stays out of the session gate. */
-const PUBLIC_PREFIXES = ["/signin", "/api/auth", "/print"];
+ *  render token (renderToken.ts); /api/cron is authorised by the CRON_SECRET bearer
+ *  (Vercel Cron carries no session cookie). Both stay out of the session gate. */
+const PUBLIC_PREFIXES = ["/signin", "/api/auth", "/print", "/api/cron"];
 
 /**
  * Edge-safe Auth.js config shared by middleware and the Node auth instance.

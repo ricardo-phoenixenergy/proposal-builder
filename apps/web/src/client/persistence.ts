@@ -88,3 +88,22 @@ export async function snapshotVersion(id: string): Promise<void> {
   const res = await fetch(`/api/proposals/${id}/versions`, { method: "POST" });
   if (!res.ok) throw new Error(`Snapshot failed (${res.status})`);
 }
+
+/** Soft-deleted proposals in the trash (4b). */
+export async function listTrashedProposals(): Promise<ProposalSummary[]> {
+  const res = await fetch("/api/proposals?trash=1");
+  if (!res.ok) throw new Error(`List trash failed (${res.status})`);
+  return ((await res.json()) as { proposals?: ProposalSummary[] }).proposals ?? [];
+}
+
+/** Bring a trashed proposal back to the active list (4b). */
+export async function restoreProposal(id: string): Promise<void> {
+  const res = await fetch(`/api/proposals/${id}/restore`, { method: "POST" });
+  if (!res.ok) throw new Error(`Restore failed (${res.status})`);
+}
+
+/** Permanently delete a trashed proposal (4b). */
+export async function purgeProposal(id: string): Promise<void> {
+  const res = await fetch(`/api/proposals/${id}/purge`, { method: "DELETE" });
+  if (!res.ok) throw new Error(`Delete forever failed (${res.status})`);
+}

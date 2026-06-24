@@ -17,7 +17,7 @@ export function FolderSidebar({
   onChange,
 }: {
   folders: Folder[];
-  counts: { all: number; unfiled: number; byFolder: Record<string, number> };
+  counts: { all: number; unfiled: number; trash?: number; byFolder: Record<string, number> };
   selected: Selected;
   onSelect: (s: Selected) => void;
   onChange: () => void | Promise<void>;
@@ -61,6 +61,9 @@ export function FolderSidebar({
       ))}
       <button type="button" className={cls(null)} onClick={() => onSelect(null)}>
         Unfiled <span className="dash__count">{counts.unfiled}</span>
+      </button>
+      <button type="button" className={cls("trash")} onClick={() => onSelect("trash")}>
+        Trash <span className="dash__count">{counts.trash ?? 0}</span>
       </button>
       <button type="button" className="btn dash__addfolder" onClick={() => setPendingCreate(true)}>
         + New folder

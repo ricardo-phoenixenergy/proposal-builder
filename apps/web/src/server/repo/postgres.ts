@@ -1,4 +1,4 @@
-import { and, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull, isNull, lt, sql } from "drizzle-orm";
 import { isSelectableModel, type ThemeTokens } from "@proposal/shared";
 import { getDb } from "../db/client";
 import {
@@ -161,6 +161,18 @@ export function createPostgresRepo(): Repository {
       await db.delete(proposalVersions).where(eq(proposalVersions.proposalId, id));
       const deleted = await db.delete(proposals).where(eq(proposals.id, id)).returning();
       return deleted.length > 0;
+    },
+
+    async purgeExpiredTrash(olderThan) {
+      const expired = await db
+        .select({ id: proposals.id })
+        .from(proposals)
+        .where(and(isNotNull(proposals.deletedAt), lt(proposals.deletedAt, olderThan)));
+      if (expired.length === 0) return 0;
+      const ids = expired.map((e) => e.id);
+      await db.delete(proposalVersions).where(inArray(proposalVersions.proposalId, ids));
+      const deleted = await db.delete(proposals).where(inArray(proposals.id, ids)).returning();
+      return deleted.length;
     },
 
     async listVersions(proposalId) {
