@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { temporal } from "zundo";
 import type {
   ProposalDocument,
   SectionLayout,
@@ -105,131 +106,179 @@ function themeById(id: string): ThemeTokens {
   return themes.find((t) => t.id === id) ?? defaultTheme;
 }
 
-export const useProposalStore = create<ProposalState>((set, get) => ({
-  document: sampleProposal,
-  theme: defaultTheme,
-  selectedId: sampleProposal.sections[0]?.id ?? null,
-  proposalId: null,
-  saveStatus: "idle",
-  notifications: [],
-  notify: (kind, message) =>
-    set((state) => ({
-      notifications: [...state.notifications, { id: ++notificationSeq, kind, message }],
-    })),
-  dismiss: (id) =>
-    set((state) => ({ notifications: state.notifications.filter((n) => n.id !== id) })),
-  setTheme: (theme) =>
-    set((state) =>
-      state.document.theme ? { theme, document: { ...state.document, theme } } : { theme },
-    ),
-  forkTheme: () =>
-    set((state) => {
-      const forked = { ...state.theme, id: "custom", name: `Custom (from ${state.theme.name})` };
-      return { theme: forked, document: { ...state.document, theme: forked } };
+/**
+ * Debounce delay for undo history snapshots.
+ * Set to 0 in test environment for synchronous, deterministic behaviour.
+ */
+const HISTORY_DEBOUNCE_MS = process.env.NODE_ENV === "test" ? 0 : 300;
+
+/**
+ * Wraps a zundo internal handleSet callback with optional debouncing.
+ * When ms <= 0, returns fn unchanged (synchronous passthrough — used in tests).
+ *
+ * Typed with a constrained generic so lint (no-explicit-any) stays clean.
+ * The zundo `handleSet` option passes its internal `_handleSet` at runtime;
+ * the declared type is `StoreApi<TState>['setState']` which differs — we
+ * capture the actual function type via the generic `T` to remain flexible.
+ */
+function debounceHistory<T extends (...args: Parameters<T>) => ReturnType<T>>(
+  fn: T,
+  ms: number,
+): T {
+  if (ms <= 0) return fn;
+  let t: ReturnType<typeof setTimeout> | undefined;
+  return ((...args: Parameters<T>) => {
+    if (t) clearTimeout(t);
+    t = setTimeout(() => fn(...args), ms);
+  }) as T;
+}
+
+export const useProposalStore = create<ProposalState>()(
+  temporal(
+    (set, get) => ({
+      document: sampleProposal,
+      theme: defaultTheme,
+      selectedId: sampleProposal.sections[0]?.id ?? null,
+      proposalId: null,
+      saveStatus: "idle",
+      notifications: [],
+      notify: (kind, message) =>
+        set((state) => ({
+          notifications: [...state.notifications, { id: ++notificationSeq, kind, message }],
+        })),
+      dismiss: (id) =>
+        set((state) => ({ notifications: state.notifications.filter((n) => n.id !== id) })),
+      setTheme: (theme) =>
+        set((state) =>
+          state.document.theme ? { theme, document: { ...state.document, theme } } : { theme },
+        ),
+      forkTheme: () =>
+        set((state) => {
+          const forked = {
+            ...state.theme,
+            id: "custom",
+            name: `Custom (from ${state.theme.name})`,
+          };
+          return { theme: forked, document: { ...state.document, theme: forked } };
+        }),
+      unforkTheme: () =>
+        set((state) => {
+          const { theme: _omit, ...rest } = state.document;
+          return { theme: themeById(state.document.themeId), document: rest };
+        }),
+      selectPreset: (presetId) =>
+        set((state) => {
+          const { theme: _omit, ...rest } = state.document;
+          return { theme: themeById(presetId), document: { ...rest, themeId: presetId } };
+        }),
+      selectSection: (selectedId) => set({ selectedId }),
+      setVariant: (sectionId, variant) =>
+        set((state) => ({ document: setSectionVariant(state.document, sectionId, variant) })),
+      setSectionData: (sectionId, data) =>
+        set((state) => ({ document: setSectionData(state.document, sectionId, data) })),
+      setSectionType: (sectionId, type) =>
+        set((state) => ({ document: setSectionType(state.document, sectionId, type) })),
+      setBrief: (brief) => set((state) => ({ document: { ...state.document, brief } })),
+      applyTemplate: (templateId) => {
+        const template = get().templates.find((t) => t.id === templateId);
+        if (!template) return;
+        const document = applyTemplate(template);
+        set({
+          document,
+          theme: themeById(template.themeId),
+          selectedId: document.sections[0]?.id ?? null,
+        });
+      },
+      persistNew: async () => {
+        set({ saveStatus: "saving" });
+        try {
+          const { id, document } = await persistence.createProposal(get().document);
+          set({ proposalId: id, document, saveStatus: "saved" });
+          useProposalStore.temporal.getState().clear();
+          get().notify("success", "Saved to cloud.");
+        } catch {
+          set({ saveStatus: "error" });
+          get().notify("error", "Couldn't save to cloud. Check your connection and try again.");
+        }
+      },
+      saveNow: async () => {
+        const { proposalId, document } = get();
+        if (!proposalId) return;
+        set({ saveStatus: "saving" });
+        try {
+          await persistence.saveProposal(proposalId, document);
+          set({ saveStatus: "saved" });
+        } catch {
+          set({ saveStatus: "error" });
+          get().notify("error", "Autosave failed — your latest edits aren't saved yet.");
+        }
+      },
+      load: async (id) => {
+        const document = await persistence.loadProposal(id);
+        set({
+          document,
+          theme: document.theme ?? themeById(document.themeId),
+          proposalId: id,
+          selectedId: document.sections[0]?.id ?? null,
+          saveStatus: "saved",
+        });
+        useProposalStore.temporal.getState().clear();
+      },
+      sectionTypes: [],
+      loadSectionTypes: async () => {
+        try {
+          const types = await fetchSectionTypes();
+          setActiveSectionTypes(types); // hydrate the shared registry used by renderer/inspector
+          set({ sectionTypes: types });
+        } catch {
+          get().notify("error", "Couldn't load section types.");
+        }
+      },
+      layouts: [],
+      loadLayouts: async () => {
+        try {
+          const layouts = await fetchLayouts();
+          setActiveLayouts(layouts); // hydrate the shared registry used by resolveSection
+          set({ layouts });
+        } catch {
+          get().notify("error", "Couldn't load layouts.");
+        }
+      },
+      addSection: (type) => set((state) => ({ document: appendSection(state.document, type) })),
+      insertSection: (type, index) =>
+        set((state) => {
+          const document = insertSection(state.document, type, index);
+          const at = Math.max(0, Math.min(index, state.document.sections.length));
+          return { document, selectedId: document.sections[at]?.id ?? state.selectedId };
+        }),
+      removeSection: (id) =>
+        set((state) => ({
+          document: removeSection(state.document, id),
+          selectedId: state.selectedId === id ? null : state.selectedId,
+        })),
+      setPageBreakBefore: (sectionId, value) =>
+        set((state) => ({ document: setSectionPageBreak(state.document, sectionId, value) })),
+      setPageFormat: (id) => set((state) => ({ document: { ...state.document, pageFormat: id } })),
+      setPageMode: (mode) => set((state) => ({ document: { ...state.document, pageMode: mode } })),
+      templates: builtInTemplates,
+      loadTemplates: async () => {
+        try {
+          set({ templates: await fetchTemplates() });
+        } catch {
+          get().notify("error", "Couldn't load templates.");
+        }
+      },
     }),
-  unforkTheme: () =>
-    set((state) => {
-      const { theme: _omit, ...rest } = state.document;
-      return { theme: themeById(state.document.themeId), document: rest };
-    }),
-  selectPreset: (presetId) =>
-    set((state) => {
-      const { theme: _omit, ...rest } = state.document;
-      return { theme: themeById(presetId), document: { ...rest, themeId: presetId } };
-    }),
-  selectSection: (selectedId) => set({ selectedId }),
-  setVariant: (sectionId, variant) =>
-    set((state) => ({ document: setSectionVariant(state.document, sectionId, variant) })),
-  setSectionData: (sectionId, data) =>
-    set((state) => ({ document: setSectionData(state.document, sectionId, data) })),
-  setSectionType: (sectionId, type) =>
-    set((state) => ({ document: setSectionType(state.document, sectionId, type) })),
-  setBrief: (brief) => set((state) => ({ document: { ...state.document, brief } })),
-  applyTemplate: (templateId) => {
-    const template = get().templates.find((t) => t.id === templateId);
-    if (!template) return;
-    const document = applyTemplate(template);
-    set({
-      document,
-      theme: themeById(template.themeId),
-      selectedId: document.sections[0]?.id ?? null,
-    });
-  },
-  persistNew: async () => {
-    set({ saveStatus: "saving" });
-    try {
-      const { id, document } = await persistence.createProposal(get().document);
-      set({ proposalId: id, document, saveStatus: "saved" });
-      get().notify("success", "Saved to cloud.");
-    } catch {
-      set({ saveStatus: "error" });
-      get().notify("error", "Couldn't save to cloud. Check your connection and try again.");
-    }
-  },
-  saveNow: async () => {
-    const { proposalId, document } = get();
-    if (!proposalId) return;
-    set({ saveStatus: "saving" });
-    try {
-      await persistence.saveProposal(proposalId, document);
-      set({ saveStatus: "saved" });
-    } catch {
-      set({ saveStatus: "error" });
-      get().notify("error", "Autosave failed — your latest edits aren't saved yet.");
-    }
-  },
-  load: async (id) => {
-    const document = await persistence.loadProposal(id);
-    set({
-      document,
-      theme: document.theme ?? themeById(document.themeId),
-      proposalId: id,
-      selectedId: document.sections[0]?.id ?? null,
-      saveStatus: "saved",
-    });
-  },
-  sectionTypes: [],
-  loadSectionTypes: async () => {
-    try {
-      const types = await fetchSectionTypes();
-      setActiveSectionTypes(types); // hydrate the shared registry used by renderer/inspector
-      set({ sectionTypes: types });
-    } catch {
-      get().notify("error", "Couldn't load section types.");
-    }
-  },
-  layouts: [],
-  loadLayouts: async () => {
-    try {
-      const layouts = await fetchLayouts();
-      setActiveLayouts(layouts); // hydrate the shared registry used by resolveSection
-      set({ layouts });
-    } catch {
-      get().notify("error", "Couldn't load layouts.");
-    }
-  },
-  addSection: (type) => set((state) => ({ document: appendSection(state.document, type) })),
-  insertSection: (type, index) =>
-    set((state) => {
-      const document = insertSection(state.document, type, index);
-      const at = Math.max(0, Math.min(index, state.document.sections.length));
-      return { document, selectedId: document.sections[at]?.id ?? state.selectedId };
-    }),
-  removeSection: (id) =>
-    set((state) => ({
-      document: removeSection(state.document, id),
-      selectedId: state.selectedId === id ? null : state.selectedId,
-    })),
-  setPageBreakBefore: (sectionId, value) =>
-    set((state) => ({ document: setSectionPageBreak(state.document, sectionId, value) })),
-  setPageFormat: (id) => set((state) => ({ document: { ...state.document, pageFormat: id } })),
-  setPageMode: (mode) => set((state) => ({ document: { ...state.document, pageMode: mode } })),
-  templates: builtInTemplates,
-  loadTemplates: async () => {
-    try {
-      set({ templates: await fetchTemplates() });
-    } catch {
-      get().notify("error", "Couldn't load templates.");
-    }
-  },
-}));
+    {
+      partialize: (state) => ({ document: state.document, selectedId: state.selectedId }),
+      limit: 100,
+      handleSet: (handleSet) => debounceHistory(handleSet, HISTORY_DEBOUNCE_MS),
+      /**
+       * Skip recording a history entry when the tracked slices (document +
+       * selectedId) are reference-equal — e.g. a `saveStatus` update alone
+       * must not create an undo step.
+       */
+      equality: (a, b) => a.document === b.document && a.selectedId === b.selectedId,
+    },
+  ),
+);
