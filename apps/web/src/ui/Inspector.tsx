@@ -6,25 +6,18 @@ import {
   getSectionType,
   isFieldLocked,
   isStructureLocked,
-  isThemePinned,
   openTemplate,
-  PAGE_FORMATS,
   variantRangeWarnings,
 } from "@proposal/shared";
 import { availableVariants, resolveSection } from "../registry/componentRegistry";
 import { useProposalStore } from "../state/proposalStore";
 import { requestFieldGeneration, requestSectionGeneration } from "../client/generate";
-import { themes } from "../theme/themes";
-import { ThemeForm } from "./ThemeForm";
-import { CodeEditor } from "./CodeEditor";
 import { DataGrid } from "./DataGrid";
 import { ColumnMapping } from "./ColumnMapping";
 import { MatrixEditor } from "./MatrixEditor";
-import { AssetUpload } from "./AssetUpload";
 import { ImageField } from "./ImageField";
 import { BriefPane } from "./inspector/BriefPane";
-
-type Tab = "tokens" | "code";
+import { DocumentPane } from "./inspector/DocumentPane";
 
 /**
  * Right pane: a collapsible Document disclosure (template + theme) atop an AI
@@ -33,33 +26,22 @@ type Tab = "tokens" | "code";
  */
 export function Inspector() {
   const document = useProposalStore((s) => s.document);
-  const theme = useProposalStore((s) => s.theme);
   const selectedId = useProposalStore((s) => s.selectedId);
   const sections = useProposalStore((s) => s.document.sections);
   const setVariant = useProposalStore((s) => s.setVariant);
   const setSectionData = useProposalStore((s) => s.setSectionData);
   const setSectionType = useProposalStore((s) => s.setSectionType);
-  const applyTemplateAction = useProposalStore((s) => s.applyTemplate);
   const templates = useProposalStore((s) => s.templates);
   const notify = useProposalStore((s) => s.notify);
 
   const setPageBreakBefore = useProposalStore((s) => s.setPageBreakBefore);
-  const forkTheme = useProposalStore((s) => s.forkTheme);
-  const unforkTheme = useProposalStore((s) => s.unforkTheme);
-  const selectPreset = useProposalStore((s) => s.selectPreset);
-  const setPageFormat = useProposalStore((s) => s.setPageFormat);
-  const setPageMode = useProposalStore((s) => s.setPageMode);
-  const isForked = document.theme !== undefined;
 
-  const [tab, setTab] = useState<Tab>("tokens");
-  const [docOpen, setDocOpen] = useState(true);
   const [busy, setBusy] = useState(false);
   const [sectionInstruction, setSectionInstruction] = useState("");
   const [fieldInstr, setFieldInstr] = useState<Record<string, string>>({});
 
   const brief = document.brief ?? "";
   const template = templates.find((t) => t.id === document.templateId) ?? openTemplate;
-  const pinned = isThemePinned(template);
   const structureLocked = isStructureLocked(template);
 
   const selectedIndex = sections.findIndex((s) => s.id === selectedId);
@@ -118,144 +100,7 @@ export function Inspector() {
 
   return (
     <aside aria-label="Inspector" className="pane inspector">
-      {/* Document disclosure: template + theme */}
-      <div className="group">
-        <button
-          type="button"
-          className="group__title group__toggle"
-          aria-expanded={docOpen}
-          onClick={() => setDocOpen((v) => !v)}
-        >
-          Document {docOpen ? "▾" : "▸"}
-        </button>
-        {docOpen ? (
-          <>
-            <div className="field">
-              <span className="field__label">Template</span>
-              <select
-                aria-label="Template"
-                value={document.templateId}
-                onChange={(e) => applyTemplateAction(e.target.value)}
-              >
-                {templates
-                  .filter((t) => !t.deprecated || t.id === document.templateId)
-                  .map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name}
-                    </option>
-                  ))}
-              </select>
-              {structureLocked ? (
-                <small className="meter">Structure & theme are locked by this template.</small>
-              ) : null}
-            </div>
-
-            <div className="field">
-              <span className="field__label">Page format</span>
-              <select
-                aria-label="Page format"
-                value={document.pageFormat ?? "a4_portrait"}
-                onChange={(e) => setPageFormat(e.target.value)}
-              >
-                {PAGE_FORMATS.map((f) => (
-                  <option key={f.id} value={f.id}>
-                    {f.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="field">
-              <span className="field__label">Mode</span>
-              <select
-                aria-label="Page mode"
-                value={document.pageMode ?? "report"}
-                onChange={(e) => setPageMode(e.target.value as "report" | "slides")}
-              >
-                <option value="report">Report (flowing pages)</option>
-                <option value="slides">Slides (one section per page)</option>
-              </select>
-            </div>
-
-            <div className="group__sub">
-              <div className="group__title">Theme{pinned ? " · pinned" : ""}</div>
-              <fieldset
-                disabled={pinned}
-                style={{
-                  border: "none",
-                  margin: 0,
-                  padding: 0,
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 10,
-                }}
-              >
-                <div className="field">
-                  <span className="field__label">Preset</span>
-                  <select
-                    aria-label="Theme preset"
-                    value={isForked ? "custom" : theme.id}
-                    onChange={(e) => selectPreset(e.target.value)}
-                  >
-                    {isForked ? <option value="custom">Custom (forked)</option> : null}
-                    {themes.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {!isForked ? (
-                  <div className="field">
-                    <button type="button" className="btn btn--ghost" onClick={forkTheme}>
-                      Fork to edit
-                    </button>
-                    <small className="meter">
-                      Presets are read-only. Fork to customise colours, fonts, and the logo.
-                    </small>
-                  </div>
-                ) : (
-                  <>
-                    <div className="tabs" role="tablist" aria-label="Theme editor">
-                      <button
-                        type="button"
-                        className="tab"
-                        role="tab"
-                        aria-selected={tab === "tokens"}
-                        onClick={() => setTab("tokens")}
-                      >
-                        Tokens
-                      </button>
-                      <button
-                        type="button"
-                        className="tab"
-                        role="tab"
-                        aria-selected={tab === "code"}
-                        onClick={() => setTab("code")}
-                      >
-                        Code
-                      </button>
-                    </div>
-                    {tab === "tokens" ? (
-                      <ThemeForm />
-                    ) : (
-                      <div className="editor-frame">
-                        <CodeEditor />
-                      </div>
-                    )}
-                    <AssetUpload />
-                    <div className="field">
-                      <button type="button" className="btn btn--ghost" onClick={unforkTheme}>
-                        Revert to preset
-                      </button>
-                    </div>
-                  </>
-                )}
-              </fieldset>
-            </div>
-          </>
-        ) : null}
-      </div>
+      <DocumentPane />
 
       <BriefPane />
 
