@@ -25,12 +25,15 @@ function form(file?: File): Request {
   return new Request("http://x/api/assets", { method: "POST", body: fd });
 }
 
+// A minimal but valid PNG byte signature, so the magic-byte gate (5a) accepts it.
+const pngBytes = () =>
+  new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x00]);
+const pngFile = (name = "logo.png") => new File([pngBytes()], name, { type: "image/png" });
+
 describe("POST /api/assets — logo/image upload to Blob (§10.2, §13.10)", () => {
   it("401s when unauthenticated", async () => {
     owner = null;
-    expect(
-      (await uploadAsset(form(new File(["x"], "logo.png", { type: "image/png" })))).status,
-    ).toBe(401);
+    expect((await uploadAsset(form(pngFile()))).status).toBe(401);
     expect(put).not.toHaveBeenCalled();
   });
 
@@ -46,8 +49,24 @@ describe("POST /api/assets — logo/image upload to Blob (§10.2, §13.10)", () 
     expect(put).not.toHaveBeenCalled();
   });
 
-  it("uploads an image and returns its public URL, namespaced by owner", async () => {
-    const res = await uploadAsset(form(new File(["x"], "logo.png", { type: "image/png" })));
+  it("415s for an SVG even though it claims image/* (scriptable, 5a)", async () => {
+    const svg = new File(["<svg><script>alert(1)</script></svg>"], "logo.svg", {
+      type: "image/svg+xml",
+    });
+    expect((await uploadAsset(form(svg))).status).toBe(415);
+    expect(put).not.toHaveBeenCalled();
+  });
+
+  it("415s when the bytes don't match the declared image type (spoofed, 5a)", async () => {
+    const spoof = new File(["<!doctype html><script>alert(1)</script>"], "logo.png", {
+      type: "image/png",
+    });
+    expect((await uploadAsset(form(spoof))).status).toBe(415);
+    expect(put).not.toHaveBeenCalled();
+  });
+
+  it("uploads a real image and returns its public URL, namespaced by owner", async () => {
+    const res = await uploadAsset(form(pngFile()));
     expect(res.status).toBe(200);
     const body = (await res.json()) as { url: string };
     expect(body.url).toContain("https://blob.test/");
