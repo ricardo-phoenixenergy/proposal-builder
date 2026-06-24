@@ -10,7 +10,7 @@ afterEach(() => setRepoForTests(null));
 
 describe("admin flag through authentication", () => {
   it("defaults isAdmin to false and surfaces it on auth", async () => {
-    await getRepo().createUser({ email: "u@x.test", passwordHash: hashPassword("pw") });
+    await getRepo().createUser({ email: "u@x.test", passwordHash: await hashPassword("pw") });
     const user = await authenticateUser("u@x.test", "pw");
     expect(user?.isAdmin).toBe(false);
   });
@@ -18,7 +18,7 @@ describe("admin flag through authentication", () => {
   it("carries isAdmin true when created as admin", async () => {
     await getRepo().createUser({
       email: "a@x.test",
-      passwordHash: hashPassword("pw"),
+      passwordHash: await hashPassword("pw"),
       isAdmin: true,
     });
     expect((await authenticateUser("a@x.test", "pw"))?.isAdmin).toBe(true);

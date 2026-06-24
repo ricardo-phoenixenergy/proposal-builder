@@ -3,11 +3,14 @@
 // Requires DATABASE_URL (loaded from .env.local if present). Passwords are
 // scrypt-hashed with the SAME format as src/server/auth/password.ts.
 import { neon } from "@neondatabase/serverless";
-import { randomBytes, randomUUID, scryptSync } from "node:crypto";
+import { randomBytes, randomUUID, scrypt } from "node:crypto";
+import { promisify } from "node:util";
 
-function hashPassword(password) {
+const scryptAsync = promisify(scrypt);
+
+async function hashPassword(password) {
   const salt = randomBytes(16).toString("hex");
-  const derived = scryptSync(password, salt, 64).toString("hex");
+  const derived = (await scryptAsync(password, salt, 64)).toString("hex");
   return `${salt}:${derived}`;
 }
 
@@ -30,7 +33,7 @@ const normalized = email.trim().toLowerCase();
 
 try {
   const sql = neon(url);
-  await sql`INSERT INTO users (id, email, password_hash, is_admin) VALUES (${id}, ${normalized}, ${hashPassword(password)}, ${isAdmin})`;
+  await sql`INSERT INTO users (id, email, password_hash, is_admin) VALUES (${id}, ${normalized}, ${await hashPassword(password)}, ${isAdmin})`;
   console.log(`✓ Created ${isAdmin ? "admin " : ""}account ${normalized} (${id})`);
 } catch (err) {
   const message = String(err?.message ?? err);

@@ -18,7 +18,7 @@ export async function POST(request: Request, { params }: Ctx): Promise<Response>
     return NextResponse.json({ error: "Password must be at least 8 characters" }, { status: 400 });
   }
 
-  const ok = await getRepo().setUserPassword(id, hashPassword(password));
+  const ok = await getRepo().setUserPassword(id, await hashPassword(password));
   if (!ok) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json({ ok: true });
 }

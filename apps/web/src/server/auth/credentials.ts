@@ -21,7 +21,7 @@ export async function authenticateUser(
 
   const user = await getRepo().getUserByEmail(email);
   if (!user) return null;
-  if (!verifyPassword(password, user.passwordHash)) return null;
+  if (!(await verifyPassword(password, user.passwordHash))) return null;
   if (user.disabled) return null; // disabled accounts cannot sign in (§B)
 
   return { id: user.id, email: user.email, isAdmin: user.isAdmin };

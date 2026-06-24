@@ -13,19 +13,19 @@ beforeEach(() => {
 afterEach(() => setRepoForTests(null));
 
 describe("password hashing (scrypt, no plaintext at rest)", () => {
-  it("verifies a correct password and rejects a wrong one", () => {
-    const hash = hashPassword("correct horse");
+  it("verifies a correct password and rejects a wrong one", async () => {
+    const hash = await hashPassword("correct horse");
     expect(hash).not.toContain("correct horse"); // not stored in the clear
-    expect(verifyPassword("correct horse", hash)).toBe(true);
-    expect(verifyPassword("wrong", hash)).toBe(false);
+    expect(await verifyPassword("correct horse", hash)).toBe(true);
+    expect(await verifyPassword("wrong", hash)).toBe(false);
   });
 
-  it("produces a different hash each time (random salt) but both verify", () => {
-    const a = hashPassword("pw");
-    const b = hashPassword("pw");
+  it("produces a different hash each time (random salt) but both verify", async () => {
+    const a = await hashPassword("pw");
+    const b = await hashPassword("pw");
     expect(a).not.toBe(b);
-    expect(verifyPassword("pw", a)).toBe(true);
-    expect(verifyPassword("pw", b)).toBe(true);
+    expect(await verifyPassword("pw", a)).toBe(true);
+    expect(await verifyPassword("pw", b)).toBe(true);
   });
 });
 
@@ -33,7 +33,7 @@ describe("authenticateUser — DB-backed credentials (§13.10)", () => {
   it("returns the user for a stored email + correct password", async () => {
     const created = await getRepo().createUser({
       email: "Owner@Phoenix.test",
-      passwordHash: hashPassword("hunter2"),
+      passwordHash: await hashPassword("hunter2"),
     });
     const user = await authenticateUser("owner@phoenix.test", "hunter2"); // case-insensitive email
     expect(user?.id).toBe(created.id);
@@ -43,7 +43,7 @@ describe("authenticateUser — DB-backed credentials (§13.10)", () => {
   it("rejects a wrong password", async () => {
     await getRepo().createUser({
       email: "owner@phoenix.test",
-      passwordHash: hashPassword("hunter2"),
+      passwordHash: await hashPassword("hunter2"),
     });
     expect(await authenticateUser("owner@phoenix.test", "nope")).toBeNull();
   });
