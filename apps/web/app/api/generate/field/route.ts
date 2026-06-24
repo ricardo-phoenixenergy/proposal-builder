@@ -4,6 +4,7 @@ import { generateField } from "../../../../src/server/generateField";
 import { anthropicCreateMessage } from "../../../../src/server/anthropic";
 import { requireOwner } from "../../../../src/server/auth/guard";
 import { getActiveModel } from "../../../../src/server/aiModel";
+import { checkRateLimit } from "../../../../src/server/rateLimit";
 
 /**
  * POST /api/generate/field — rewrite one AI-composable field (§10). The model is
@@ -12,6 +13,13 @@ import { getActiveModel } from "../../../../src/server/aiModel";
 export async function POST(request: Request): Promise<Response> {
   const owner = await requireOwner();
   if (owner instanceof Response) return owner;
+  const limit = checkRateLimit(owner);
+  if (!limit.ok) {
+    return NextResponse.json(
+      { error: "Too many generation requests. Please wait a moment." },
+      { status: 429, headers: { "retry-after": String(Math.ceil(limit.retryAfterMs / 1000)) } },
+    );
+  }
   const body: unknown = await request.json().catch(() => null);
   if (
     !body ||

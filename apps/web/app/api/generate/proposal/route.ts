@@ -3,6 +3,7 @@ import { generateSection } from "../../../../src/server/generateSection";
 import { anthropicCreateMessage } from "../../../../src/server/anthropic";
 import { requireOwner } from "../../../../src/server/auth/guard";
 import { getActiveModel } from "../../../../src/server/aiModel";
+import { checkRateLimit } from "../../../../src/server/rateLimit";
 
 /**
  * POST /api/generate/proposal — stream a full draft (§10.1, §13.6). Generates
@@ -13,6 +14,19 @@ import { getActiveModel } from "../../../../src/server/aiModel";
 export async function POST(request: Request): Promise<Response> {
   const owner = await requireOwner();
   if (owner instanceof Response) return owner;
+  const limit = checkRateLimit(owner);
+  if (!limit.ok) {
+    return new Response(
+      JSON.stringify({ error: "Too many generation requests. Please wait a moment." }),
+      {
+        status: 429,
+        headers: {
+          "content-type": "application/json",
+          "retry-after": String(Math.ceil(limit.retryAfterMs / 1000)),
+        },
+      },
+    );
+  }
   const body: unknown = await request.json().catch(() => null);
   if (
     !body ||
