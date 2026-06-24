@@ -274,11 +274,14 @@ export const useProposalStore = create<ProposalState>()(
       limit: 100,
       handleSet: (handleSet) => debounceHistory(handleSet, HISTORY_DEBOUNCE_MS),
       /**
-       * Skip recording a history entry when the tracked slices (document +
-       * selectedId) are reference-equal — e.g. a `saveStatus` update alone
-       * must not create an undo step.
+       * Only a `document` change creates an undo step. `selectedId` is still
+       * tracked (partialize) so it rides along in each snapshot — undoing a
+       * content change restores the selection that was active at that time —
+       * but a *pure* selection change (clicking another section) must NOT be
+       * its own undo step, nor must a `saveStatus` update. Hence we gate on
+       * the document reference only.
        */
-      equality: (a, b) => a.document === b.document && a.selectedId === b.selectedId,
+      equality: (a, b) => a.document === b.document,
     },
   ),
 );

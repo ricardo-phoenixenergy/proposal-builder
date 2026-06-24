@@ -28,6 +28,16 @@ describe("undo/redo (zundo temporal)", () => {
     expect(useProposalStore.temporal.getState().pastStates.length).toBe(0);
   });
 
+  it("does not make a pure section selection its own undo step", () => {
+    useProposalStore.temporal.getState().clear();
+    const firstId = useProposalStore.getState().document.sections[0]?.id ?? null;
+    useProposalStore.getState().selectSection(firstId);
+    expect(useProposalStore.temporal.getState().pastStates.length).toBe(0);
+    // but a real content edit still records one
+    useProposalStore.getState().setBrief("now an edit");
+    expect(useProposalStore.temporal.getState().pastStates.length).toBe(1);
+  });
+
   it("clears history when a different proposal context is loaded (clear on load path)", () => {
     useProposalStore.getState().setBrief("edit one");
     expect(useProposalStore.temporal.getState().pastStates.length).toBeGreaterThan(0);
