@@ -1,8 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   listProposals,
+  listTrashedProposals,
+  restoreProposal,
+  purgeProposal,
   updateProposalMeta,
   duplicateProposal,
   deleteProposal,
@@ -14,6 +17,7 @@ import { fetchFolders } from "../../client/folders";
 import { useProposalStore } from "../../state/proposalStore";
 import { FolderSidebar } from "./FolderSidebar";
 import { ProposalGrid } from "./ProposalGrid";
+import { TrashView } from "./TrashView";
 import { NewProposalDialog } from "./NewProposalDialog";
 import { SignOutButton } from "../SignOutButton";
 import { ConfirmDialog } from "../ConfirmDialog";
@@ -32,6 +36,7 @@ export function Dashboard({
 }) {
   const notify = useProposalStore((s) => s.notify);
   const [proposals, setProposals] = useState(initialProposals);
+  const [trashed, setTrashed] = useState<ProposalSummary[]>([]);
   const [folders, setFolders] = useState(initialFolders);
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<Sort>("recent");
@@ -48,6 +53,19 @@ export function Dashboard({
     }
   };
 
+  const refreshTrash = async () => {
+    try {
+      setTrashed(await listTrashedProposals());
+    } catch {
+      /* trash count is non-critical; ignore a transient failure */
+    }
+  };
+
+  // Load the trash once so its count shows in the sidebar.
+  useEffect(() => {
+    void refreshTrash();
+  }, []);
+
   const refreshFolders = async () => {
     try {
       setFolders(await fetchFolders());
@@ -61,12 +79,13 @@ export function Dashboard({
     () => ({
       all: proposals.length,
       unfiled: proposals.filter((p) => p.folderId === null).length,
+      trash: trashed.length,
       byFolder: folders.reduce<Record<string, number>>((acc, f) => {
         acc[f.id] = proposals.filter((p) => p.folderId === f.id).length;
         return acc;
       }, {}),
     }),
-    [proposals, folders],
+    [proposals, trashed, folders],
   );
 
   const visible = useMemo(() => {
@@ -117,6 +136,24 @@ export function Dashboard({
     onDelete: (id: string) => {
       setPendingDeleteId(id);
     },
+    onRestore: async (id: string) => {
+      try {
+        await restoreProposal(id);
+        await Promise.all([refresh(), refreshTrash()]);
+        notify("success", "Restored.");
+      } catch {
+        notify("error", "Restore failed.");
+      }
+    },
+    onPurge: async (id: string) => {
+      try {
+        await purgeProposal(id);
+        await refreshTrash();
+        notify("success", "Deleted forever.");
+      } catch {
+        notify("error", "Delete failed.");
+      }
+    },
   };
 
   return (
@@ -158,7 +195,13 @@ export function Dashboard({
           onChange={refreshFolders}
         />
         <main className="dash__main">
-          {proposals.length === 0 ? (
+          {selectedFolderId === "trash" ? (
+            <TrashView
+              proposals={trashed}
+              onRestore={(id) => void handlers.onRestore(id)}
+              onPurge={(id) => void handlers.onPurge(id)}
+            />
+          ) : proposals.length === 0 ? (
             <div className="dash__empty">
               <p>No proposals yet.</p>
               <button type="button" className="btn btn--primary" onClick={() => setShowNew(true)}>
@@ -192,14 +235,17 @@ export function Dashboard({
       ) : null}
       {pendingDeleteId ? (
         <ConfirmDialog
-          title="Delete proposal"
-          message="Delete this proposal? This can't be undone."
-          confirmLabel="Delete"
+          title="Move to Trash"
+          message="Move this proposal to the Trash? You can restore it within 30 days."
+          confirmLabel="Move to Trash"
           onConfirm={() => {
+            const id = pendingDeleteId;
             void (async () => {
               try {
-                await deleteProposal(pendingDeleteId);
-                setProposals((prev) => prev.filter((p) => p.id !== pendingDeleteId));
+                await deleteProposal(id);
+                setProposals((prev) => prev.filter((p) => p.id !== id));
+                await refreshTrash();
+                notify("success", "Moved to Trash.");
               } catch {
                 notify("error", "Delete failed.");
               }

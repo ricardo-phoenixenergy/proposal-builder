@@ -102,6 +102,9 @@ export interface Repository {
   restoreProposal(id: string): Promise<boolean>;
   /** Permanently delete a proposal AND its versions (hard delete). False if unknown. */
   purgeProposal(id: string): Promise<boolean>;
+  /** Scheduled cleanup: hard-delete all trash whose deletedAt is before `olderThan`.
+   *  Returns the number of proposals purged (their versions go too). */
+  purgeExpiredTrash(olderThan: Date): Promise<number>;
 
   listVersions(proposalId: string): Promise<ProposalVersion[]>;
   /** Capture the proposal's current document as an immutable version (export snapshot). */

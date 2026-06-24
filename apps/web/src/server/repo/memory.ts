@@ -145,6 +145,19 @@ export function createMemoryRepo(): Repository {
       return proposals.delete(id);
     },
 
+    async purgeExpiredTrash(olderThan) {
+      const cutoff = olderThan.toISOString();
+      let purged = 0;
+      for (const p of [...proposals.values()]) {
+        if (p.deletedAt !== null && p.deletedAt < cutoff) {
+          versions.delete(p.id);
+          proposals.delete(p.id);
+          purged++;
+        }
+      }
+      return purged;
+    },
+
     async listVersions(proposalId) {
       return clone(versions.get(proposalId) ?? []);
     },
