@@ -7,7 +7,8 @@ import { ExecutiveSummaryBanner } from "../components/sections/ExecutiveSummaryB
 import { TextSection } from "../components/sections/TextSection";
 import { ComparisonMatrix } from "../components/sections/ComparisonMatrix";
 import { DataTable } from "../components/sections/DataTable";
-import { ChartView, type ChartKind } from "../components/charts/ChartView";
+import { ChartView } from "../components/charts/ChartView";
+import { CHART_VARIANTS } from "../print/clientPaint";
 
 export type ComponentRegistry = Map<string, RegisteredVariant>;
 
@@ -44,7 +45,7 @@ registerVariant(defaultRegistry, "commercial_comparison", "table", {
 
 // data_table: one dataset rendered as a table or any chart type (§6.2).
 registerVariant(defaultRegistry, "data_table", "table", { component: DataTable, schemaVersion: 1 });
-for (const kind of ["bar", "line", "pie", "area"] as ChartKind[]) {
+for (const kind of CHART_VARIANTS) {
   const Chart = (props: SectionComponentProps) => <ChartView {...props} kind={kind} />;
   Chart.displayName = `ChartView(${kind})`;
   registerVariant(defaultRegistry, "data_table", kind, { component: Chart, schemaVersion: 1 });
