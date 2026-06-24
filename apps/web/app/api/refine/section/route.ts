@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { checkGenerationInput } from "@proposal/shared";
 import { generateSection } from "../../../../src/server/generateSection";
 import { anthropicCreateMessage } from "../../../../src/server/anthropic";
 import { requireOwner } from "../../../../src/server/auth/guard";
@@ -28,6 +29,9 @@ export async function POST(request: Request): Promise<Response> {
     data?: unknown;
     sectionId?: string;
   };
+
+  const limitError = checkGenerationInput({ instruction, ...(data !== undefined ? { data } : {}) });
+  if (limitError) return NextResponse.json({ error: limitError }, { status: 400 });
 
   const model = await getActiveModel();
 
