@@ -42,6 +42,7 @@ export function PromptDialog({
             disabled={trimmed === ""}
             onClick={() => {
               onConfirm(trimmed);
+              onClose();
             }}
           >
             {confirmLabel}

@@ -6,7 +6,7 @@ import { PromptDialog } from "../ui/PromptDialog";
 afterEach(cleanup);
 
 describe("ConfirmDialog", () => {
-  it("fires onConfirm then is dismissible via Cancel", () => {
+  it("self-closes on confirm: fires onConfirm then onClose", () => {
     const onConfirm = vi.fn();
     const onClose = vi.fn();
     render(
@@ -20,8 +20,16 @@ describe("ConfirmDialog", () => {
     expect(screen.getByText("This cannot be undone.")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /confirm|delete|ok/i }));
     expect(onConfirm).toHaveBeenCalledOnce();
+    expect(onClose).toHaveBeenCalledOnce(); // self-closes so callers only wire onClose to clear state
+  });
+
+  it("dismisses via Cancel without confirming", () => {
+    const onConfirm = vi.fn();
+    const onClose = vi.fn();
+    render(<ConfirmDialog title="Delete?" message="msg" onConfirm={onConfirm} onClose={onClose} />);
     fireEvent.click(screen.getByRole("button", { name: /cancel/i }));
     expect(onClose).toHaveBeenCalledOnce();
+    expect(onConfirm).not.toHaveBeenCalled();
   });
 });
 

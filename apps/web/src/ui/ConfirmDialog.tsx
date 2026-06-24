@@ -22,7 +22,14 @@ export function ConfirmDialog({
           <button type="button" className="btn btn--ghost" onClick={onClose}>
             Cancel
           </button>
-          <button type="button" className="btn btn--primary" onClick={onConfirm}>
+          <button
+            type="button"
+            className="btn btn--primary"
+            onClick={() => {
+              onConfirm();
+              onClose();
+            }}
+          >
             {confirmLabel}
           </button>
         </div>
