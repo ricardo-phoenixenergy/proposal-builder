@@ -27,7 +27,7 @@ describe("FieldArea", () => {
         selectedIndex={0}
         typeSchema={typeSchema}
         template={template}
-        busy={false}
+        busyFields={new Set()}
         fieldInstr={{}}
         setFieldInstr={vi.fn()}
         setField={vi.fn()}
@@ -51,7 +51,7 @@ describe("FieldArea", () => {
         selectedIndex={0}
         typeSchema={typeSchema}
         template={template}
-        busy={false}
+        busyFields={new Set()}
         fieldInstr={{}}
         setFieldInstr={vi.fn()}
         setField={vi.fn()}
@@ -76,7 +76,7 @@ describe("FieldArea", () => {
         selectedIndex={0}
         typeSchema={typeSchema}
         template={template}
-        busy={false}
+        busyFields={new Set()}
         fieldInstr={{}}
         setFieldInstr={vi.fn()}
         setField={vi.fn()}
@@ -89,10 +89,11 @@ describe("FieldArea", () => {
     expect(screen.getAllByRole("button", { name: /rewrite field/i }).length).toBeGreaterThan(0);
   });
 
-  it("disables Rewrite field button when busy=true", () => {
+  it("disables Rewrite field button when all fields are in busyFields", () => {
     const section = sampleProposal.sections[0]! as Section;
     const typeSchema = getSectionType(section.type) as SectionTypeSchema;
     const template = openTemplate as Template;
+    const allAiFieldKeys = typeSchema.fields.map((f) => f.key);
 
     render(
       <FieldArea
@@ -100,7 +101,7 @@ describe("FieldArea", () => {
         selectedIndex={0}
         typeSchema={typeSchema}
         template={template}
-        busy={true}
+        busyFields={new Set(allAiFieldKeys)}
         fieldInstr={{}}
         setFieldInstr={vi.fn()}
         setField={vi.fn()}

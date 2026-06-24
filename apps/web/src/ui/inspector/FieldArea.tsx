@@ -13,7 +13,7 @@ export function FieldArea({
   selectedIndex,
   typeSchema,
   template,
-  busy,
+  busyFields,
   fieldInstr,
   setFieldInstr,
   setField,
@@ -23,7 +23,7 @@ export function FieldArea({
   selectedIndex: number;
   typeSchema: SectionTypeSchema;
   template: Template;
-  busy: boolean;
+  busyFields: Set<string>;
   fieldInstr: Record<string, string>;
   setFieldInstr: Dispatch<SetStateAction<Record<string, string>>>;
   setField: (key: string, value: unknown) => void;
@@ -133,7 +133,7 @@ export function FieldArea({
                 <button
                   type="button"
                   className="btn btn--ghost"
-                  disabled={busy}
+                  disabled={busyFields.has(field.key)}
                   onClick={() => rewriteField(field.key)}
                 >
                   Rewrite field

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { UserSummary } from "../../server/repo/types";
 import { createUser, fetchUsers, setUserPassword, updateUser } from "../../client/users";
 import { useProposalStore } from "../../state/proposalStore";
+import { PromptDialog } from "../PromptDialog";
 
 export function UsersView({ currentUserId }: { currentUserId: string }) {
   const notify = useProposalStore((s) => s.notify);
@@ -11,6 +12,7 @@ export function UsersView({ currentUserId }: { currentUserId: string }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [makeAdmin, setMakeAdmin] = useState(false);
+  const [pendingPwUser, setPendingPwUser] = useState<string | null>(null);
 
   useEffect(() => {
     void (async () => {
@@ -48,15 +50,8 @@ export function UsersView({ currentUserId }: { currentUserId: string }) {
     }
   };
 
-  const onSetPassword = async (id: string) => {
-    const pw = window.prompt("New password (minimum 8 characters)");
-    if (pw === null) return;
-    try {
-      await setUserPassword(id, pw);
-      notify("success", "Password updated.");
-    } catch (err) {
-      notify("error", err instanceof Error ? err.message : "Update failed");
-    }
+  const onSetPassword = (id: string) => {
+    setPendingPwUser(id);
   };
 
   if (users === null) {
@@ -149,6 +144,24 @@ export function UsersView({ currentUserId }: { currentUserId: string }) {
           );
         })}
       </ul>
+      {pendingPwUser ? (
+        <PromptDialog
+          title="Set password"
+          label="New password"
+          confirmLabel="Set password"
+          onConfirm={(pw) => {
+            void (async () => {
+              try {
+                await setUserPassword(pendingPwUser, pw);
+                notify("success", "Password updated.");
+              } catch (err) {
+                notify("error", err instanceof Error ? err.message : "Update failed");
+              }
+            })();
+          }}
+          onClose={() => setPendingPwUser(null)}
+        />
+      ) : null}
     </div>
   );
 }

@@ -33,7 +33,8 @@ export function SectionPane() {
   const setPageBreakBefore = useProposalStore((s) => s.setPageBreakBefore);
   const notify = useProposalStore((s) => s.notify);
 
-  const [busy, setBusy] = useState(false);
+  const [sectionBusy, setSectionBusy] = useState(false);
+  const [fieldBusy, setFieldBusy] = useState<Set<string>>(new Set());
   const [sectionInstruction, setSectionInstruction] = useState("");
   const [fieldInstr, setFieldInstr] = useState<Record<string, string>>({});
 
@@ -55,14 +56,14 @@ export function SectionPane() {
   };
 
   const rewriteSection = async () => {
-    setBusy(true);
+    setSectionBusy(true);
     const result = await requestSectionGeneration({
       type: section.type,
       brief,
       instruction: sectionInstruction,
       sectionId: section.id,
     });
-    setBusy(false);
+    setSectionBusy(false);
     if (result.ok && result.data) {
       setSectionData(section.id, { ...section.data, ...result.data }); // merge: keep data/manual fields
       notify("success", "Section rewritten.");
@@ -72,7 +73,7 @@ export function SectionPane() {
   };
 
   const rewriteField = async (key: string) => {
-    setBusy(true);
+    setFieldBusy((prev) => new Set(prev).add(key));
     const current = typeof section.data[key] === "string" ? section.data[key] : "";
     const result = await requestFieldGeneration({
       type: section.type,
@@ -82,7 +83,11 @@ export function SectionPane() {
       currentValue: current,
       sectionId: section.id,
     });
-    setBusy(false);
+    setFieldBusy((prev) => {
+      const next = new Set(prev);
+      next.delete(key);
+      return next;
+    });
     if (result.ok) {
       setField(key, result.value);
       notify("success", "Field rewritten.");
@@ -141,10 +146,10 @@ export function SectionPane() {
           <button
             type="button"
             className="btn btn--primary"
-            disabled={busy}
+            disabled={sectionBusy}
             onClick={() => void rewriteSection()}
           >
-            {busy ? "Working…" : "Rewrite section with AI"}
+            {sectionBusy ? "Working…" : "Rewrite section with AI"}
           </button>
         </div>
       ) : null}
@@ -155,7 +160,7 @@ export function SectionPane() {
         selectedIndex={selectedIndex}
         typeSchema={typeSchema}
         template={template}
-        busy={busy}
+        busyFields={fieldBusy}
         fieldInstr={fieldInstr}
         setFieldInstr={setFieldInstr}
         setField={setField}
