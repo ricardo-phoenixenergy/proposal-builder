@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import type { StoredProposal } from "../repo/types";
+import type { StoredProposal, WorkspaceRole } from "../repo/types";
 import { getRepo } from "../repo";
 import { getOwner } from "./owner";
 import { getSessionUser } from "./sessionUser";
+import { roleAtLeast } from "./roles";
 
 /** Resolve the signed-in owner, or a 401 Response to return from the handler. */
 export async function requireOwner(): Promise<string | Response> {
@@ -19,38 +20,44 @@ export async function requireAdmin(): Promise<string | Response> {
 }
 
 /**
- * Load a proposal owned by the signed-in user, or a Response to return:
- * 401 when unauthenticated, 404 when missing OR owned by someone else
- * (a 404 rather than 403 so we never leak that the id exists).
+ * Authorise the acting user for a proposal (Theme 1b + 2):
+ * - 401 when unauthenticated
+ * - 404 when missing, on the wrong side of the trash, or NOT a workspace member
+ *   (a non-member must not learn the id exists)
+ * - 403 when a member whose role is below `minRole`
+ * Otherwise returns the proposal.
  */
-async function canAccess(stored: StoredProposal | null, userId: string): Promise<boolean> {
-  // 1b: access is workspace membership, not ownership. workspace_id is always
-  // populated (backfilled + write paths); a null is treated as inaccessible.
-  if (!stored?.workspaceId) return false;
-  return getRepo().isWorkspaceMember(stored.workspaceId, userId);
-}
-
-export async function requireOwnedProposal(id: string): Promise<StoredProposal | Response> {
-  const owner = await getOwner();
-  if (!owner) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+async function authorizeProposal(
+  id: string,
+  opts: { trashed: boolean; minRole: WorkspaceRole },
+): Promise<StoredProposal | Response> {
+  const userId = await getOwner();
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const notFound = NextResponse.json({ error: "Not found" }, { status: 404 });
   const stored = await getRepo().getProposal(id);
-  // A trashed proposal is invisible to the normal edit/read surface (404, not 403):
-  // it's reachable only via the restore/purge routes. Non-members get 404 (no leak).
-  if (!stored || stored.deletedAt !== null || !(await canAccess(stored, owner)))
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!stored || !stored.workspaceId) return notFound;
+  // Trashed proposals are reachable only via restore/purge, live ones only via the
+  // normal surface — a mismatch is a 404, not a leak.
+  if (opts.trashed ? stored.deletedAt === null : stored.deletedAt !== null) return notFound;
+  const role = await getRepo().getWorkspaceRole(stored.workspaceId, userId);
+  if (role === null) return notFound; // not a member
+  if (!roleAtLeast(role, opts.minRole))
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   return stored;
 }
 
-/**
- * Load a TRASHED proposal the signed-in user can access (for restore/purge), or a
- * Response: 401 unauthenticated, 404 when missing, not a workspace member, or not
- * in the trash.
- */
-export async function requireTrashedProposal(id: string): Promise<StoredProposal | Response> {
-  const owner = await getOwner();
-  if (!owner) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const stored = await getRepo().getProposal(id);
-  if (!stored || stored.deletedAt === null || !(await canAccess(stored, owner)))
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
-  return stored;
+/** Active (non-trashed) proposal the user may access; `minRole` gates mutations (Theme 2). */
+export function requireOwnedProposal(
+  id: string,
+  minRole: WorkspaceRole = "viewer",
+): Promise<StoredProposal | Response> {
+  return authorizeProposal(id, { trashed: false, minRole });
+}
+
+/** Trashed proposal the user may access (restore/purge); editor+ by default. */
+export function requireTrashedProposal(
+  id: string,
+  minRole: WorkspaceRole = "editor",
+): Promise<StoredProposal | Response> {
+  return authorizeProposal(id, { trashed: true, minRole });
 }

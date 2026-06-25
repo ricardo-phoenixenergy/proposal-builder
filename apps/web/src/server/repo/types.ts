@@ -167,6 +167,10 @@ export interface Repository {
   listUserWorkspaces(userId: string): Promise<WorkspaceMembership[]>;
   /** Whether a user is a member of a workspace — the 1b access-control check. */
   isWorkspaceMember(workspaceId: string, userId: string): Promise<boolean>;
+  /** The user's role in a workspace, or null if not a member (Theme 2 RBAC). */
+  getWorkspaceRole(workspaceId: string, userId: string): Promise<WorkspaceRole | null>;
+  /** Add or update a member's role in a workspace (idempotent upsert, Theme 2). */
+  addWorkspaceMember(workspaceId: string, userId: string, role: WorkspaceRole): Promise<void>;
 
   /** Builder (§11). Authored section-type rows; null definition = built-in overlay. */
   listSectionTypeRows(): Promise<SectionTypeRow[]>;

@@ -15,7 +15,7 @@ export async function GET(_request: Request, { params }: Ctx): Promise<Response>
 
 export async function PUT(request: Request, { params }: Ctx): Promise<Response> {
   const { id } = await params;
-  const owned = await requireOwnedProposal(id);
+  const owned = await requireOwnedProposal(id, "editor");
   if (owned instanceof Response) return owned;
   const document = (await request.json().catch(() => null)) as ProposalDocument | null;
   if (!document || typeof document !== "object" || !Array.isArray(document.sections)) {
@@ -29,7 +29,7 @@ export async function PUT(request: Request, { params }: Ctx): Promise<Response> 
 
 export async function DELETE(_request: Request, { params }: Ctx): Promise<Response> {
   const { id } = await params;
-  const owned = await requireOwnedProposal(id);
+  const owned = await requireOwnedProposal(id, "editor");
   if (owned instanceof Response) return owned;
   const ok = await getRepo().deleteProposal(id);
   return ok
@@ -40,7 +40,7 @@ export async function DELETE(_request: Request, { params }: Ctx): Promise<Respon
 /** PATCH — rename (title) and/or move (folderId). Owner-scoped. */
 export async function PATCH(request: Request, { params }: Ctx): Promise<Response> {
   const { id } = await params;
-  const owned = await requireOwnedProposal(id);
+  const owned = await requireOwnedProposal(id, "editor");
   if (owned instanceof Response) return owned;
 
   const body = (await request.json().catch(() => null)) as {
