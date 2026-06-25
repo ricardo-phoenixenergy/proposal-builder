@@ -22,6 +22,7 @@ import { NewProposalDialog } from "./NewProposalDialog";
 import { SignOutButton } from "../SignOutButton";
 import { ConfirmDialog } from "../ConfirmDialog";
 import { PromptDialog } from "../PromptDialog";
+import { ShareDialog } from "../ShareDialog";
 
 type Sort = "recent" | "title";
 
@@ -44,6 +45,7 @@ export function Dashboard({
   const [showNew, setShowNew] = useState(false);
   const [pendingRename, setPendingRename] = useState<{ id: string; current: string } | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [pendingShare, setPendingShare] = useState<{ id: string; title: string } | null>(null);
 
   const refresh = async () => {
     try {
@@ -124,6 +126,9 @@ export function Dashboard({
     },
     onRename: (id: string, current: string) => {
       setPendingRename({ id, current });
+    },
+    onShare: (id: string, title: string) => {
+      setPendingShare({ id, title });
     },
     onMove: async (id: string, folderId: string | null) => {
       try {
@@ -214,6 +219,13 @@ export function Dashboard({
         </main>
       </div>
       {showNew ? <NewProposalDialog folders={folders} onClose={() => setShowNew(false)} /> : null}
+      {pendingShare ? (
+        <ShareDialog
+          proposalId={pendingShare.id}
+          title={pendingShare.title}
+          onClose={() => setPendingShare(null)}
+        />
+      ) : null}
       {pendingRename ? (
         <PromptDialog
           title="Rename proposal"
