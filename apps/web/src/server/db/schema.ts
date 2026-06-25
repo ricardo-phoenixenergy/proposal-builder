@@ -1,6 +1,28 @@
-import { boolean, index, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { boolean, index, jsonb, pgTable, primaryKey, text, timestamp } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import type { ProposalDocument, Template, ThemeTokens } from "@proposal/shared";
+
+/** Tenancy (Theme 1). A workspace owns proposals/folders/themes; users join via
+ *  workspace_members. Personal workspaces are 1:1 with a user (id = `ws_<userId>`). */
+export const workspaces = pgTable("workspaces", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const workspaceMembers = pgTable(
+  "workspace_members",
+  {
+    workspaceId: text("workspace_id").notNull(),
+    userId: text("user_id").notNull(),
+    role: text("role").notNull().default("editor"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.workspaceId, t.userId] }),
+    index("workspace_members_user_id_idx").on(t.userId),
+  ],
+);
 
 /** §12 data model. Content/structure/presentation kept intact as JSONB. */
 export const folders = pgTable(
@@ -8,6 +30,7 @@ export const folders = pgTable(
   {
     id: text("id").primaryKey(),
     ownerId: text("owner_id").notNull(),
+    workspaceId: text("workspace_id"), // Theme 1: nullable until the 1b cutover
     name: text("name").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -19,6 +42,7 @@ export const proposals = pgTable(
   {
     id: text("id").primaryKey(),
     ownerId: text("owner_id").notNull(),
+    workspaceId: text("workspace_id"), // Theme 1: nullable until the 1b cutover
     folderId: text("folder_id"),
     document: jsonb("document").$type<ProposalDocument>().notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -51,6 +75,7 @@ export const themes = pgTable(
   {
     id: text("id").primaryKey(),
     ownerId: text("owner_id").notNull(),
+    workspaceId: text("workspace_id"), // Theme 1: nullable until the 1b cutover
     tokens: jsonb("tokens").$type<ThemeTokens>().notNull(),
   },
   (t) => [index("themes_owner_id_idx").on(t.ownerId)],

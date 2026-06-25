@@ -16,6 +16,21 @@ export interface StoredProposal {
   updatedAt: string;
   /** Soft-delete (4a): null = live; ISO timestamp = in the trash, recoverable. */
   deletedAt: string | null;
+  /** Owning workspace (Theme 1). Populated on write; reads are still owner-scoped
+   *  in 1a (shadow data) until the 1b cutover. Nullable until backfill is verified. */
+  workspaceId: string | null;
+}
+
+/** Workspace roles (Theme 1/2). Enforced server-side in Theme 2. */
+export type WorkspaceRole = "admin" | "editor" | "viewer";
+export interface Workspace {
+  id: string;
+  name: string;
+  createdAt: string;
+}
+export interface WorkspaceMembership {
+  workspace: Workspace;
+  role: WorkspaceRole;
 }
 export interface ProposalVersion {
   id: string;
@@ -27,6 +42,7 @@ export interface StoredTheme {
   id: string;
   ownerId: string;
   tokens: ThemeTokens;
+  workspaceId: string | null;
 }
 export interface TemplateRow {
   id: string;
@@ -65,6 +81,7 @@ export interface Folder {
   ownerId: string;
   name: string;
   createdAt: string;
+  workspaceId: string | null;
 }
 
 export interface SectionTypeRow {
@@ -145,6 +162,9 @@ export interface Repository {
   ): Promise<UserSummary | null>;
   setUserPassword(id: string, passwordHash: string): Promise<boolean>;
   countActiveAdmins(): Promise<number>;
+
+  /** Workspaces a user belongs to, with their role (Theme 1). */
+  listUserWorkspaces(userId: string): Promise<WorkspaceMembership[]>;
 
   /** Builder (§11). Authored section-type rows; null definition = built-in overlay. */
   listSectionTypeRows(): Promise<SectionTypeRow[]>;
