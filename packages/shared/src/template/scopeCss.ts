@@ -217,14 +217,20 @@ function isAllowedUrl(url: string): boolean {
 // ---------------------------------------------------------------------------
 
 function scopeSelector(selectorStr: string, scope: string): string {
+  // Use postcss-selector-parser only to split the selector list correctly
+  // (so commas inside :is()/:has() are not split), then string-prepend scope.
+  const scopedParts: string[] = [];
+
   const transform = selectorParser((selectors) => {
     selectors.each((selector) => {
-      // Prepend `${scope} ` as a tag + descendant-combinator before the first node
-      const scopeNode = selectorParser.tag({ value: scope });
-      const space = selectorParser.combinator({ value: " " });
-      selector.prepend(space);
-      selector.prepend(scopeNode);
+      // Serialize this top-level selector to its string form
+      const selectorString = selector.toString().trim();
+      // Prepend the scope + space
+      scopedParts.push(`${scope} ${selectorString}`);
     });
   });
-  return transform.processSync(selectorStr);
+
+  // Run the parser to populate scopedParts, then join the results
+  transform.processSync(selectorStr);
+  return scopedParts.join(",");
 }
