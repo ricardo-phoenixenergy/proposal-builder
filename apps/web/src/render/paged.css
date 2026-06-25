@@ -37,26 +37,16 @@
   }
   .paged-document[data-page-mode="slides"] .paged-slide {
     background: var(--c-surface);
-    box-shadow: 0 1px 8px rgba(0, 0, 0, 0.12);
+    box-shadow:
+      0 1px 8px rgba(0, 0, 0, 0.12),
+      0 0 0 1px var(--c-line);
+    margin-bottom: 16px;
   }
-}
 
-/* Slide boundary + gap (editor preview only — print is clean). */
-.paged-slide {
-  box-shadow: 0 0 0 1px var(--c-line);
-  margin-bottom: 16px;
-  background: #fff;
-}
-@media print {
-  .paged-slide {
-    box-shadow: none;
-    margin-bottom: 0;
+  /* Report mode: visible break marker before manually-paged sections (editor-only). */
+  .paged-document[data-page-mode="report"] .paged-section[data-page-break-before="true"] {
+    border-top: 1px dashed var(--c-line);
+    margin-top: 16px;
+    padding-top: 16px;
   }
-}
-
-/* Report mode: visible break marker before manually-paged sections. */
-.paged-document[data-page-mode="report"] .paged-section[data-page-break-before="true"] {
-  border-top: 1px dashed var(--c-line);
-  margin-top: 16px;
-  padding-top: 16px;
 }
