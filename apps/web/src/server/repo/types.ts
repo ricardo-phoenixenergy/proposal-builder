@@ -76,6 +76,27 @@ export class DuplicateEmailError extends Error {
   }
 }
 
+/** A recorded audit event (Theme 3). */
+export interface AuditEvent {
+  id: string;
+  workspaceId: string | null;
+  actorUserId: string;
+  action: string;
+  targetType: string | null;
+  targetId: string | null;
+  detail: Record<string, unknown> | null;
+  createdAt: string;
+}
+/** Fields supplied when recording an event; id/createdAt are assigned by the repo. */
+export interface AuditEventInput {
+  workspaceId?: string | null;
+  actorUserId: string;
+  action: string;
+  targetType?: string;
+  targetId?: string;
+  detail?: Record<string, unknown>;
+}
+
 export interface Folder {
   id: string;
   ownerId: string;
@@ -171,6 +192,11 @@ export interface Repository {
   getWorkspaceRole(workspaceId: string, userId: string): Promise<WorkspaceRole | null>;
   /** Add or update a member's role in a workspace (idempotent upsert, Theme 2). */
   addWorkspaceMember(workspaceId: string, userId: string, role: WorkspaceRole): Promise<void>;
+
+  /** Append an audit event (Theme 3). */
+  recordAuditEvent(event: AuditEventInput): Promise<void>;
+  /** Audit events for a workspace, newest first (admin view). */
+  listAuditEvents(workspaceId: string, opts?: { limit?: number }): Promise<AuditEvent[]>;
 
   /** Builder (§11). Authored section-type rows; null definition = built-in overlay. */
   listSectionTypeRows(): Promise<SectionTypeRow[]>;

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getRepo } from "../../../../../src/server/repo";
 import { requireTrashedProposal } from "../../../../../src/server/auth/guard";
+import { audit } from "../../../../../src/server/audit";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -10,7 +11,12 @@ export async function POST(_request: Request, { params }: Ctx): Promise<Response
   const trashed = await requireTrashedProposal(id);
   if (trashed instanceof Response) return trashed;
   const ok = await getRepo().restoreProposal(id);
-  return ok
-    ? NextResponse.json({ ok: true })
-    : NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!ok) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  await audit({
+    action: "proposal.restored",
+    workspaceId: trashed.workspaceId,
+    targetType: "proposal",
+    targetId: id,
+  });
+  return NextResponse.json({ ok: true });
 }

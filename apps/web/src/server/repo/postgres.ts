@@ -13,6 +13,7 @@ import {
   users,
   workspaces,
   workspaceMembers,
+  auditEvents,
 } from "../db/schema";
 import type {
   Folder,
@@ -449,6 +450,37 @@ export function createPostgresRepo(): Repository {
           target: [workspaceMembers.workspaceId, workspaceMembers.userId],
           set: { role },
         });
+    },
+
+    async recordAuditEvent(event) {
+      await db.insert(auditEvents).values({
+        id: uid("evt"),
+        workspaceId: event.workspaceId ?? null,
+        actorUserId: event.actorUserId,
+        action: event.action,
+        targetType: event.targetType ?? null,
+        targetId: event.targetId ?? null,
+        detail: event.detail ?? null,
+      });
+    },
+
+    async listAuditEvents(workspaceId, opts) {
+      const rows = await db
+        .select()
+        .from(auditEvents)
+        .where(eq(auditEvents.workspaceId, workspaceId))
+        .orderBy(desc(auditEvents.createdAt))
+        .limit(opts?.limit ?? 200);
+      return rows.map((r) => ({
+        id: r.id,
+        workspaceId: r.workspaceId ?? null,
+        actorUserId: r.actorUserId,
+        action: r.action,
+        targetType: r.targetType ?? null,
+        targetId: r.targetId ?? null,
+        detail: r.detail ?? null,
+        createdAt: r.createdAt.toISOString(),
+      }));
     },
 
     async getUserById(id) {

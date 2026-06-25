@@ -1,6 +1,7 @@
 import { isSelectableModel, type GenerationModelId } from "@proposal/shared";
 import type { ThemeTokens } from "@proposal/shared";
 import type {
+  AuditEvent,
   Folder,
   ProposalSummary,
   ProposalVersion,
@@ -48,6 +49,7 @@ export function createMemoryRepo(): Repository {
   const folders = new Map<string, Folder>(); // keyed by folder id
   const workspaces = new Map<string, Workspace>(); // keyed by workspace id
   const workspaceMembers: { workspaceId: string; userId: string; role: WorkspaceRole }[] = [];
+  const auditEvents: AuditEvent[] = [];
   let aiModel: GenerationModelId | null = null;
   const sectionLayoutRows = new Map<string, import("@proposal/shared").SectionLayout>();
   const layoutKey = (type: string, variant: string, pageFormat: string) =>
@@ -305,6 +307,27 @@ export function createMemoryRepo(): Repository {
       );
       if (existing) existing.role = role;
       else workspaceMembers.push({ workspaceId, userId, role });
+    },
+
+    async recordAuditEvent(event) {
+      auditEvents.push({
+        id: uid("evt"),
+        workspaceId: event.workspaceId ?? null,
+        actorUserId: event.actorUserId,
+        action: event.action,
+        targetType: event.targetType ?? null,
+        targetId: event.targetId ?? null,
+        detail: event.detail ?? null,
+        createdAt: now(),
+      });
+    },
+
+    async listAuditEvents(workspaceId, opts) {
+      const rows = auditEvents
+        .filter((e) => e.workspaceId === workspaceId)
+        .slice()
+        .reverse(); // newest first
+      return (opts?.limit ? rows.slice(0, opts.limit) : rows).map(clone);
     },
 
     async listUsers() {

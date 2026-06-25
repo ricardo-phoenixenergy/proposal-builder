@@ -5,6 +5,7 @@ import { renderUrlToPdf } from "../../../../../src/server/pdf/renderProposalPdf"
 import { requireOwnedProposal } from "../../../../../src/server/auth/guard";
 import { mintRenderToken } from "../../../../../src/server/auth/renderToken";
 import { getMergedTemplates } from "../../../../../src/server/registry/activeTemplates";
+import { audit } from "../../../../../src/server/audit";
 
 // Puppeteer needs the Node runtime and headroom for Chromium (§ research).
 export const runtime = "nodejs";
@@ -38,6 +39,13 @@ export async function POST(request: Request, { params }: Ctx): Promise<Response>
   const token = mintRenderToken(id);
   const fmt = getPageFormat(stored.document.pageFormat);
   const pdf = await renderUrlToPdf(`${origin}/print/${id}?t=${encodeURIComponent(token)}`, fmt);
+
+  await audit({
+    action: "proposal.exported",
+    workspaceId: stored.workspaceId,
+    targetType: "proposal",
+    targetId: id,
+  });
 
   return new Response(pdf as BodyInit, {
     status: 200,

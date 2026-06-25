@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { ProposalDocument } from "@proposal/shared";
 import { getRepo } from "../../../../src/server/repo";
 import { requireOwnedProposal } from "../../../../src/server/auth/guard";
+import { audit } from "../../../../src/server/audit";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -32,9 +33,14 @@ export async function DELETE(_request: Request, { params }: Ctx): Promise<Respon
   const owned = await requireOwnedProposal(id, "editor");
   if (owned instanceof Response) return owned;
   const ok = await getRepo().deleteProposal(id);
-  return ok
-    ? new Response(null, { status: 204 })
-    : NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!ok) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  await audit({
+    action: "proposal.trashed",
+    workspaceId: owned.workspaceId,
+    targetType: "proposal",
+    targetId: id,
+  });
+  return new Response(null, { status: 204 });
 }
 
 /** PATCH — rename (title) and/or move (folderId). Owner-scoped. */
