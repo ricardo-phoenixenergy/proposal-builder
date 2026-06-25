@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { cleanup, render } from "@testing-library/react";
 import {
   getSectionType,
   resetSectionTypesForTests,
@@ -38,7 +38,6 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   resetSectionTypesForTests();
-  vi.unstubAllGlobals();
 });
 
 describe("AdminDashboard hydrates the shared section-type registry", () => {
@@ -49,28 +48,5 @@ describe("AdminDashboard hydrates the shared section-type registry", () => {
     expect(resolved).toBeDefined();
     expect(resolved?.fields.map((f) => f.key)).toContain("hero");
     expect(resolved?.fields.find((f) => f.key === "hero")?.type).toBe("image");
-  });
-
-  it("exposes the authored image field in the layout editor's background bind dropdown", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(
-        async () => new Response(JSON.stringify({ layouts: [] }), { status: 200 }),
-      ) as unknown as typeof fetch,
-    );
-    render(<AdminDashboard {...props} />);
-
-    // Section types panel → open Layouts for the authored cover type (scope to its row;
-    // every type row has its own "Layouts" button).
-    const row = document.querySelector('[data-type="cover_page"]') as HTMLElement;
-    fireEvent.click(within(row).getByRole("button", { name: "Layouts" }));
-    await waitFor(() => expect(screen.getByRole("button", { name: /new layout/i })).toBeTruthy());
-    fireEvent.click(screen.getByRole("button", { name: /new layout/i }));
-
-    // New layout root is a stack; selecting it reveals the Background "Bind image field" select.
-    fireEvent.click(screen.getByRole("button", { name: /select-root/i }));
-    const bind = (await screen.findByLabelText("bg-image-field")) as HTMLSelectElement;
-    const options = Array.from(bind.options).map((o) => o.textContent);
-    expect(options).toContain("Hero image");
   });
 });

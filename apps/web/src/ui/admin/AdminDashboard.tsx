@@ -35,11 +35,10 @@ export function AdminDashboard({
   const [panel, setPanel] = useState<Panel>("section-types");
 
   // Hydrate the shared section-type registry so getSectionType() resolves AUTHORED
-  // types in the layout editor (BlockTree/BlockStylePanel field bindings, image
-  // background binding, layout validation). The server seeds its own module instance
-  // via getMergedSectionTypes; the client bundle starts with built-ins only, so
-  // without this an authored type has no fields to bind and Save stays disabled.
-  // Re-runs when `types` changes (e.g. after creating/editing a type).
+  // types in the layout editor (field bindings, layout validation). The server seeds
+  // its own module instance via getMergedSectionTypes; the client bundle starts with
+  // built-ins only, so without this an authored type has no fields to bind and Save
+  // stays disabled. Re-runs when `types` changes (e.g. after creating/editing a type).
   useEffect(() => {
     setActiveSectionTypes(types);
   }, [types]);
