@@ -53,4 +53,9 @@ describe("interpolate", () => {
     expect(interpolate("{{#if flag}}yes{{/if}}", { flag: true })).toBe("yes");
     expect(interpolate("{{#if flag}}yes{{/if}}", {})).toBe("");
   });
+  it("does not traverse inherited/prototype properties", () => {
+    expect(interpolate("[{{constructor}}]", {})).toBe("[]");
+    expect(interpolate("[{{__proto__}}]", {})).toBe("[]");
+    expect(interpolate("[{{hasOwnProperty}}]", {})).toBe("[]");
+  });
 });

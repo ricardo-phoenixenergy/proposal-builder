@@ -16,7 +16,10 @@ function esc(v: unknown): string {
 /** Resolve a dotted path (e.g. "ds.rows") against a context object. */
 function lookup(ctx: Record<string, unknown>, path: string): unknown {
   return path.split(".").reduce<unknown>((acc, k) => {
-    if (acc != null && typeof acc === "object") return (acc as Record<string, unknown>)[k];
+    if (acc != null && typeof acc === "object") {
+      const obj = acc as Record<string, unknown>;
+      return Object.prototype.hasOwnProperty.call(obj, k) ? obj[k] : undefined;
+    }
     return undefined;
   }, ctx);
 }
