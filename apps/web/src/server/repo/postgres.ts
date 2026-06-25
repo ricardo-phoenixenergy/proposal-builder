@@ -430,6 +430,27 @@ export function createPostgresRepo(): Repository {
       return !!row;
     },
 
+    async getWorkspaceRole(workspaceId, userId) {
+      const [row] = await db
+        .select({ role: workspaceMembers.role })
+        .from(workspaceMembers)
+        .where(
+          and(eq(workspaceMembers.workspaceId, workspaceId), eq(workspaceMembers.userId, userId)),
+        )
+        .limit(1);
+      return row ? (row.role as WorkspaceRole) : null;
+    },
+
+    async addWorkspaceMember(workspaceId, userId, role) {
+      await db
+        .insert(workspaceMembers)
+        .values({ workspaceId, userId, role })
+        .onConflictDoUpdate({
+          target: [workspaceMembers.workspaceId, workspaceMembers.userId],
+          set: { role },
+        });
+    },
+
     async getUserById(id) {
       const [row] = await db.select().from(users).where(eq(users.id, id));
       return row

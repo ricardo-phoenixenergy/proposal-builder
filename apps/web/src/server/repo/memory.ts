@@ -294,6 +294,19 @@ export function createMemoryRepo(): Repository {
       return workspaceMembers.some((m) => m.workspaceId === workspaceId && m.userId === userId);
     },
 
+    async getWorkspaceRole(workspaceId, userId) {
+      const m = workspaceMembers.find((x) => x.workspaceId === workspaceId && x.userId === userId);
+      return m ? m.role : null;
+    },
+
+    async addWorkspaceMember(workspaceId, userId, role) {
+      const existing = workspaceMembers.find(
+        (m) => m.workspaceId === workspaceId && m.userId === userId,
+      );
+      if (existing) existing.role = role;
+      else workspaceMembers.push({ workspaceId, userId, role });
+    },
+
     async listUsers() {
       return [...users.values()]
         .sort((a, b) => a.createdAt.localeCompare(b.createdAt))

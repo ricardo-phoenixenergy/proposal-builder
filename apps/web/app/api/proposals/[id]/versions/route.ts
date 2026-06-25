@@ -14,7 +14,7 @@ export async function GET(_request: Request, { params }: Ctx): Promise<Response>
 
 export async function POST(_request: Request, { params }: Ctx): Promise<Response> {
   const { id } = await params;
-  const owned = await requireOwnedProposal(id);
+  const owned = await requireOwnedProposal(id, "editor");
   if (owned instanceof Response) return owned;
   const version = await getRepo().snapshotVersion(id);
   return version
