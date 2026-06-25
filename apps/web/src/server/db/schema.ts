@@ -30,11 +30,14 @@ export const folders = pgTable(
   {
     id: text("id").primaryKey(),
     ownerId: text("owner_id").notNull(),
-    workspaceId: text("workspace_id"), // Theme 1: nullable until the 1b cutover
+    workspaceId: text("workspace_id").notNull(), // Theme 1b: now the access-control key
     name: text("name").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index("folders_owner_id_idx").on(t.ownerId)],
+  (t) => [
+    index("folders_owner_id_idx").on(t.ownerId),
+    index("folders_workspace_id_idx").on(t.workspaceId),
+  ],
 );
 
 export const proposals = pgTable(
@@ -42,7 +45,7 @@ export const proposals = pgTable(
   {
     id: text("id").primaryKey(),
     ownerId: text("owner_id").notNull(),
-    workspaceId: text("workspace_id"), // Theme 1: nullable until the 1b cutover
+    workspaceId: text("workspace_id").notNull(), // Theme 1b: now the access-control key
     folderId: text("folder_id"),
     document: jsonb("document").$type<ProposalDocument>().notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -52,7 +55,10 @@ export const proposals = pgTable(
   },
   (t) => [
     index("proposals_folder_id_idx").on(t.folderId),
-    // Partial index for the hot path: the active (non-trashed) list per owner.
+    // Partial index for the active (non-trashed) list, now scoped by workspace (1b).
+    index("proposals_workspace_active_idx")
+      .on(t.workspaceId)
+      .where(sql`${t.deletedAt} is null`),
     index("proposals_owner_active_idx")
       .on(t.ownerId)
       .where(sql`${t.deletedAt} is null`),
@@ -75,10 +81,13 @@ export const themes = pgTable(
   {
     id: text("id").primaryKey(),
     ownerId: text("owner_id").notNull(),
-    workspaceId: text("workspace_id"), // Theme 1: nullable until the 1b cutover
+    workspaceId: text("workspace_id").notNull(), // Theme 1b: now the access-control key
     tokens: jsonb("tokens").$type<ThemeTokens>().notNull(),
   },
-  (t) => [index("themes_owner_id_idx").on(t.ownerId)],
+  (t) => [
+    index("themes_owner_id_idx").on(t.ownerId),
+    index("themes_workspace_id_idx").on(t.workspaceId),
+  ],
 );
 
 export const templates = pgTable("templates", {

@@ -67,12 +67,38 @@ const toUserSummary = (r: UserRow): UserSummary => ({
 export function createPostgresRepo(): Repository {
   const db = getDb();
 
+  // Theme 1: every owner has a personal workspace they admin. Idempotent — also
+  // called from the write paths so membership-scoped reads stay self-consistent.
+  const ensurePersonalWorkspace = async (userId: string): Promise<string> => {
+    const wsId = personalWorkspaceId(userId);
+    await db
+      .insert(workspaces)
+      .values({ id: wsId, name: "Personal workspace" })
+      .onConflictDoNothing();
+    await db
+      .insert(workspaceMembers)
+      .values({ workspaceId: wsId, userId, role: "admin" })
+      .onConflictDoNothing();
+    return wsId;
+  };
+  // Workspace ids the acting user belongs to (1b: the access-control scope).
+  const memberWorkspaces = (userId: string) =>
+    db
+      .select({ id: workspaceMembers.workspaceId })
+      .from(workspaceMembers)
+      .where(eq(workspaceMembers.userId, userId));
+
   return {
-    async listProposals(ownerId) {
+    async listProposals(userId) {
       const rows = await db
         .select()
         .from(proposals)
-        .where(and(eq(proposals.ownerId, ownerId), isNull(proposals.deletedAt)));
+        .where(
+          and(
+            inArray(proposals.workspaceId, memberWorkspaces(userId)),
+            isNull(proposals.deletedAt),
+          ),
+        );
       return rows.map(toProposalSummary);
     },
 
@@ -83,7 +109,7 @@ export function createPostgresRepo(): Repository {
         .values({
           id,
           ownerId,
-          workspaceId: personalWorkspaceId(ownerId),
+          workspaceId: await ensurePersonalWorkspace(ownerId),
           document: { ...document, id },
           folderId,
         })
@@ -121,7 +147,7 @@ export function createPostgresRepo(): Repository {
         .values({
           id: newId,
           ownerId,
-          workspaceId: src.workspaceId ?? personalWorkspaceId(ownerId),
+          workspaceId: src.workspaceId ?? (await ensurePersonalWorkspace(ownerId)),
           document: { ...src.document, id: newId, title: `Copy of ${src.document.title}` },
           folderId: src.folderId,
         })
@@ -153,11 +179,16 @@ export function createPostgresRepo(): Repository {
       return updated.length > 0;
     },
 
-    async listTrashedProposals(ownerId) {
+    async listTrashedProposals(userId) {
       const rows = await db
         .select()
         .from(proposals)
-        .where(and(eq(proposals.ownerId, ownerId), isNotNull(proposals.deletedAt)))
+        .where(
+          and(
+            inArray(proposals.workspaceId, memberWorkspaces(userId)),
+            isNotNull(proposals.deletedAt),
+          ),
+        )
         .orderBy(desc(proposals.deletedAt));
       return rows.map(toProposalSummary);
     },
@@ -236,8 +267,11 @@ export function createPostgresRepo(): Repository {
       };
     },
 
-    async listThemes(ownerId) {
-      const rows = await db.select().from(themes).where(eq(themes.ownerId, ownerId));
+    async listThemes(userId) {
+      const rows = await db
+        .select()
+        .from(themes)
+        .where(inArray(themes.workspaceId, memberWorkspaces(userId)));
       return rows.map((r) => ({
         id: r.id,
         ownerId: r.ownerId,
@@ -247,7 +281,7 @@ export function createPostgresRepo(): Repository {
     },
 
     async upsertTheme(ownerId, tokens: ThemeTokens) {
-      const workspaceId = personalWorkspaceId(ownerId);
+      const workspaceId = await ensurePersonalWorkspace(ownerId);
       const [row] = await db
         .insert(themes)
         .values({ id: tokens.id, ownerId, workspaceId, tokens })
@@ -351,16 +385,7 @@ export function createPostgresRepo(): Repository {
           .insert(users)
           .values({ id: uid("user"), email: email.trim().toLowerCase(), passwordHash, isAdmin })
           .returning();
-        // Theme 1: give the new user a personal workspace they admin.
-        const wsId = personalWorkspaceId(row!.id);
-        await db
-          .insert(workspaces)
-          .values({ id: wsId, name: "Personal workspace" })
-          .onConflictDoNothing();
-        await db
-          .insert(workspaceMembers)
-          .values({ workspaceId: wsId, userId: row!.id, role: "admin" })
-          .onConflictDoNothing();
+        await ensurePersonalWorkspace(row!.id); // Theme 1: personal workspace + admin membership
         return {
           id: row!.id,
           email: row!.email,
@@ -392,6 +417,17 @@ export function createPostgresRepo(): Repository {
         workspace: { id: r.id, name: r.name, createdAt: r.createdAt.toISOString() },
         role: r.role as WorkspaceRole,
       }));
+    },
+
+    async isWorkspaceMember(workspaceId, userId) {
+      const [row] = await db
+        .select({ userId: workspaceMembers.userId })
+        .from(workspaceMembers)
+        .where(
+          and(eq(workspaceMembers.workspaceId, workspaceId), eq(workspaceMembers.userId, userId)),
+        )
+        .limit(1);
+      return !!row;
     },
 
     async getUserById(id) {
@@ -518,11 +554,11 @@ export function createPostgresRepo(): Repository {
         .filter(Boolean);
     },
 
-    async listFolders(ownerId) {
+    async listFolders(userId) {
       const rows = await db
         .select()
         .from(folders)
-        .where(eq(folders.ownerId, ownerId))
+        .where(inArray(folders.workspaceId, memberWorkspaces(userId)))
         .orderBy(folders.name);
       return rows.map<Folder>((r) => ({
         id: r.id,
@@ -539,7 +575,7 @@ export function createPostgresRepo(): Repository {
         .values({
           id: uid("fld"),
           ownerId,
-          workspaceId: personalWorkspaceId(ownerId),
+          workspaceId: await ensurePersonalWorkspace(ownerId),
           name: name.trim(),
         })
         .returning();

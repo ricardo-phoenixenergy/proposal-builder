@@ -53,10 +53,24 @@ export function createMemoryRepo(): Repository {
   const layoutKey = (type: string, variant: string, pageFormat: string) =>
     `${type}:${variant}:${pageFormat}`;
 
+  // Theme 1: every owner has a personal workspace they admin. Idempotent — also
+  // called from the write paths so membership-scoped reads stay self-consistent.
+  const ensurePersonalWorkspace = (userId: string): string => {
+    const wsId = personalWorkspaceId(userId);
+    if (!workspaces.has(wsId))
+      workspaces.set(wsId, { id: wsId, name: "Personal workspace", createdAt: now() });
+    if (!workspaceMembers.some((m) => m.workspaceId === wsId && m.userId === userId))
+      workspaceMembers.push({ workspaceId: wsId, userId, role: "admin" });
+    return wsId;
+  };
+  const userWorkspaceIds = (userId: string): Set<string> =>
+    new Set(workspaceMembers.filter((m) => m.userId === userId).map((m) => m.workspaceId));
+
   return {
-    async listProposals(ownerId) {
+    async listProposals(userId) {
+      const ws = userWorkspaceIds(userId);
       return [...proposals.values()]
-        .filter((p) => p.ownerId === ownerId && p.deletedAt === null)
+        .filter((p) => p.deletedAt === null && p.workspaceId !== null && ws.has(p.workspaceId))
         .map(toProposalSummary);
     },
 
@@ -65,7 +79,7 @@ export function createMemoryRepo(): Repository {
       const stored: StoredProposal = {
         id,
         ownerId,
-        workspaceId: personalWorkspaceId(ownerId),
+        workspaceId: ensurePersonalWorkspace(ownerId),
         document: { ...clone(document), id },
         folderId,
         createdAt: now(),
@@ -100,7 +114,7 @@ export function createMemoryRepo(): Repository {
       const stored: StoredProposal = {
         id: newId,
         ownerId,
-        workspaceId: src.workspaceId ?? personalWorkspaceId(ownerId),
+        workspaceId: src.workspaceId ?? ensurePersonalWorkspace(ownerId),
         document: { ...clone(src.document), id: newId, title: `Copy of ${src.document.title}` },
         folderId: src.folderId,
         createdAt: now(),
@@ -135,9 +149,10 @@ export function createMemoryRepo(): Repository {
       return true;
     },
 
-    async listTrashedProposals(ownerId) {
+    async listTrashedProposals(userId) {
+      const ws = userWorkspaceIds(userId);
       return [...proposals.values()]
-        .filter((p) => p.ownerId === ownerId && p.deletedAt !== null)
+        .filter((p) => p.deletedAt !== null && p.workspaceId !== null && ws.has(p.workspaceId))
         .sort((a, b) => (a.deletedAt! < b.deletedAt! ? 1 : -1))
         .map(toProposalSummary);
     },
@@ -186,15 +201,18 @@ export function createMemoryRepo(): Repository {
       return clone(version);
     },
 
-    async listThemes(ownerId) {
-      return [...themes.values()].filter((t) => t.ownerId === ownerId).map(clone);
+    async listThemes(userId) {
+      const ws = userWorkspaceIds(userId);
+      return [...themes.values()]
+        .filter((t) => t.workspaceId !== null && ws.has(t.workspaceId))
+        .map(clone);
     },
 
     async upsertTheme(ownerId, tokens: ThemeTokens) {
       const stored: StoredTheme = {
         id: tokens.id,
         ownerId,
-        workspaceId: personalWorkspaceId(ownerId),
+        workspaceId: ensurePersonalWorkspace(ownerId),
         tokens: clone(tokens),
       };
       themes.set(tokens.id, stored);
@@ -259,11 +277,7 @@ export function createMemoryRepo(): Repository {
         createdAt: now(),
       };
       users.set(normalized, stored);
-      // Theme 1: personal workspace + admin membership for the new user.
-      const wsId = personalWorkspaceId(stored.id);
-      if (!workspaces.has(wsId))
-        workspaces.set(wsId, { id: wsId, name: "Personal workspace", createdAt: now() });
-      workspaceMembers.push({ workspaceId: wsId, userId: stored.id, role: "admin" });
+      ensurePersonalWorkspace(stored.id); // Theme 1: personal workspace + admin membership
       return clone(stored);
     },
 
@@ -274,6 +288,10 @@ export function createMemoryRepo(): Repository {
           workspace: clone(workspaces.get(m.workspaceId)!),
           role: m.role,
         }));
+    },
+
+    async isWorkspaceMember(workspaceId, userId) {
+      return workspaceMembers.some((m) => m.workspaceId === workspaceId && m.userId === userId);
     },
 
     async listUsers() {
@@ -367,9 +385,10 @@ export function createMemoryRepo(): Repository {
       return [...keys];
     },
 
-    async listFolders(ownerId) {
+    async listFolders(userId) {
+      const ws = userWorkspaceIds(userId);
       return [...folders.values()]
-        .filter((f) => f.ownerId === ownerId)
+        .filter((f) => f.workspaceId !== null && ws.has(f.workspaceId))
         .sort((a, b) => a.name.localeCompare(b.name))
         .map(clone);
     },
@@ -378,7 +397,7 @@ export function createMemoryRepo(): Repository {
       const folder: Folder = {
         id: uid("fld"),
         ownerId,
-        workspaceId: personalWorkspaceId(ownerId),
+        workspaceId: ensurePersonalWorkspace(ownerId),
         name: name.trim(),
         createdAt: now(),
       };
