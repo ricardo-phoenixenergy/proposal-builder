@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { validateLayout } from "../validation/validateLayout";
-import type { SectionLayout } from "../types/layout";
+import type { Block, SectionLayout } from "../types/layout";
 import type { SectionTypeSchema } from "../types/section";
 
 const coverType: SectionTypeSchema = {
@@ -19,7 +19,7 @@ const coverType: SectionTypeSchema = {
   schemaVersion: 1,
 };
 
-const layout = (root: SectionLayout["root"]): SectionLayout => ({
+const layout = (root: Block): SectionLayout => ({
   type: "cover",
   variant: "cover",
   pageFormat: "widescreen_16_9",
@@ -114,7 +114,7 @@ describe("validateLayout", () => {
   });
 
   it("enforces a max nesting depth of 4", () => {
-    let node: SectionLayout["root"] = { kind: "heading", field: "title" };
+    let node: Block = { kind: "heading", field: "title" };
     for (let i = 0; i < 5; i++) node = { kind: "stack", children: [node] };
     const res = validateLayout(layout(node), coverType);
     expect(res.valid).toBe(false);

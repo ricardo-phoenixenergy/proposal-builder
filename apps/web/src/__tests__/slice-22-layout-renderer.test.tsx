@@ -3,7 +3,7 @@ import { cleanup, render } from "@testing-library/react";
 import { LayoutRenderer } from "../render/LayoutRenderer";
 import { defaultTheme } from "../theme/defaultTheme";
 import { setActiveSectionTypes, resetSectionTypesForTests } from "@proposal/shared";
-import type { SectionLayout, SectionTypeSchema } from "@proposal/shared";
+import type { Block, SectionLayout, SectionTypeSchema } from "@proposal/shared";
 
 const coverType: SectionTypeSchema = {
   type: "cover",
@@ -26,7 +26,7 @@ const data = {
   metrics: { columns: [{ key: "y", label: "Year", type: "text" }], rows: [{ y: "2026" }] },
 };
 
-const layout = (root: SectionLayout["root"]): SectionLayout => ({
+const layout = (root: Block): SectionLayout => ({
   type: "cover",
   variant: "cover",
   pageFormat: "widescreen_16_9",

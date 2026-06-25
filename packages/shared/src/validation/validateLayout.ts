@@ -53,11 +53,22 @@ export function validateLayout(layout: unknown, typeSchema: SectionTypeSchema): 
       errors: [{ path: "", message: "Expected a layout object", source: "app" }],
     };
   }
-  const root = (layout as { root?: unknown }).root;
+  const lay = layout as { root?: unknown; template?: unknown };
+  // Template layout: a non-empty string template is sufficient (css optional).
+  if (typeof lay.template === "string") {
+    if (lay.template.trim() === "") {
+      return {
+        valid: false,
+        errors: [{ path: "/template", message: "template is empty", source: "app" }],
+      };
+    }
+    return { valid: true, errors: [] };
+  }
+  const root = lay.root;
   if (root === undefined || root === null) {
     return {
       valid: false,
-      errors: [{ path: "/root", message: "layout.root is required", source: "app" }],
+      errors: [{ path: "/root", message: "a template or a block root is required", source: "app" }],
     };
   }
 

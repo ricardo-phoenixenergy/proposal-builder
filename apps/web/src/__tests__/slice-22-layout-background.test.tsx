@@ -2,9 +2,9 @@ import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, render } from "@testing-library/react";
 import { LayoutRenderer } from "../render/LayoutRenderer";
 import { defaultTheme } from "../theme/defaultTheme";
-import type { SectionLayout } from "@proposal/shared";
+import type { Block, SectionLayout } from "@proposal/shared";
 
-const layout = (root: SectionLayout["root"]): SectionLayout => ({
+const layout = (root: Block): SectionLayout => ({
   type: "cover",
   variant: "cover",
   pageFormat: "widescreen_16_9",

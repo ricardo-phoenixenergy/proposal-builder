@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { validateLayout } from "../validation/validateLayout";
 import { LEAF_KINDS } from "../types/layout";
-import type { SectionLayout } from "../types/layout";
+import type { Block, SectionLayout } from "../types/layout";
 import type { SectionTypeSchema } from "../types/section";
 
 const coverType: SectionTypeSchema = {
@@ -16,7 +16,7 @@ const coverType: SectionTypeSchema = {
   schemaVersion: 1,
 };
 
-const layout = (root: SectionLayout["root"]): SectionLayout => ({
+const layout = (root: Block): SectionLayout => ({
   type: "cover",
   variant: "cover",
   pageFormat: "a4_portrait",

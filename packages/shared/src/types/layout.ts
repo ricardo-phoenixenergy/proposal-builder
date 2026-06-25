@@ -95,6 +95,11 @@ export interface SectionLayout {
   variant: string; // design-identity slug
   pageFormat: string; // the page format this layout is designed for (§J)
   name: string; // display label
-  root: Block; // normally a stack
   version: number;
+  /** Template layout (current): authored HTML with {{…}} placeholders. */
+  template?: string;
+  /** Template layout: authored CSS, scoped at render time. */
+  css?: string;
+  /** Legacy block layout (read-only; no longer authored). */
+  root?: Block;
 }
