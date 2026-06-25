@@ -239,7 +239,7 @@ export function LayoutRenderer({
 }) {
   return (
     <div data-layout={`${layout.type}:${layout.variant}`}>
-      {renderBlock(layout.root, data, theme, layout.type, pageFormat, "root")}
+      {layout.root && renderBlock(layout.root, data, theme, layout.type, pageFormat, "root")}
     </div>
   );
 }

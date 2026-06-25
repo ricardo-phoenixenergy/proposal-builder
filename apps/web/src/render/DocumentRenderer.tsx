@@ -27,6 +27,9 @@ export function DocumentRenderer({
         className="paged-document"
         style={{
           width: `${fmt.widthMm}mm`,
+          ["--page-w" as string]: `${fmt.widthMm}mm`,
+          ["--page-h" as string]: `${fmt.heightMm}mm`,
+          ["--page-margin" as string]: `${fmt.marginMm}mm`,
           color: "var(--c-text)",
           fontFamily: "var(--f-body)",
           padding: slides ? 0 : "calc(56px * var(--space))",

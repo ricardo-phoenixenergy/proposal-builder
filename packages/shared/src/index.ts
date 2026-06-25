@@ -93,3 +93,8 @@ export {
 // Layout render
 export { compileBlockStyle, spaceToken } from "./render/layoutStyle";
 export { sampleDataForType } from "./render/sampleData";
+
+// Template authoring helpers (Tasks 1-3)
+export { interpolate } from "./template/interpolate";
+export { sanitizeLayoutHtml } from "./template/sanitizeLayoutHtml";
+export { scopeCss } from "./template/scopeCss";
