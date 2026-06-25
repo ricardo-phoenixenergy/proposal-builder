@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getRepo } from "../../../../../src/server/repo";
 import { requireTrashedProposal } from "../../../../../src/server/auth/guard";
+import { audit } from "../../../../../src/server/audit";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -13,7 +14,12 @@ export async function DELETE(_request: Request, { params }: Ctx): Promise<Respon
   const trashed = await requireTrashedProposal(id);
   if (trashed instanceof Response) return trashed;
   const ok = await getRepo().purgeProposal(id);
-  return ok
-    ? new Response(null, { status: 204 })
-    : NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!ok) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  await audit({
+    action: "proposal.purged",
+    workspaceId: trashed.workspaceId,
+    targetType: "proposal",
+    targetId: id,
+  });
+  return new Response(null, { status: 204 });
 }

@@ -130,6 +130,26 @@ export const sectionLayoutRows = pgTable("section_layouts", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+/** Append-only audit trail (Theme 3): who did what, where, when. workspace_id is
+ *  nullable for events without one (e.g. auth). detail holds a small JSON blob. */
+export const auditEvents = pgTable(
+  "audit_events",
+  {
+    id: text("id").primaryKey(),
+    workspaceId: text("workspace_id"),
+    actorUserId: text("actor_user_id").notNull(),
+    action: text("action").notNull(),
+    targetType: text("target_type"),
+    targetId: text("target_id"),
+    detail: jsonb("detail").$type<Record<string, unknown>>(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("audit_events_workspace_created_idx").on(t.workspaceId, t.createdAt),
+    index("audit_events_actor_idx").on(t.actorUserId),
+  ],
+);
+
 /** App-wide key/value settings (§10). Currently holds the admin-set AI model under "ai_model". */
 export const appSettings = pgTable("app_settings", {
   key: text("key").primaryKey(),
