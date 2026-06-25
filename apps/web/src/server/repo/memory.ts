@@ -7,6 +7,7 @@ import type {
   ProposalVersion,
   Repository,
   SectionTypeRow,
+  ShareLink,
   StoredProposal,
   StoredTheme,
   TemplateRow,
@@ -19,6 +20,7 @@ import type {
 import { DuplicateEmailError } from "./types";
 import { versionCap } from "./retention";
 import { personalWorkspaceId } from "./workspaceId";
+import { mintShareToken } from "../share/shareLink";
 
 const uid = (prefix: string) => `${prefix}_${crypto.randomUUID().slice(0, 8)}`;
 const now = () => new Date().toISOString();
@@ -49,6 +51,7 @@ export function createMemoryRepo(): Repository {
   const folders = new Map<string, Folder>(); // keyed by folder id
   const workspaces = new Map<string, Workspace>(); // keyed by workspace id
   const workspaceMembers: { workspaceId: string; userId: string; role: WorkspaceRole }[] = [];
+  const shareLinks = new Map<string, ShareLink>(); // keyed by token
   const auditEvents: AuditEvent[] = [];
   let aiModel: GenerationModelId | null = null;
   const sectionLayoutRows = new Map<string, import("@proposal/shared").SectionLayout>();
@@ -307,6 +310,49 @@ export function createMemoryRepo(): Repository {
       );
       if (existing) existing.role = role;
       else workspaceMembers.push({ workspaceId, userId, role });
+    },
+
+    async createShareLink(input) {
+      const link: ShareLink = {
+        token: mintShareToken(),
+        proposalId: input.proposalId,
+        workspaceId: input.workspaceId,
+        createdBy: input.createdBy,
+        allowExport: input.allowExport ?? true,
+        expiresAt: input.expiresAt ?? null,
+        revokedAt: null,
+        lastViewedAt: null,
+        createdAt: now(),
+      };
+      shareLinks.set(link.token, link);
+      return clone(link);
+    },
+
+    async listShareLinks(proposalId) {
+      // Reverse first so that links created within the same millisecond still come
+      // back newest-first (stable sort keeps insertion-desc order on equal timestamps).
+      return [...shareLinks.values()]
+        .filter((l) => l.proposalId === proposalId)
+        .reverse()
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+        .map(clone);
+    },
+
+    async getShareLink(token) {
+      const link = shareLinks.get(token);
+      return link ? clone(link) : null;
+    },
+
+    async revokeShareLink(token) {
+      const link = shareLinks.get(token);
+      if (!link || link.revokedAt !== null) return false;
+      link.revokedAt = now();
+      return true;
+    },
+
+    async touchShareLink(token) {
+      const link = shareLinks.get(token);
+      if (link) link.lastViewedAt = now();
     },
 
     async recordAuditEvent(event) {

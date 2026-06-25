@@ -105,6 +105,31 @@ export interface Folder {
   workspaceId: string | null;
 }
 
+/** A client share link (2b). `token` is the unguessable public capability. */
+export interface ShareLink {
+  token: string;
+  proposalId: string;
+  workspaceId: string | null;
+  createdBy: string;
+  /** Whether holders of this link may download the proposal as a PDF. */
+  allowExport: boolean;
+  /** ISO timestamp; null = never expires. */
+  expiresAt: string | null;
+  /** ISO timestamp; null = active. Set = dead (revocable kill-switch). */
+  revokedAt: string | null;
+  /** ISO timestamp of the most recent view; null until first viewed. */
+  lastViewedAt: string | null;
+  createdAt: string;
+}
+/** Fields supplied when minting a link; token/createdAt are assigned by the repo. */
+export interface ShareLinkInput {
+  proposalId: string;
+  workspaceId: string | null;
+  createdBy: string;
+  allowExport?: boolean;
+  expiresAt?: string | null;
+}
+
 export interface SectionTypeRow {
   type: string;
   definition: import("@proposal/shared").SectionTypeSchema | null;
@@ -192,6 +217,17 @@ export interface Repository {
   getWorkspaceRole(workspaceId: string, userId: string): Promise<WorkspaceRole | null>;
   /** Add or update a member's role in a workspace (idempotent upsert, Theme 2). */
   addWorkspaceMember(workspaceId: string, userId: string, role: WorkspaceRole): Promise<void>;
+
+  /** Client share links (2b). */
+  createShareLink(input: ShareLinkInput): Promise<ShareLink>;
+  /** All links for a proposal (newest first), including revoked/expired (for the manager UI). */
+  listShareLinks(proposalId: string): Promise<ShareLink[]>;
+  /** Resolve a link by its token, or null if unknown. State checks live in the caller. */
+  getShareLink(token: string): Promise<ShareLink | null>;
+  /** Revoke a link (sets revokedAt). False if unknown or already revoked. */
+  revokeShareLink(token: string): Promise<boolean>;
+  /** Best-effort: stamp lastViewedAt on a successful view. */
+  touchShareLink(token: string): Promise<void>;
 
   /** Append an audit event (Theme 3). */
   recordAuditEvent(event: AuditEventInput): Promise<void>;

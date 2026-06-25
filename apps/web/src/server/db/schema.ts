@@ -150,6 +150,26 @@ export const auditEvents = pgTable(
   ],
 );
 
+/** Client share links (Phase 4 / 2b). The `token` PK is an unguessable secret that
+ *  IS the capability: anyone holding it can view the proposal read-only. Persisted so
+ *  links are individually revocable (revoked_at) and may carry an optional expiry.
+ *  allow_export gates the public PDF download per link. */
+export const shareLinks = pgTable(
+  "share_links",
+  {
+    token: text("token").primaryKey(),
+    proposalId: text("proposal_id").notNull(),
+    workspaceId: text("workspace_id"),
+    createdBy: text("created_by").notNull(),
+    allowExport: boolean("allow_export").notNull().default(true),
+    expiresAt: timestamp("expires_at", { withTimezone: true }), // null = never expires
+    revokedAt: timestamp("revoked_at", { withTimezone: true }), // null = active
+    lastViewedAt: timestamp("last_viewed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("share_links_proposal_id_idx").on(t.proposalId)],
+);
+
 /** App-wide key/value settings (§10). Currently holds the admin-set AI model under "ai_model". */
 export const appSettings = pgTable("app_settings", {
   key: text("key").primaryKey(),

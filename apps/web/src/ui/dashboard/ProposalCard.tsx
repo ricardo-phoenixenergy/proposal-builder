@@ -22,6 +22,7 @@ export function ProposalCard({
   onDuplicate,
   onRename,
   onMove,
+  onShare,
   onDelete,
 }: {
   proposal: ProposalSummary;
@@ -30,6 +31,7 @@ export function ProposalCard({
   onDuplicate: (id: string) => void;
   onRename: (id: string, current: string) => void;
   onMove: (id: string, folderId: string | null) => void;
+  onShare: (id: string, title: string) => void;
   onDelete: (id: string) => void;
 }) {
   const [menu, setMenu] = useState(false);
@@ -87,6 +89,16 @@ export function ProposalCard({
             }}
           >
             Rename
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setMenu(false);
+              onShare(proposal.id, proposal.title);
+            }}
+          >
+            Share…
           </button>
           <div className="pcard__submenu">
             <span className="pcard__submenu-label">Move to</span>

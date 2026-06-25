@@ -1,0 +1,66 @@
+/* Public share viewer chrome (2b). Self-contained — this route does not load the
+   editor's global stylesheet, so it carries its own button + layout styling. */
+.share-view {
+  min-height: 100vh;
+  background: #f3f4f6;
+}
+.share-view__bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 20px;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  font-family: Inter, system-ui, sans-serif;
+}
+.share-view__title {
+  font-weight: 600;
+  font-size: 15px;
+  color: #111827;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.share-view__doc {
+  display: flex;
+  justify-content: center;
+  padding: 24px 0;
+}
+.share-view .btn {
+  font-family: Inter, system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 8px 16px;
+  cursor: pointer;
+}
+.share-view .btn--primary {
+  background: #111827;
+  color: #ffffff;
+}
+.share-view .btn--primary:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.share-unavailable {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-align: center;
+  padding: 24px;
+  font-family: Inter, system-ui, sans-serif;
+  color: #374151;
+}
+.share-unavailable h1 {
+  font-size: 20px;
+  margin: 0;
+}

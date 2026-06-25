@@ -13,6 +13,7 @@ import {
   users,
   workspaces,
   workspaceMembers,
+  shareLinks,
   auditEvents,
 } from "../db/schema";
 import type {
@@ -20,6 +21,7 @@ import type {
   ProposalSummary,
   Repository,
   SectionTypeRow,
+  ShareLink,
   StoredProposal,
   UserSummary,
   WorkspaceMembership,
@@ -28,6 +30,7 @@ import type {
 import { DuplicateEmailError } from "./types";
 import { versionCap } from "./retention";
 import { personalWorkspaceId } from "./workspaceId";
+import { mintShareToken } from "../share/shareLink";
 
 const uid = (prefix: string) => `${prefix}_${crypto.randomUUID().slice(0, 8)}`;
 
@@ -53,6 +56,19 @@ const toProposalSummary = (r: ProposalRow): ProposalSummary => ({
   client: r.document.client?.name ?? "",
   folderId: r.folderId ?? null,
   updatedAt: r.updatedAt.toISOString(),
+});
+
+type ShareLinkRow = typeof shareLinks.$inferSelect;
+const toShareLink = (r: ShareLinkRow): ShareLink => ({
+  token: r.token,
+  proposalId: r.proposalId,
+  workspaceId: r.workspaceId ?? null,
+  createdBy: r.createdBy,
+  allowExport: r.allowExport,
+  expiresAt: r.expiresAt?.toISOString() ?? null,
+  revokedAt: r.revokedAt?.toISOString() ?? null,
+  lastViewedAt: r.lastViewedAt?.toISOString() ?? null,
+  createdAt: r.createdAt.toISOString(),
 });
 
 type UserRow = typeof users.$inferSelect;
@@ -450,6 +466,51 @@ export function createPostgresRepo(): Repository {
           target: [workspaceMembers.workspaceId, workspaceMembers.userId],
           set: { role },
         });
+    },
+
+    async createShareLink(input) {
+      const [row] = await db
+        .insert(shareLinks)
+        .values({
+          token: mintShareToken(),
+          proposalId: input.proposalId,
+          workspaceId: input.workspaceId,
+          createdBy: input.createdBy,
+          allowExport: input.allowExport ?? true,
+          expiresAt: input.expiresAt ? new Date(input.expiresAt) : null,
+        })
+        .returning();
+      return toShareLink(row!);
+    },
+
+    async listShareLinks(proposalId) {
+      const rows = await db
+        .select()
+        .from(shareLinks)
+        .where(eq(shareLinks.proposalId, proposalId))
+        .orderBy(desc(shareLinks.createdAt));
+      return rows.map(toShareLink);
+    },
+
+    async getShareLink(token) {
+      const [row] = await db.select().from(shareLinks).where(eq(shareLinks.token, token));
+      return row ? toShareLink(row) : null;
+    },
+
+    async revokeShareLink(token) {
+      const [row] = await db
+        .update(shareLinks)
+        .set({ revokedAt: new Date() })
+        .where(and(eq(shareLinks.token, token), isNull(shareLinks.revokedAt)))
+        .returning();
+      return !!row;
+    },
+
+    async touchShareLink(token) {
+      await db
+        .update(shareLinks)
+        .set({ lastViewedAt: new Date() })
+        .where(eq(shareLinks.token, token));
     },
 
     async recordAuditEvent(event) {

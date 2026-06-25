@@ -16,6 +16,7 @@ export function ProposalGrid({
     onDuplicate: (id: string) => void;
     onRename: (id: string, current: string) => void;
     onMove: (id: string, folderId: string | null) => void;
+    onShare: (id: string, title: string) => void;
     onDelete: (id: string) => void;
   };
 }) {
