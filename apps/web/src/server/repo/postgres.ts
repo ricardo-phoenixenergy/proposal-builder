@@ -21,6 +21,7 @@ import type {
   UserSummary,
 } from "./types";
 import { DuplicateEmailError } from "./types";
+import { versionCap } from "./retention";
 
 const uid = (prefix: string) => `${prefix}_${crypto.randomUUID().slice(0, 8)}`;
 
@@ -201,6 +202,19 @@ export function createPostgresRepo(): Repository {
         (result as unknown as Record<string, unknown>[]);
       const row = rows[0];
       if (!row) return null;
+
+      // Retention (4c): keep only the most recent N versions for this proposal.
+      await db.execute(sql`
+        DELETE FROM proposal_versions
+        WHERE proposal_id = ${proposalId}
+          AND id NOT IN (
+            SELECT id FROM proposal_versions
+            WHERE proposal_id = ${proposalId}
+            ORDER BY created_at DESC, id DESC
+            LIMIT ${versionCap()}
+          )
+      `);
+
       return {
         id: row["id"] as string,
         proposalId: row["proposal_id"] as string,

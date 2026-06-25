@@ -13,6 +13,7 @@ import type {
   UserSummary,
 } from "./types";
 import { DuplicateEmailError } from "./types";
+import { versionCap } from "./retention";
 
 const uid = (prefix: string) => `${prefix}_${crypto.randomUUID().slice(0, 8)}`;
 const now = () => new Date().toISOString();
@@ -171,7 +172,9 @@ export function createMemoryRepo(): Repository {
         document: clone(p.document),
         createdAt: now(),
       };
-      versions.set(proposalId, [version, ...(versions.get(proposalId) ?? [])]);
+      // Newest-first, then keep only the most recent N (4c retention).
+      const next = [version, ...(versions.get(proposalId) ?? [])].slice(0, versionCap());
+      versions.set(proposalId, next);
       return clone(version);
     },
 
