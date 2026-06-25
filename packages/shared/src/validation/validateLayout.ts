@@ -1,5 +1,6 @@
 import type { ValidationError, ValidationResult } from "./result";
 import type { FieldType, SectionTypeSchema } from "../types/section";
+import { cssSyntaxError } from "../template/scopeCss";
 import {
   ALIGNS,
   CHART_KINDS,
@@ -53,14 +54,21 @@ export function validateLayout(layout: unknown, typeSchema: SectionTypeSchema): 
       errors: [{ path: "", message: "Expected a layout object", source: "app" }],
     };
   }
-  const lay = layout as { root?: unknown; template?: unknown };
-  // Template layout: a non-empty string template is sufficient (css optional).
+  const lay = layout as { root?: unknown; template?: unknown; css?: unknown };
+  // Template layout: a non-empty string template is required (css optional, but if
+  // present it must parse — malformed CSS that saves here crashes the render path).
   if (typeof lay.template === "string") {
     if (lay.template.trim() === "") {
       return {
         valid: false,
         errors: [{ path: "/template", message: "template is empty", source: "app" }],
       };
+    }
+    if (typeof lay.css === "string" && lay.css.trim() !== "") {
+      const cssErr = cssSyntaxError(lay.css);
+      if (cssErr) {
+        return { valid: false, errors: [{ path: "/css", message: cssErr, source: "app" }] };
+      }
     }
     return { valid: true, errors: [] };
   }

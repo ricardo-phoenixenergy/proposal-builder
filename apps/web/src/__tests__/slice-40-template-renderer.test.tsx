@@ -63,4 +63,25 @@ describe("template layout rendering", () => {
     expect(container.querySelector("script")).toBeNull(); // sanitized
     expect(container.querySelector('[data-layout="cover_page:hero"]')).not.toBeNull();
   });
+
+  // Robustness: an already-saved layout with malformed CSS must NOT crash the render
+  // (this is the prod crash — postcss CssSyntaxError propagated out of the server render).
+  it("renders the HTML and drops the CSS when authored CSS is malformed (no throw)", () => {
+    resetLayoutsForTests();
+    setActiveLayouts([{ ...layout, css: ".cover h1{color:red" /* unclosed */ }]);
+    const { Component } = resolveSection(
+      { id: "s2", type: "cover_page", data: { title: "Acme", hero: "https://x/y.png" } },
+      undefined,
+      "a4_portrait",
+    );
+    let container!: HTMLElement;
+    expect(() => {
+      container = render(
+        <Component data={{ title: "Acme", hero: "https://x/y.png" }} theme={defaultTheme} />,
+      ).container;
+    }).not.toThrow();
+    // Content still renders; the broken stylesheet is simply omitted.
+    expect(container.querySelector("h1")?.textContent).toBe("Acme");
+    expect(container.querySelector("style")).toBeNull();
+  });
 });

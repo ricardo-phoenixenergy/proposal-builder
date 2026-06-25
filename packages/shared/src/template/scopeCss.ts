@@ -40,10 +40,32 @@ export function scopeCss(css: string, scope: string): string {
   // Pre-sanitize: strip backslash-escaped at-rules (e.g. @\69mport) before handing
   // to postcss. These are never valid CSS and postcss throws "At-rule without name"
   // on them. Strip the entire statement up to the next semicolon or block end.
-  const preCleaned = stripEscapedAtRules(css);
-  const root = postcss.parse(preCleaned);
-  sanitizeAndScope(root, scope);
-  return root.toResult().css;
+  try {
+    const preCleaned = stripEscapedAtRules(css);
+    const root = postcss.parse(preCleaned);
+    sanitizeAndScope(root, scope);
+    return root.toResult().css;
+  } catch {
+    // Malformed authored CSS (postcss throws CssSyntaxError). Degrade to NO CSS —
+    // never the raw payload, which would bypass scoping/sanitization. A render must
+    // never throw on saved content (§ graceful degradation); the authoring gate
+    // (validateLayout → cssSyntaxError) is what surfaces the error to the author.
+    return "";
+  }
+}
+
+/**
+ * Authoring-gate check: return a human-readable message if `css` cannot be parsed,
+ * else null. scopeCss swallows parse errors at render time, so this is how the
+ * editor tells the author their CSS is broken before it is ever saved.
+ */
+export function cssSyntaxError(css: string): string | null {
+  try {
+    postcss.parse(stripEscapedAtRules(css));
+    return null;
+  } catch (e) {
+    return e instanceof Error ? e.message.split("\n")[0]! : "invalid CSS";
+  }
 }
 
 /**

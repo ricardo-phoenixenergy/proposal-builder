@@ -32,4 +32,19 @@ describe("validateLayout — template layouts", () => {
       true,
     );
   });
+
+  it("accepts a template with valid css", () => {
+    expect(
+      validateLayout({ ...base, template: "<h1>{{title}}</h1>", css: ".x{color:red}" }, type).valid,
+    ).toBe(true);
+  });
+
+  it("rejects a template whose css has a syntax error (authoring gate)", () => {
+    const result = validateLayout(
+      { ...base, template: "<h1>{{title}}</h1>", css: ".x{color:red" },
+      type,
+    );
+    expect(result.valid).toBe(false);
+    expect(result.errors.some((e) => e.path === "/css")).toBe(true);
+  });
 });
