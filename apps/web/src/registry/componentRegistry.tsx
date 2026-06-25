@@ -93,7 +93,17 @@ export function resolveSection(
     return { Component: entry.component, unstyled: false, variant };
   }
 
-  // 3. Generic fallback.
+  // 3. Generic fallback. When the type has image fields, wrap the fallback so it
+  //    renders uploaded images as actual <img> rather than their URL strings.
+  const imageFields = (typeSchema?.fields ?? []).filter((f) => f.type === "image");
+  if (imageFields.length > 0) {
+    const keys = new Set(imageFields.map((f) => f.key));
+    const Fallback = (props: SectionComponentProps) => (
+      <GenericSection {...props} imageFields={keys} />
+    );
+    Fallback.displayName = "GenericSection";
+    return { Component: Fallback, unstyled: true };
+  }
   return { Component: GenericSection, unstyled: true };
 }
 

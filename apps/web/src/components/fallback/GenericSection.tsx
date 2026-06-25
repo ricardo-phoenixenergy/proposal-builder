@@ -46,12 +46,18 @@ function DatasetTable({ dataset }: { dataset: Dataset }) {
  * no designed component still renders something on the page. Reads defensively
  * to degrade rather than crash.
  */
-export function GenericSection({ data }: SectionComponentProps) {
+export function GenericSection({
+  data,
+  imageFields,
+}: SectionComponentProps & { imageFields?: ReadonlySet<string> }) {
   return (
     <div data-fallback="true" style={{ color: "var(--c-text)", fontFamily: "var(--f-body)" }}>
       {Object.entries(data).map(([key, value]) => (
         <div key={key} data-field={key}>
-          {typeof value === "string" ? (
+          {imageFields?.has(key) && typeof value === "string" && value !== "" ? (
+            // An image field renders as an actual image, not its URL string.
+            <img src={value} alt="" style={{ maxWidth: "100%", display: "block" }} />
+          ) : typeof value === "string" ? (
             <p>{value}</p>
           ) : isDataset(value) ? (
             <DatasetTable dataset={value} />

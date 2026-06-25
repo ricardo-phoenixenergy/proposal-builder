@@ -139,6 +139,20 @@ function renderBlock(
           <ComparisonMatrix data={{ matrix: data[block.field] }} theme={theme} />
         </div>
       );
+    case "image": {
+      // Foreground image bound to an image field (§I). The field value is a URL
+      // string; an empty/missing value renders nothing (graceful, like other binds).
+      const src = asText(data[block.field]);
+      return src ? (
+        <img
+          key={k}
+          data-block="image"
+          src={src}
+          alt=""
+          style={{ maxWidth: "100%", display: "block", ...style }}
+        />
+      ) : null;
+    }
     case "logo":
       return theme.logoUrl ? (
         <img key={k} data-block="logo" src={theme.logoUrl} alt="" style={style} />
