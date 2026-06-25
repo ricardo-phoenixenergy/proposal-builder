@@ -11,9 +11,13 @@ import type {
   TemplateRow,
   StoredUser,
   UserSummary,
+  Workspace,
+  WorkspaceMembership,
+  WorkspaceRole,
 } from "./types";
 import { DuplicateEmailError } from "./types";
 import { versionCap } from "./retention";
+import { personalWorkspaceId } from "./workspaceId";
 
 const uid = (prefix: string) => `${prefix}_${crypto.randomUUID().slice(0, 8)}`;
 const now = () => new Date().toISOString();
@@ -42,6 +46,8 @@ export function createMemoryRepo(): Repository {
   const users = new Map<string, StoredUser>(); // keyed by lowercased email
   const sectionTypeRows = new Map<string, SectionTypeRow>();
   const folders = new Map<string, Folder>(); // keyed by folder id
+  const workspaces = new Map<string, Workspace>(); // keyed by workspace id
+  const workspaceMembers: { workspaceId: string; userId: string; role: WorkspaceRole }[] = [];
   let aiModel: GenerationModelId | null = null;
   const sectionLayoutRows = new Map<string, import("@proposal/shared").SectionLayout>();
   const layoutKey = (type: string, variant: string, pageFormat: string) =>
@@ -59,6 +65,7 @@ export function createMemoryRepo(): Repository {
       const stored: StoredProposal = {
         id,
         ownerId,
+        workspaceId: personalWorkspaceId(ownerId),
         document: { ...clone(document), id },
         folderId,
         createdAt: now(),
@@ -93,6 +100,7 @@ export function createMemoryRepo(): Repository {
       const stored: StoredProposal = {
         id: newId,
         ownerId,
+        workspaceId: src.workspaceId ?? personalWorkspaceId(ownerId),
         document: { ...clone(src.document), id: newId, title: `Copy of ${src.document.title}` },
         folderId: src.folderId,
         createdAt: now(),
@@ -183,7 +191,12 @@ export function createMemoryRepo(): Repository {
     },
 
     async upsertTheme(ownerId, tokens: ThemeTokens) {
-      const stored: StoredTheme = { id: tokens.id, ownerId, tokens: clone(tokens) };
+      const stored: StoredTheme = {
+        id: tokens.id,
+        ownerId,
+        workspaceId: personalWorkspaceId(ownerId),
+        tokens: clone(tokens),
+      };
       themes.set(tokens.id, stored);
       return clone(stored);
     },
@@ -246,7 +259,21 @@ export function createMemoryRepo(): Repository {
         createdAt: now(),
       };
       users.set(normalized, stored);
+      // Theme 1: personal workspace + admin membership for the new user.
+      const wsId = personalWorkspaceId(stored.id);
+      if (!workspaces.has(wsId))
+        workspaces.set(wsId, { id: wsId, name: "Personal workspace", createdAt: now() });
+      workspaceMembers.push({ workspaceId: wsId, userId: stored.id, role: "admin" });
       return clone(stored);
+    },
+
+    async listUserWorkspaces(userId) {
+      return workspaceMembers
+        .filter((m) => m.userId === userId)
+        .map<WorkspaceMembership>((m) => ({
+          workspace: clone(workspaces.get(m.workspaceId)!),
+          role: m.role,
+        }));
     },
 
     async listUsers() {
@@ -348,7 +375,13 @@ export function createMemoryRepo(): Repository {
     },
 
     async createFolder(ownerId, name) {
-      const folder: Folder = { id: uid("fld"), ownerId, name: name.trim(), createdAt: now() };
+      const folder: Folder = {
+        id: uid("fld"),
+        ownerId,
+        workspaceId: personalWorkspaceId(ownerId),
+        name: name.trim(),
+        createdAt: now(),
+      };
       folders.set(folder.id, folder);
       return clone(folder);
     },

@@ -11,6 +11,8 @@ import {
   templates,
   themes,
   users,
+  workspaces,
+  workspaceMembers,
 } from "../db/schema";
 import type {
   Folder,
@@ -19,9 +21,12 @@ import type {
   SectionTypeRow,
   StoredProposal,
   UserSummary,
+  WorkspaceMembership,
+  WorkspaceRole,
 } from "./types";
 import { DuplicateEmailError } from "./types";
 import { versionCap } from "./retention";
+import { personalWorkspaceId } from "./workspaceId";
 
 const uid = (prefix: string) => `${prefix}_${crypto.randomUUID().slice(0, 8)}`;
 
@@ -37,6 +42,7 @@ function toStored(row: ProposalRow): StoredProposal {
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
     deletedAt: row.deletedAt?.toISOString() ?? null,
+    workspaceId: row.workspaceId ?? null,
   };
 }
 
@@ -74,7 +80,13 @@ export function createPostgresRepo(): Repository {
       const id = uid("prop");
       const [row] = await db
         .insert(proposals)
-        .values({ id, ownerId, document: { ...document, id }, folderId })
+        .values({
+          id,
+          ownerId,
+          workspaceId: personalWorkspaceId(ownerId),
+          document: { ...document, id },
+          folderId,
+        })
         .returning();
       return toStored(row!);
     },
@@ -109,6 +121,7 @@ export function createPostgresRepo(): Repository {
         .values({
           id: newId,
           ownerId,
+          workspaceId: src.workspaceId ?? personalWorkspaceId(ownerId),
           document: { ...src.document, id: newId, title: `Copy of ${src.document.title}` },
           folderId: src.folderId,
         })
@@ -225,16 +238,27 @@ export function createPostgresRepo(): Repository {
 
     async listThemes(ownerId) {
       const rows = await db.select().from(themes).where(eq(themes.ownerId, ownerId));
-      return rows.map((r) => ({ id: r.id, ownerId: r.ownerId, tokens: r.tokens }));
+      return rows.map((r) => ({
+        id: r.id,
+        ownerId: r.ownerId,
+        tokens: r.tokens,
+        workspaceId: r.workspaceId ?? null,
+      }));
     },
 
     async upsertTheme(ownerId, tokens: ThemeTokens) {
+      const workspaceId = personalWorkspaceId(ownerId);
       const [row] = await db
         .insert(themes)
-        .values({ id: tokens.id, ownerId, tokens })
-        .onConflictDoUpdate({ target: themes.id, set: { ownerId, tokens } })
+        .values({ id: tokens.id, ownerId, workspaceId, tokens })
+        .onConflictDoUpdate({ target: themes.id, set: { ownerId, workspaceId, tokens } })
         .returning();
-      return { id: row!.id, ownerId: row!.ownerId, tokens: row!.tokens };
+      return {
+        id: row!.id,
+        ownerId: row!.ownerId,
+        tokens: row!.tokens,
+        workspaceId: row!.workspaceId ?? null,
+      };
     },
 
     async listTemplateRows() {
@@ -327,6 +351,16 @@ export function createPostgresRepo(): Repository {
           .insert(users)
           .values({ id: uid("user"), email: email.trim().toLowerCase(), passwordHash, isAdmin })
           .returning();
+        // Theme 1: give the new user a personal workspace they admin.
+        const wsId = personalWorkspaceId(row!.id);
+        await db
+          .insert(workspaces)
+          .values({ id: wsId, name: "Personal workspace" })
+          .onConflictDoNothing();
+        await db
+          .insert(workspaceMembers)
+          .values({ workspaceId: wsId, userId: row!.id, role: "admin" })
+          .onConflictDoNothing();
         return {
           id: row!.id,
           email: row!.email,
@@ -340,6 +374,24 @@ export function createPostgresRepo(): Repository {
           throw new DuplicateEmailError(email.trim().toLowerCase());
         throw e;
       }
+    },
+
+    async listUserWorkspaces(userId) {
+      const rows = await db
+        .select({
+          id: workspaces.id,
+          name: workspaces.name,
+          createdAt: workspaces.createdAt,
+          role: workspaceMembers.role,
+        })
+        .from(workspaceMembers)
+        .innerJoin(workspaces, eq(workspaces.id, workspaceMembers.workspaceId))
+        .where(eq(workspaceMembers.userId, userId))
+        .orderBy(workspaces.createdAt);
+      return rows.map<WorkspaceMembership>((r) => ({
+        workspace: { id: r.id, name: r.name, createdAt: r.createdAt.toISOString() },
+        role: r.role as WorkspaceRole,
+      }));
     },
 
     async getUserById(id) {
@@ -477,19 +529,26 @@ export function createPostgresRepo(): Repository {
         ownerId: r.ownerId,
         name: r.name,
         createdAt: r.createdAt.toISOString(),
+        workspaceId: r.workspaceId ?? null,
       }));
     },
 
     async createFolder(ownerId, name) {
       const [row] = await db
         .insert(folders)
-        .values({ id: uid("fld"), ownerId, name: name.trim() })
+        .values({
+          id: uid("fld"),
+          ownerId,
+          workspaceId: personalWorkspaceId(ownerId),
+          name: name.trim(),
+        })
         .returning();
       return {
         id: row!.id,
         ownerId: row!.ownerId,
         name: row!.name,
         createdAt: row!.createdAt.toISOString(),
+        workspaceId: row!.workspaceId ?? null,
       };
     },
 
@@ -505,6 +564,7 @@ export function createPostgresRepo(): Repository {
             ownerId: row.ownerId,
             name: row.name,
             createdAt: row.createdAt.toISOString(),
+            workspaceId: row.workspaceId ?? null,
           }
         : null;
     },
