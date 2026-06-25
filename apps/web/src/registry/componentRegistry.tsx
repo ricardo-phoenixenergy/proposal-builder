@@ -2,6 +2,7 @@ import { getSectionType, getLayout, listLayoutVariants, type Section } from "@pr
 import type { RegisteredVariant, ResolvedSection, SectionComponentProps } from "./registry.types";
 import { GenericSection } from "../components/fallback/GenericSection";
 import { LayoutRenderer } from "../render/LayoutRenderer";
+import { TemplateRenderer } from "../render/TemplateRenderer";
 import { ExecutiveSummary } from "../components/sections/ExecutiveSummary";
 import { ExecutiveSummaryBanner } from "../components/sections/ExecutiveSummaryBanner";
 import { TextSection } from "../components/sections/TextSection";
@@ -75,6 +76,22 @@ export function resolveSection(
   if (variant) {
     const layout = getLayout(section.type, variant, pageFormat);
     if (layout) {
+      // Template layout (HTML/CSS authored): interpolate + sanitize, then render via
+      // dangerouslySetInnerHTML. The safety invariant is enforced inside TemplateRenderer:
+      // interpolate escapes data → sanitizeLayoutHtml strips scripts/events.
+      if (layout.template !== undefined) {
+        const Tmpl = (props: SectionComponentProps) => (
+          <TemplateRenderer
+            layout={layout}
+            data={props.data}
+            theme={props.theme}
+            {...(pageFormat !== undefined ? { pageFormat } : {})}
+          />
+        );
+        Tmpl.displayName = `Template(${section.type}:${variant})`;
+        return { Component: Tmpl, unstyled: false, variant };
+      }
+      // Legacy block layout (existing LayoutRenderer path) — unchanged.
       const Layout = (props: SectionComponentProps) => (
         <LayoutRenderer
           layout={layout}
