@@ -39,6 +39,7 @@ export type LeafBlock =
   | { kind: "table"; field: string; style?: BlockStyle }
   | { kind: "chart"; field: string; chart: LayoutChartKind; style?: BlockStyle }
   | { kind: "matrix"; field: string; style?: BlockStyle }
+  | { kind: "image"; field: string; style?: BlockStyle }
   | { kind: "logo"; style?: BlockStyle }
   | { kind: "divider"; style?: BlockStyle }
   | { kind: "callout"; text: string; style?: BlockStyle }
@@ -81,6 +82,7 @@ export const LEAF_KINDS = [
   "table",
   "chart",
   "matrix",
+  "image",
   "logo",
   "divider",
   "callout",

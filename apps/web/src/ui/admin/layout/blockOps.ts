@@ -10,6 +10,7 @@ export const BINDING: Partial<Record<string, FieldType[]>> = {
   table: ["dataset"],
   chart: ["dataset"],
   matrix: ["matrix"],
+  image: ["image"],
 };
 
 export const STATIC_KINDS = ["callout", "text"];

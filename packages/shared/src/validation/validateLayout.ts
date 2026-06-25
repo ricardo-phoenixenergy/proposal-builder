@@ -22,6 +22,7 @@ const BINDING_KINDS: Record<string, FieldType[]> = {
   table: ["dataset"],
   chart: ["dataset"],
   matrix: ["matrix"],
+  image: ["image"],
 };
 
 const STYLE_VOCAB: Record<string, readonly string[]> = {
