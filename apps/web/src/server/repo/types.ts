@@ -165,6 +165,8 @@ export interface Repository {
 
   /** Workspaces a user belongs to, with their role (Theme 1). */
   listUserWorkspaces(userId: string): Promise<WorkspaceMembership[]>;
+  /** Whether a user is a member of a workspace — the 1b access-control check. */
+  isWorkspaceMember(workspaceId: string, userId: string): Promise<boolean>;
 
   /** Builder (§11). Authored section-type rows; null definition = built-in overlay. */
   listSectionTypeRows(): Promise<SectionTypeRow[]>;
