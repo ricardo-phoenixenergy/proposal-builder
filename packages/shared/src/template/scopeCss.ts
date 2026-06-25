@@ -18,6 +18,24 @@ import selectorParser from "postcss-selector-parser";
 // Public API
 // ---------------------------------------------------------------------------
 
+/**
+ * Sanitize a raw CSS text value (e.g. an inline `style` attribute).
+ * Expands CSS escapes, strips expression()/behavior: declarations and
+ * neutralizes any url() whose scheme is not on the allowlist.
+ * This is the shared helper used by both scopeCss (for block CSS) and
+ * sanitizeLayoutHtml (for inline style attributes) to keep them symmetric.
+ */
+export function sanitizeCssText(value: string): string {
+  // Expand CSS hex escapes + line continuations first
+  const expanded = expandCssEscapes(value);
+  // Drop expression(...) entirely
+  if (/expression\s*\(/i.test(expanded)) return "";
+  // Drop behavior: declarations entirely
+  if (/^\s*behavior\s*:/i.test(expanded)) return "";
+  // Sanitize url() scheme
+  return sanitizeUrlValues(value);
+}
+
 export function scopeCss(css: string, scope: string): string {
   // Pre-sanitize: strip backslash-escaped at-rules (e.g. @\69mport) before handing
   // to postcss. These are never valid CSS and postcss throws "At-rule without name"

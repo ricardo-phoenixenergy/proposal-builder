@@ -21,4 +21,30 @@ describe("sanitizeLayoutHtml", () => {
   it("strips <style> and <link> from the template body", () => {
     expect(sanitizeLayoutHtml('<style>body{}</style><link rel="x">')).toBe("");
   });
+
+  // Adversarial inline-style tests (Fix 1)
+  it("strips dangerous tokens from inline style but keeps legit styles", () => {
+    expect(
+      sanitizeLayoutHtml('<div style="background:url(javascript:alert(1))">x</div>'),
+    ).not.toContain("javascript:");
+    expect(sanitizeLayoutHtml('<div style="width:expression(alert(1))">x</div>')).not.toContain(
+      "expression(",
+    );
+    expect(sanitizeLayoutHtml('<div style="behavior:url(x.htc)">x</div>')).not.toContain(
+      "behavior:",
+    );
+    const ok = sanitizeLayoutHtml(
+      '<div style="position:absolute;top:10px;background:url(https://x/y.png)">x</div>',
+    );
+    expect(ok).toContain("position:absolute");
+    expect(ok).toContain("https://x/y.png");
+  });
+
+  // Adversarial img data: scheme tests (Fix 2)
+  it("allows only raster data: images on <img>", () => {
+    expect(sanitizeLayoutHtml('<img src="data:image/png;base64,AAA">')).toContain("data:image/png");
+    expect(sanitizeLayoutHtml('<img src="https://x/y.png">')).toContain("https://x/y.png");
+    expect(sanitizeLayoutHtml('<img src="data:text/html,<b>x</b>">')).not.toContain("text/html");
+    expect(sanitizeLayoutHtml('<img src="data:image/svg+xml,<svg></svg>">')).not.toContain("svg");
+  });
 });

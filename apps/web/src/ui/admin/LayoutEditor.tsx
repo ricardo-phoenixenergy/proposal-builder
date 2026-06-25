@@ -1,3 +1,4 @@
+// Thin stable entry point opened by SectionLayoutsView; delegates all logic to TemplateLayoutEditor.
 "use client";
 
 import type { SectionLayout } from "@proposal/shared";
