@@ -62,7 +62,14 @@ export function resolveSection(
   pageFormat?: string,
 ): ResolvedSection {
   const typeSchema = getSectionType(section.type);
-  const variant = section.variant ?? typeSchema?.defaultVariant;
+  // Precedence for the variant: the section's explicit choice → the type's declared
+  // default → the first authored layout for this format. The last step makes a
+  // freshly-authored layout render without the author having to also pick a variant
+  // or set a defaultVariant on the type (otherwise the section stays unstyled).
+  const variant =
+    section.variant ??
+    typeSchema?.defaultVariant ??
+    listLayoutVariants(section.type, pageFormat)[0];
 
   // 1. Authored layout wins (format-aware).
   if (variant) {
