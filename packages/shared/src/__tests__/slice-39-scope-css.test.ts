@@ -66,4 +66,27 @@ describe("scopeCss", () => {
     expect(out).toContain("@supports");
     expect(out).toContain(`${S} .grid{display:grid}`);
   });
+
+  // Adversarial tests — security bypass scenarios
+  it("removes @import even when written with CSS escapes", () => {
+    expect(scopeCss('@\\69mport url("https://evil/x.css");.a{color:red}', S)).not.toMatch(
+      /import/i,
+    );
+    expect(scopeCss('@\\69mport url("https://evil/x.css");.a{color:red}', S)).toContain(`${S} .a`);
+  });
+  it("scopes :is()/:has() as a unit without splitting internal commas", () => {
+    expect(scopeCss(":is(h1, h2){margin:0}", S)).toBe(`${S} :is(h1, h2){margin:0}`);
+  });
+  it("keeps https and data:image raster url(), strips others", () => {
+    expect(scopeCss(".a{background:url(https://x/y.png)}", S)).toContain("https://x/y.png");
+    expect(scopeCss(".a{background:url(data:image/png;base64,AAA)}", S)).toContain(
+      "data:image/png",
+    );
+    expect(scopeCss(".a{background:url(http://x/y.png)}", S)).not.toContain("http://x");
+    expect(scopeCss('.a{background:url("data:text/html,<x>")}', S)).not.toContain("text/html");
+  });
+  it("leaves @keyframes step selectors unscoped but scopes @media inner rules", () => {
+    expect(scopeCss("@keyframes k{0%{opacity:0}100%{opacity:1}}", S)).toContain("0%{");
+    expect(scopeCss("@media print{.x{color:#000}}", S)).toContain(`${S} .x`);
+  });
 });
