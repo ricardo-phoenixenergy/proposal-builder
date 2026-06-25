@@ -1,6 +1,6 @@
 // packages/shared/src/__tests__/slice-39-scope-css.test.ts
 import { describe, expect, it } from "vitest";
-import { scopeCss } from "../template/scopeCss";
+import { scopeCss, cssSyntaxError } from "../template/scopeCss";
 
 const S = '[data-layout="cover:hero"]';
 
@@ -88,5 +88,30 @@ describe("scopeCss", () => {
   it("leaves @keyframes step selectors unscoped but scopes @media inner rules", () => {
     expect(scopeCss("@keyframes k{0%{opacity:0}100%{opacity:1}}", S)).toContain("0%{");
     expect(scopeCss("@media print{.x{color:#000}}", S)).toContain(`${S} .x`);
+  });
+
+  // Robustness — malformed authored CSS must degrade, never throw (a thrown
+  // CssSyntaxError during render 500s the whole page; spec requires graceful degrade).
+  it("returns empty string on malformed CSS instead of throwing", () => {
+    for (const bad of [".x{color:red", "@", "}}}", "<div>oops</div>", ".a{color:}}}extra"]) {
+      expect(() => scopeCss(bad, S)).not.toThrow();
+      expect(scopeCss(bad, S)).toBe("");
+    }
+  });
+  it("drops malformed CSS entirely (never emits unsanitized raw)", () => {
+    // A parse failure must not leak the raw payload through unscoped/unsanitized.
+    const raw = ".x{behavior:url(evil.htc)"; // unclosed → parse error
+    expect(scopeCss(raw, S)).toBe("");
+  });
+});
+
+describe("cssSyntaxError", () => {
+  it("returns null for valid CSS", () => {
+    expect(cssSyntaxError(".x{color:red}")).toBeNull();
+    expect(cssSyntaxError("")).toBeNull();
+  });
+  it("returns a message for malformed CSS", () => {
+    expect(cssSyntaxError(".x{color:red")).toMatch(/./);
+    expect(cssSyntaxError("}}}")).toMatch(/./);
   });
 });

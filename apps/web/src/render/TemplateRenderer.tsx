@@ -22,8 +22,17 @@ export function TemplateRenderer({
   theme?: ThemeTokens;
 }) {
   const scope = `[data-layout="${layout.type}:${layout.variant}"]`;
-  // Safety: interpolate escapes data, sanitizeLayoutHtml strips scripts/events.
-  const html = sanitizeLayoutHtml(interpolate(layout.template ?? "", data));
+  // Safety + robustness: interpolate escapes data, sanitizeLayoutHtml strips
+  // scripts/events. Both run on author-saved content, so a single malformed layout
+  // must never throw and 500 the whole document (§ graceful degradation). On failure
+  // the section degrades to empty rather than crashing the render; scopeCss already
+  // self-degrades to "" on malformed CSS.
+  let html = "";
+  try {
+    html = sanitizeLayoutHtml(interpolate(layout.template ?? "", data));
+  } catch {
+    html = "";
+  }
   const css = layout.css ? scopeCss(layout.css, scope) : "";
   const fmt = getPageFormat(pageFormat ?? layout.pageFormat);
   return (
